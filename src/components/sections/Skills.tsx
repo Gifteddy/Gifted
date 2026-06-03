@@ -33,6 +33,13 @@ export function Skills() {
   const [groups, setGroups] = useState<{ name: string; skills: SkillItem[] }[]>([])
   const [loading, setLoading] = useState(true)
 
+  const fallback = [
+    { name: 'Frontend', skills: [{ name: 'React' }, { name: 'TypeScript' }, { name: 'Tailwind CSS' }, { name: 'Next.js' }] },
+    { name: 'Backend', skills: [{ name: 'Node.js' }, { name: 'Python' }, { name: 'PostgreSQL' }, { name: 'Supabase' }] },
+    { name: 'Design', skills: [{ name: 'Figma' }, { name: 'Photoshop' }, { name: 'After Effects' }, { name: 'Premiere Pro' }] },
+    { name: 'Other', skills: [{ name: 'Git' }, { name: 'Docker' }, { name: 'AWS' }, { name: 'Vercel' }] },
+  ]
+
   useEffect(() => {
     async function load() {
       try {
@@ -44,8 +51,8 @@ export function Skills() {
             grouped[s.category].push({ name: s.name })
           }
           setGroups(Object.entries(grouped).map(([name, skills]) => ({ name, skills })))
-        } else setGroups([])
-      } catch { setGroups([]) }
+        } else setGroups(fallback)
+      } catch { setGroups(fallback) }
       finally { setLoading(false) }
     }
     load()

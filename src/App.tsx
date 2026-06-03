@@ -18,6 +18,7 @@ const GraphicDesign = lazy(() => import('@/pages/GraphicDesign'))
 const Development = lazy(() => import('@/pages/Development'))
 const AiEnthusiast = lazy(() => import('@/pages/AiEnthusiast'))
 const PhotoEditing = lazy(() => import('@/pages/PhotoEditing'))
+const SubmitTestimonial = lazy(() => import('@/pages/SubmitTestimonial'))
 const About = lazy(() => import('@/pages/About'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="full-stack-development" element={<Navigate to="/development" replace />} />
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
+            <Route path="submit-testimonial" element={<SubmitTestimonial />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 

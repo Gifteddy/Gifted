@@ -29,6 +29,15 @@ const serviceRoutes: Record<string, string> = {
   'Photo Editing': '/photo-editing',
 }
 
+const fallback: ServiceItem[] = [
+  { title: 'Photography', description: 'Professional photography services capturing moments with artistic vision and technical precision.', icon: '📷', glow: '#4dabf7' },
+  { title: 'Video Production', description: 'End-to-end video production from concept to final cut, delivering compelling visual stories.', icon: '🎬', glow: '#f472b6' },
+  { title: 'Graphic Design', description: 'Creative design solutions that communicate your brand identity across all media.', icon: '🎨', glow: '#a78bfa' },
+  { title: 'Development', description: 'Full-stack web development building modern, scalable applications with cutting-edge tech.', icon: '💻', glow: '#34d399' },
+  { title: 'AI Enthusiast', description: 'Exploring and implementing AI solutions to solve real-world problems creatively.', icon: '🤖', glow: '#a855f7' },
+  { title: 'Photo Editing', description: 'Professional photo editing and retouching services for stunning visual results.', icon: '✨', glow: '#fb923c' },
+]
+
 export function Services() {
   const [services, setServices] = useState<ServiceItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,8 +47,8 @@ export function Services() {
       try {
         const { getServices } = await import('@/lib/queries')
         const data = await getServices()
-        setServices(data.length > 0 ? data.map(s => ({ title: s.title, description: s.description, icon: s.icon, glow: '#4dabf7' })) : [])
-      } catch { setServices([]) } finally { setLoading(false) }
+        setServices(data.length > 0 ? data.map(s => ({ title: s.title, description: s.description, icon: s.icon, glow: '#4dabf7' })) : fallback)
+      } catch { setServices(fallback) } finally { setLoading(false) }
     }
     load()
   }, [])

@@ -223,6 +223,11 @@ CREATE POLICY "Admins can manage testimonials"
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
   );
 
+DROP POLICY IF EXISTS "Anyone can insert testimonials" ON testimonials;
+CREATE POLICY "Anyone can insert testimonials"
+  ON testimonials FOR INSERT
+  WITH CHECK (true);
+
 -- ===================== SKILLS =====================
 CREATE TABLE IF NOT EXISTS skills (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

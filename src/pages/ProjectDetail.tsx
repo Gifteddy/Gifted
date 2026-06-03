@@ -61,6 +61,9 @@ export default function ProjectDetail() {
             {project.categories?.map(cat => (
               <span key={cat.name} className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{cat.name}</span>
             ))}
+            {(!project.categories || project.categories.length === 0) && project.category && (
+              <span className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{project.category.replace(/-/g, ' ')}</span>
+            )}
           </div>
           <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">{project.title}</h1>
         </motion.div>
@@ -70,7 +73,7 @@ export default function ProjectDetail() {
           {project.thumbnail ? (
             <div className="relative">
               <img src={project.thumbnail} alt={project.title} className="w-full object-cover" />
-              {project.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) && (
+              {(project.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) || project.category?.includes('video')) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/10">
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm">
                     <svg className="ml-1 h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
@@ -134,7 +137,7 @@ export default function ProjectDetail() {
           </motion.div>
         </div>
 
-        {project.project_url && project.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) && (
+        {project.project_url && (project.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) || project.category?.includes('video')) && (
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
             className="mt-8 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
             <video src={project.project_url} controls className="w-full" poster={project.thumbnail || undefined}>

@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/Skeleton'
 
+const fallbackStats = [
+  { value: '5+', label: 'Years Experience' },
+  { value: '50+', label: 'Projects Delivered' },
+  { value: '30+', label: 'Happy Clients' },
+  { value: '10+', label: 'Industries Served' },
+]
+
 export function About() {
   const [bio, setBio] = useState<string | null>(null)
   const [stats, setStats] = useState<{ value: string; label: string }[]>([])
@@ -22,6 +29,8 @@ export function About() {
     }
     load()
   }, [])
+
+  const displayStats = stats.length > 0 ? stats : fallbackStats
 
   return (
     <section className="relative overflow-hidden px-4 py-24 sm:py-32">
@@ -45,7 +54,7 @@ export function About() {
               <div key={i} className="rounded-2xl border border-border-light dark:border-border-dark bg-surface-secondary-light dark:bg-surface-secondary-dark p-6 text-center">
                 <Skeleton className="mx-auto h-8 w-16" /><Skeleton className="mx-auto mt-2 h-3 w-20" />
               </div>
-            )) : stats.map(stat => (
+            )) : displayStats.map(stat => (
               <div key={stat.label} className="rounded-2xl border border-border-light dark:border-border-dark bg-surface-secondary-light dark:bg-surface-secondary-dark p-6 text-center">
                 <div className="font-display text-3xl font-bold text-gradient sm:text-4xl">{stat.value}</div>
                 <div className="mt-1 text-xs text-text-muted-light dark:text-text-muted-dark">{stat.label}</div>

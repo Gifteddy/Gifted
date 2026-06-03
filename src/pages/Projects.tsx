@@ -21,7 +21,9 @@ export default function Projects() {
         ])
         const [projData, catData] = await Promise.all([getProjects(), getCategories()])
         setProjects(projData)
-        setCategories(catData.map(c => c.name))
+        const catNames = catData.map(c => c.name)
+        const usedCats = [...new Set([...catNames, ...projData.flatMap(p => p.category ? [p.category.replace(/-/g, ' ')] : [])])]
+        setCategories(usedCats)
       } catch { /* silent */ } finally { setLoading(false) }
     }
     load()
@@ -29,7 +31,7 @@ export default function Projects() {
 
   const filtered = activeCategory === 'all'
     ? projects
-    : projects.filter(p => p.categories?.some(c => c.name === activeCategory))
+    : projects.filter(p => p.categories?.some(c => c.name === activeCategory) || p.category?.replace(/-/g, ' ') === activeCategory)
 
   return (
     <section className="relative min-h-screen px-4 pt-32 pb-24">
@@ -63,7 +65,7 @@ export default function Projects() {
                   <div className="relative flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
                     {p.thumbnail ? <img src={p.thumbnail} alt={p.title} className="h-full w-full object-cover" />
                       : <span className="text-4xl opacity-30">🚀</span>}
-                    {p.categories?.some(c => c.name?.toLowerCase() === 'video-production' || c.slug === 'video-production') && (
+                    {(p.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug === 'video-production') || p.category === 'video-production') && (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-transform group-hover:scale-110">
                           <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
