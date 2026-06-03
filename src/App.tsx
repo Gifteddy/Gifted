@@ -67,8 +67,9 @@ export default function App() {
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
             <Route path="submit-testimonial" element={<SubmitTestimonial />} />
-            <Route path="*" element={<NotFound />} />
           </Route>
+
+          <Route path="*" element={<NotFound />} />
 
           <Route path="/admin/login" element={<AdminLogin />} />
 
@@ -80,6 +81,7 @@ export default function App() {
               <Route path="blog" element={<AdminBlog />} />
               <Route path="messages" element={<AdminMessages />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>
           </Route>
         </Routes>
