@@ -13,6 +13,8 @@ SERVICES:
 2. Video Production — Commercial videos, content videos, short-form videos, motion-based work.
 3. Graphic Design — Marketing creatives, social media assets, posters, digital design assets.
 4. Development — Frontend development (React, TypeScript, interactive websites), full stack development (Supabase, dashboards, admin systems, SaaS), web applications, and cloud deployment.
+5. AI Enthusiast — AI integration, prompt engineering, AI-powered tools, automation, and intelligent systems.
+6. Photo Editing — Professional photo retouching, color grading, background removal, restoration, and enhancement.
 
 WEBSITE STRUCTURE:
 - / — Home
@@ -21,6 +23,8 @@ WEBSITE STRUCTURE:
 - /video-production — Video Production services and projects
 - /graphic-design — Graphic Design services and projects
 - /development — Development services and projects (frontend + full stack)
+- /ai-enthusiast — AI Enthusiast services and projects
+- /photo-editing — Photo Editing services and projects
 - /projects — All projects
 - /blog — Blog posts
 - /contact — Contact page

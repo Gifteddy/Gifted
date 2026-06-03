@@ -11,8 +11,9 @@ const footerLinks = {
     { to: '/photography', label: 'Photography' },
     { to: '/video-production', label: 'Video Production' },
     { to: '/graphic-design', label: 'Graphic Design' },
-    { to: '/frontend-development', label: 'Frontend Development' },
-    { to: '/full-stack-development', label: 'Full Stack Development' },
+    { to: '/development', label: 'Development' },
+    { to: '/ai-enthusiast', label: 'AI Enthusiast' },
+    { to: '/photo-editing', label: 'Photo Editing' },
   ],
   Social: [
     { to: '#', label: 'GitHub' },

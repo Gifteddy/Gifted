@@ -1,7 +1,13 @@
-export function GifteddyMark({ className = 'h-8 w-8' }: { className?: string }) {
+export function GifteddyMark({ className = 'h-7 w-7' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-      <path d="M20 6L22.5 17.5L34 20L22.5 22.5L20 34L17.5 22.5L6 20L17.5 17.5Z" fill="currentColor" fillOpacity="0.9" />
+    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
+      <rect x="12" y="14" width="24" height="18" rx="4" stroke="currentColor" strokeWidth="1.8" fill="currentColor" fillOpacity="0.08" />
+      <rect x="8" y="8" width="32" height="26" rx="6" stroke="currentColor" strokeWidth="1.8" fill="currentColor" fillOpacity="0.12" />
+      <circle cx="19" cy="21" r="2.5" fill="currentColor" />
+      <circle cx="29" cy="21" r="2.5" fill="currentColor" />
+      <path d="M18 29 Q24 33 30 29" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <rect x="20" y="34" width="8" height="4" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="currentColor" fillOpacity="0.08" />
+      <path d="M14 38 Q14 44 16 44 L32 44 Q34 44 34 38" stroke="currentColor" strokeWidth="1.2" fill="currentColor" fillOpacity="0.06" />
     </svg>
   )
 }

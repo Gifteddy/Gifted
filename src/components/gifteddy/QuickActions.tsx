@@ -9,6 +9,8 @@ const quickActions: QuickAction[] = [
   { label: 'Video Production', action: 'Show me video production work' },
   { label: 'Graphic Design', action: 'Show me graphic design projects' },
   { label: 'Development', action: 'Show me development projects' },
+  { label: 'AI Enthusiast', action: 'Show me AI Enthusiast projects' },
+  { label: 'Photo Editing', action: 'Show me photo editing work' },
   { label: 'Contact Gifted', action: 'How can I contact Gifted?' },
   { label: 'Latest Projects', action: 'Show me the latest projects' },
 ]

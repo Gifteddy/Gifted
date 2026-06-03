@@ -47,48 +47,72 @@ export default function ProjectDetail() {
   }
 
   return (
-    <section className="relative min-h-screen px-4 pt-32 pb-24">
-      <div className="mx-auto max-w-4xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Link to="/projects" className="mb-8 inline-flex items-center gap-2 text-sm text-text-muted-light transition-colors hover:text-brand-500 dark:text-text-muted-dark dark:hover:text-brand-400">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Back to Projects
-          </Link>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <div className="mb-2 flex flex-wrap gap-2">
-            {project.categories?.map(cat => (
-              <span key={cat.name} className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{cat.name}</span>
-            ))}
-            {(!project.categories || project.categories.length === 0) && project.category && (
-              <span className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{project.category.replace(/-/g, ' ')}</span>
-            )}
+    <section className="relative min-h-screen pb-24">
+      {(project.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) || project.category?.includes('video')) && project.project_url ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="relative h-screen w-full overflow-hidden">
+          <video src={project.project_url} controls className="h-full w-full object-contain bg-black" poster={project.thumbnail || undefined}>
+            Your browser does not support the video tag.
+          </video>
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute bottom-8 left-4 sm:bottom-12 sm:left-8">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <Link to="/projects" className="pointer-events-auto mb-4 inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Back to Projects
+              </Link>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <div className="mb-2 flex flex-wrap gap-2">
+                {project.categories?.map(cat => (
+                  <span key={cat.name} className="pointer-events-auto rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">{cat.name}</span>
+                ))}
+                {(!project.categories || project.categories.length === 0) && project.category && (
+                  <span className="pointer-events-auto rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">{project.category.replace(/-/g, ' ')}</span>
+                )}
+              </div>
+              <h1 className="font-display text-4xl font-bold leading-tight text-white sm:text-5xl">{project.title}</h1>
+            </motion.div>
           </div>
-          <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">{project.title}</h1>
         </motion.div>
+      ) : (
+        <div className="mx-auto max-w-4xl px-4 pt-32">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <Link to="/projects" className="mb-8 inline-flex items-center gap-2 text-sm text-text-muted-light transition-colors hover:text-brand-500 dark:text-text-muted-dark dark:hover:text-brand-400">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              Back to Projects
+            </Link>
+          </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="mt-8 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
-          {project.thumbnail ? (
-            <div className="relative">
-              <img src={project.thumbnail} alt={project.title} className="w-full object-cover" />
-              {(project.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) || project.category?.includes('video')) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm">
-                    <svg className="ml-1 h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                  </div>
-                </div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <div className="mb-2 flex flex-wrap gap-2">
+              {project.categories?.map(cat => (
+                <span key={cat.name} className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{cat.name}</span>
+              ))}
+              {(!project.categories || project.categories.length === 0) && project.category && (
+                <span className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{project.category.replace(/-/g, ' ')}</span>
               )}
             </div>
-          ) : (
-            <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
-              <span className="text-6xl opacity-30">🚀</span>
-            </div>
-          )}
-        </motion.div>
+            <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">{project.title}</h1>
+          </motion.div>
 
-        <div className="mt-12 grid gap-8 lg:grid-cols-3">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="mt-8 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
+            {project.thumbnail ? (
+              <div className="relative">
+                <img src={project.thumbnail} alt={project.title} className="w-full object-cover" />
+              </div>
+            ) : (
+              <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
+                <span className="text-6xl opacity-30">🚀</span>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
+
+      <div className="mx-auto mt-12 max-w-4xl px-4">
+        <div className="grid gap-8 lg:grid-cols-3">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="lg:col-span-2">
             <LiquidGlass className="rounded-2xl p-6 sm:p-8" intensity="subtle">
               <h2 className="mb-4 text-xl font-semibold">About This Project</h2>
@@ -136,15 +160,6 @@ export default function ProjectDetail() {
             </LiquidGlass>
           </motion.div>
         </div>
-
-        {project.project_url && (project.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) || project.category?.includes('video')) && (
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-            className="mt-8 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
-            <video src={project.project_url} controls className="w-full" poster={project.thumbnail || undefined}>
-              Your browser does not support the video tag.
-            </video>
-          </motion.div>
-        )}
 
         {project.gallery && project.gallery.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
