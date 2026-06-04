@@ -182,9 +182,9 @@ export default function AdminMedia() {
         </div>
       )}
 
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search media..." className="w-full max-w-xs admin-input" />
+          placeholder="Search media..." className="w-full sm:max-w-xs admin-input" />
         <span className="text-xs text-gray-400 dark:text-white/30">{filtered.length} file{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 

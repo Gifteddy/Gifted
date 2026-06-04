@@ -83,16 +83,16 @@ export default function AdminProjects() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white/90">Projects</h1>
-        <button onClick={() => { setEditorMode('create'); setEditId(null) }} className="admin-btn-primary">
+        <button onClick={() => { setEditorMode('create'); setEditId(null) }} className="w-full sm:w-auto admin-btn-primary">
           New Project
         </button>
       </div>
 
       <div className="mb-4">
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search projects..." className="w-full max-w-xs admin-input" />
+          placeholder="Search projects..." className="w-full sm:max-w-xs admin-input" />
       </div>
 
       {loading ? (
@@ -109,30 +109,32 @@ export default function AdminProjects() {
         <div className="space-y-2">
           {filtered.map(project => (
             <div key={project.id} className="relative overflow-hidden rounded-2xl p-4 transition-all hover:scale-[1.002] admin-glass">
-              <div className="flex items-center gap-4">
-                {project.cover_image ? (
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl">
-                    <img src={project.cover_image} alt="" className="h-full w-full object-cover" />
-                  </div>
-                ) : (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#7700ff]/10 text-lg text-[#7700ff] dark:text-[#ad66ff]">◇</div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium text-gray-900 dark:text-white/90">{project.title}</span>
-                    {project.featured && <span className="shrink-0 text-xs text-amber-500">★</span>}
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-white/40">
-                    {project.category && <span>{project.category.replace(/-/g, ' ')}</span>}
-                    <span>·</span>
-                    <span className={cn((project.published || project.status === 'published') ? 'text-emerald-500' : 'text-amber-500')}>
-                      {project.published || project.status === 'published' ? 'Published' : 'Draft'}
-                    </span>
-                    <span>·</span>
-                    <span>{formatDate(project.created_at)}</span>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  {project.cover_image ? (
+                    <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl">
+                      <img src={project.cover_image} alt="" className="h-full w-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-[#7700ff]/10 text-lg text-[#7700ff] dark:text-[#ad66ff]">◇</div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-gray-900 dark:text-white/90">{project.title}</span>
+                      {project.featured && <span className="shrink-0 text-xs text-amber-500">★</span>}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-white/40">
+                      {project.category && <span className="truncate">{project.category.replace(/-/g, ' ')}</span>}
+                      <span>·</span>
+                      <span className={cn('shrink-0', (project.published || project.status === 'published') ? 'text-emerald-500' : 'text-amber-500')}>
+                        {project.published || project.status === 'published' ? 'Published' : 'Draft'}
+                      </span>
+                      <span>·</span>
+                      <span className="shrink-0">{formatDate(project.created_at)}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1 pl-0 sm:pl-0">
                   <button onClick={() => handleTogglePublish(project)}
                     className="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/80"
                     title={project.published || project.status === 'published' ? 'Unpublish' : 'Publish'}>
@@ -187,7 +189,8 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
   const [description, setDescription] = useState('')
-  const [category, setCategory] = useState('')
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [allCategories, setAllCategories] = useState<{ id: string; slug: string; name: string }[]>([])
   const [coverImage, setCoverImage] = useState('')
   const [technologies, setTechnologies] = useState('')
   const [client, setClient] = useState('')
@@ -196,24 +199,34 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
   const [featured, setFeatured] = useState(false)
   const [published, setPublished] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [gallery, setGallery] = useState<string[]>([])
   const [galleryOpen, setGalleryOpen] = useState(false)
-  const [galleryTarget, setGalleryTarget] = useState<'cover' | 'video'>('cover')
+  const [galleryTarget, setGalleryTarget] = useState<'cover' | 'video' | 'gallery'>('cover')
+
+  useEffect(() => {
+    supabase.from('categories').select('id, slug, name').then(({ data }) => {
+      if (data) setAllCategories(data)
+    })
+  }, [])
 
   useEffect(() => {
     if (projectId) {
-      supabase.from('projects').select('*').eq('id', projectId).single().then(({ data }) => {
+      supabase.from('projects').select('*, categories:project_categories(category:categories(*))').eq('id', projectId).single().then(({ data }) => {
         if (!data) return
         setTitle(data.title || '')
         setSlug(data.slug || '')
         setDescription(data.description || '')
-        setCategory(data.category || '')
         setCoverImage(data.cover_image || data.thumbnail || '')
+        setGallery(data.gallery || [])
         setTechnologies((data.technologies || data.tools || []).join(', '))
         setClient(data.client || '')
         setProjectUrl(data.project_url || '')
         setGithubUrl(data.github_url || '')
         setFeatured(data.featured || false)
         setPublished(data.published || data.status === 'published')
+        if (data.categories) {
+          setSelectedCategories(data.categories.map((pc: any) => pc.category?.slug).filter(Boolean))
+        }
       })
     }
   }, [projectId])
@@ -223,16 +236,30 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
     if (!title.trim() || !slug.trim()) return
     setSaving(true)
     const techArray = technologies.split(',').map(t => t.trim()).filter(Boolean)
+    const firstCategory = selectedCategories[0] || ''
     const payload = {
-      title: title.trim(), slug: slug.trim(), description: description.trim(), category,
-      cover_image: coverImage, thumbnail: coverImage, technologies: techArray, tools: techArray,
+      title: title.trim(), slug: slug.trim(), description: description.trim(), category: firstCategory,
+      cover_image: coverImage, thumbnail: coverImage, gallery, technologies: techArray, tools: techArray,
       client: client.trim(), project_url: projectUrl.trim(), github_url: githubUrl.trim(),
       featured, published, status: published ? 'published' : 'draft', updated_at: new Date().toISOString(),
     }
     if (projectId) {
       await supabase.from('projects').update(payload).eq('id', projectId)
+      await supabase.from('project_categories').delete().eq('project_id', projectId)
+      if (selectedCategories.length > 0) {
+        const catIds = allCategories.filter(c => selectedCategories.includes(c.slug)).map(c => c.id)
+        if (catIds.length > 0) {
+          await supabase.from('project_categories').insert(catIds.map(categoryId => ({ project_id: projectId, category_id: categoryId })))
+        }
+      }
     } else {
-      await supabase.from('projects').insert({ ...payload, created_at: new Date().toISOString() })
+      const { data: newProject } = await supabase.from('projects').insert({ ...payload, created_at: new Date().toISOString() }).select('id').single()
+      if (newProject && selectedCategories.length > 0) {
+        const catIds = allCategories.filter(c => selectedCategories.includes(c.slug)).map(c => c.id)
+        if (catIds.length > 0) {
+          await supabase.from('project_categories').insert(catIds.map(categoryId => ({ project_id: newProject.id, category_id: categoryId })))
+        }
+      }
     }
     setSaving(false)
     onSaved()
@@ -242,7 +269,8 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
 
   const pickImage = (url: string) => {
     if (galleryTarget === 'cover') setCoverImage(url)
-    else setProjectUrl(url)
+    else if (galleryTarget === 'video') setProjectUrl(url)
+    else if (galleryTarget === 'gallery') setGallery(prev => [...prev, url])
     setGalleryOpen(false)
   }
 
@@ -252,6 +280,36 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
       const url = await uploadToCloudinary('image/*')
       if (url) setCoverImage(url)
     } catch { /* silent */ }
+  }
+
+  const handleUploadGallery = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.multiple = true
+    input.onchange = async () => {
+      const files = Array.from(input.files || [])
+      if (files.length === 0) return
+      const uploads = files.map(file => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '')
+        return fetch(
+          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/auto/upload`,
+          { method: 'POST', body: formData }
+        ).then(r => r.json())
+      })
+      const results = await Promise.allSettled(uploads)
+      const urls = results
+        .filter((r): r is PromiseFulfilledResult<{ secure_url: string }> => r.status === 'fulfilled' && r.value.secure_url)
+        .map(r => r.value.secure_url)
+      if (urls.length > 0) setGallery(prev => [...prev, ...urls])
+    }
+    input.click()
+  }
+
+  const handleRemoveGallery = (index: number) => {
+    setGallery(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleUploadVideo = async () => {
@@ -283,11 +341,29 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
               <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Slug</label>
               <input type="text" value={slug} onChange={(e) => setSlug(generateSlug(e.target.value))} className="w-full admin-input" placeholder="project-slug" />
             </div>
-            <div>
-              <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Category</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full admin-input">
-                {categoryOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-              </select>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Categories</label>
+              <div className="flex flex-wrap gap-1.5">
+                {allCategories.length > 0 ? allCategories.map(cat => {
+                  const isSelected = selectedCategories.includes(cat.slug)
+                  return (
+                    <button key={cat.id} type="button" onClick={() => {
+                      setSelectedCategories(prev =>
+                        isSelected ? prev.filter(s => s !== cat.slug) : [...prev, cat.slug]
+                      )
+                    }}
+                      className={cn('rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                        isSelected
+                          ? 'bg-[#7700ff] text-white dark:bg-[#9233ff]'
+                          : 'bg-black/[0.04] text-gray-500 hover:bg-black/[0.08] dark:bg-white/[0.04] dark:text-white/50 dark:hover:bg-white/[0.08]'
+                      )}>
+                      {cat.name}
+                    </button>
+                  )
+                }) : (
+                  <span className="text-xs text-gray-400 dark:text-white/30">Loading categories...</span>
+                )}
+              </div>
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Description</label>
@@ -295,7 +371,7 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">
-                {category === 'video-production' ? 'Video Thumbnail (cover image)' : 'Cover Image'}
+                {selectedCategories.includes('video-production') ? 'Video Thumbnail (cover image)' : 'Cover Image'}
               </label>
               <div className="flex gap-2">
                 <input type="text" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} className="flex-1 admin-input" placeholder="https://... or pick from gallery" />
@@ -312,16 +388,36 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
               )}
             </div>
             <div className="sm:col-span-2">
+              <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Gallery Images</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {gallery.map((img, i) => (
+                  <div key={i} className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
+                    <img src={img.replace('/upload/', '/upload/w_100/')} alt="" className="h-full w-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    <button type="button" onClick={() => handleRemoveGallery(i)}
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">✕</button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={handleUploadGallery} className="rounded-xl bg-[#7700ff] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[#9900ff]">Upload Images</button>
+                <button type="button" onClick={() => { setGalleryTarget('gallery'); setGalleryOpen(true) }} className="rounded-xl bg-[#7700ff]/10 px-3 py-2 text-xs font-medium text-[#7700ff] transition-colors hover:bg-[#7700ff]/20 dark:text-[#ad66ff]">Pick from Gallery</button>
+                {gallery.length > 0 && (
+                  <span className="self-center text-xs text-gray-400 dark:text-white/30">{gallery.length} image{gallery.length !== 1 ? 's' : ''}</span>
+                )}
+              </div>
+            </div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Tools / Technologies (comma separated)</label>
               <input type="text" value={technologies} onChange={(e) => setTechnologies(e.target.value)} className="w-full admin-input" placeholder="React, TypeScript, Tailwind CSS" />
             </div>
-            {(category === 'development' || category === 'graphic-design' || category === 'ai-enthusiast') && (
+            {(selectedCategories.some(c => ['development', 'graphic-design', 'ai-enthusiast'].includes(c))) && (
               <div>
                 <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">GitHub URL</label>
                 <input type="text" value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} className="w-full admin-input" placeholder="https://github.com/..." />
               </div>
             )}
-            {(category === 'photography' || category === 'video-production' || category === 'photo-editing') && (
+            {(selectedCategories.some(c => ['photography', 'video-production', 'photo-editing'].includes(c))) && (
               <div>
                 <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Client</label>
                 <input type="text" value={client} onChange={(e) => setClient(e.target.value)} className="w-full admin-input" placeholder="Client name" />
@@ -329,11 +425,11 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
             )}
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">
-                {category === 'video-production' ? 'Video File' : 'Project URL'}
+                {selectedCategories.includes('video-production') ? 'Video File' : 'Project URL'}
               </label>
               <div className="flex gap-2">
-                <input type="text" value={projectUrl} onChange={(e) => setProjectUrl(e.target.value)} className="flex-1 admin-input" placeholder={category === 'video-production' ? 'https://... or upload video' : 'https://...'} />
-                {category === 'video-production' && (
+                <input type="text" value={projectUrl} onChange={(e) => setProjectUrl(e.target.value)} className="flex-1 admin-input" placeholder={selectedCategories.includes('video-production') ? 'https://... or upload video' : 'https://...'} />
+                {selectedCategories.includes('video-production') && (
                   <>
                     <button type="button" onClick={handleUploadVideo}
                       className="shrink-0 rounded-xl bg-[#7700ff] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[#9900ff]">Upload</button>

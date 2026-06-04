@@ -64,7 +64,7 @@ export default function AdminMessages() {
         </div>
       </div>
 
-      <div className="mb-4 flex gap-1">
+      <div className="mb-4 flex flex-wrap gap-1">
         {statusFilters.map(sf => (
           <button key={sf} onClick={() => setFilter(sf)}
             className={cn('rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
@@ -115,10 +115,10 @@ export default function AdminMessages() {
           <div className="lg:col-span-2">
             {selected ? (
               <div className="relative overflow-hidden rounded-2xl p-6 admin-glass">
-                <div className="mb-4 flex items-center justify-between">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-sm font-semibold text-gray-900 dark:text-white/90">{selected.name}</h2>
-                    <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-white/40">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-white/40">
                       <a href={`mailto:${selected.email}`} className="hover:text-[#7700ff]">{selected.email}</a>
                       {selected.phone && <span>· {selected.phone}</span>}
                       <span>· {formatDate(selected.created_at)}</span>

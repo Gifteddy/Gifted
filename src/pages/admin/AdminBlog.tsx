@@ -62,16 +62,16 @@ export default function AdminBlog() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white/90">Blog Posts</h1>
-        <button onClick={() => { setEditorMode('create'); setEditId(null) }} className="admin-btn-primary">
+        <button onClick={() => { setEditorMode('create'); setEditId(null) }} className="w-full sm:w-auto admin-btn-primary">
           New Post
         </button>
       </div>
 
       <div className="mb-4">
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search posts..." className="w-full max-w-xs admin-input" />
+          placeholder="Search posts..." className="w-full sm:max-w-xs admin-input" />
       </div>
 
       {loading ? (
@@ -88,27 +88,29 @@ export default function AdminBlog() {
         <div className="space-y-2">
           {filtered.map(post => (
             <div key={post.id} className="rounded-2xl p-4 transition-all hover:scale-[1.002] admin-glass">
-              <div className="flex items-center gap-4">
-                {post.cover_image ? (
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl">
-                    <img src={post.cover_image} alt="" className="h-full w-full object-cover" />
-                  </div>
-                ) : (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#7700ff]/10 text-lg text-[#7700ff] dark:text-[#ad66ff]">◇</div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium text-gray-900 dark:text-white/90">{post.title}</span>
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-white/40">
-                    <span className={cn(post.published ? 'text-emerald-500' : 'text-amber-500')}>
-                      {post.published ? 'Published' : 'Draft'}
-                    </span>
-                    <span>·</span>
-                    <span>{formatDate(post.created_at)}</span>
-                    {post.tags?.length > 0 && (
-                      <><span>·</span><span>{post.tags.join(', ')}</span></>
-                    )}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  {post.cover_image ? (
+                    <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl">
+                      <img src={post.cover_image} alt="" className="h-full w-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-[#7700ff]/10 text-lg text-[#7700ff] dark:text-[#ad66ff]">◇</div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-gray-900 dark:text-white/90">{post.title}</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-white/40">
+                      <span className={cn('shrink-0', post.published ? 'text-emerald-500' : 'text-amber-500')}>
+                        {post.published ? 'Published' : 'Draft'}
+                      </span>
+                      <span>·</span>
+                      <span className="shrink-0">{formatDate(post.created_at)}</span>
+                      {post.tags?.length > 0 && (
+                        <><span>·</span><span className="truncate">{post.tags.join(', ')}</span></>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">

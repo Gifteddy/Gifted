@@ -106,7 +106,7 @@ export default function AdminLayout() {
             <span className="text-[11px] text-gray-400 dark:text-white/40">{user.email}</span>
           )}
         </header>
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
           <Outlet />
         </main>
       </div>

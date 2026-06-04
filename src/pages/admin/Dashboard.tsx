@@ -34,13 +34,13 @@ export default function AdminDashboard() {
       </div>
 
       <div className="mb-8 rounded-2xl p-5 admin-glass">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white/90">Testimonial Submission Link</h3>
             <p className="mt-0.5 text-xs text-gray-400 dark:text-white/40">Share this link with clients to collect testimonials</p>
           </div>
           <button onClick={copyLink}
-            className="shrink-0 rounded-xl bg-[#7700ff] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#9900ff]">
+            className="w-full sm:w-auto shrink-0 rounded-xl bg-[#7700ff] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#9900ff]">
             {copied ? 'Copied!' : 'Copy Link'}
           </button>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { LiquidGlass } from '@/components/ui/LiquidGlass'
@@ -10,6 +10,9 @@ export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>()
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [scrollPos, setScrollPos] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function load() {
@@ -46,9 +49,22 @@ export default function ProjectDetail() {
     )
   }
 
+  const isVideoProject = project.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) || project.category?.includes('video')
+
+  const scrollGallery = (direction: 'left' | 'right') => {
+    if (!scrollRef.current) return
+    const amount = scrollRef.current.clientWidth * 0.8
+    scrollRef.current.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' })
+  }
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return
+    setScrollPos(scrollRef.current.scrollLeft)
+  }
+
   return (
     <section className="relative min-h-screen pb-24">
-      {(project.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) || project.category?.includes('video')) && project.project_url ? (
+      {isVideoProject && project.project_url ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="relative h-screen w-full overflow-hidden">
           <video src={project.project_url} controls className="h-full w-full object-contain bg-black" poster={project.thumbnail || undefined}>
@@ -161,20 +177,73 @@ export default function ProjectDetail() {
           </motion.div>
         </div>
 
-        {project.gallery && project.gallery.length > 0 && (
+        {!isVideoProject && project.gallery && project.gallery.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
             className="mt-12">
             <h2 className="mb-6 text-2xl font-bold font-display">Gallery</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {project.gallery.map((img, i) => (
-                <div key={i} className="overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
-                  <img src={img} alt={`${project.title} - ${i + 1}`} className="w-full object-cover" />
-                </div>
-              ))}
+            <div className="relative group">
+              <div ref={scrollRef} onScroll={handleScroll}
+                className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {project.gallery.map((img, i) => (
+                  <button key={i} onClick={() => setLightboxIndex(i)}
+                    className="snap-start shrink-0 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark
+                      w-[80vw] sm:w-auto sm:h-96 transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                    <img src={img} alt={`${project.title} - ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                  </button>
+                ))}
+              </div>
+              {project.gallery.length > 1 && (
+                <>
+                  <button onClick={() => scrollGallery('left')}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-800 shadow-lg opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white dark:bg-gray-900/80 dark:text-white dark:hover:bg-gray-900">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  <button onClick={() => scrollGallery('right')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-800 shadow-lg opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white dark:bg-gray-900/80 dark:text-white dark:hover:bg-gray-900">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                </>
+              )}
             </div>
+            {project.gallery.length > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-4">
+                {project.gallery.map((_, i) => (
+                  <button key={i} onClick={() => { scrollRef.current?.children[i]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' }) }}
+                    className="h-1.5 rounded-full transition-all bg-gray-300 dark:bg-gray-700 data-[active]:w-4 data-[active]:bg-brand-500"
+                    data-active={i === Math.round(scrollPos / (scrollRef.current?.clientWidth || 1)) ? '' : undefined} />
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
       </div>
+
+      {lightboxIndex !== null && project.gallery && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setLightboxIndex(null)}>
+          <button onClick={() => setLightboxIndex(null)}
+            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+          {project.gallery.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => prev === 0 ? project.gallery.length - 1 : prev! - 1) }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => prev === project.gallery.length - 1 ? 0 : prev! + 1) }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </>
+          )}
+          <motion.img key={lightboxIndex} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            src={project.gallery[lightboxIndex]} alt={`${project.title} - ${lightboxIndex + 1}`}
+            className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain" onClick={(e) => e.stopPropagation()} />
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-white backdrop-blur-sm">
+            {lightboxIndex + 1} / {project.gallery.length}
+          </div>
+        </div>
+      )}
     </section>
   )
 }
