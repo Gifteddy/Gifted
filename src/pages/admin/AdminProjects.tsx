@@ -400,7 +400,7 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
               <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Tools / Technologies (comma separated)</label>
               <input type="text" value={technologies} onChange={(e) => setTechnologies(e.target.value)} className="w-full admin-input" placeholder="React, TypeScript, Tailwind CSS" />
             </div>
-            {(selectedCategories.some(c => ['development', 'graphic-design', 'ai-enthusiast'].includes(c))) && (
+            {(selectedCategories.some(c => ['development', 'graphic-design'].includes(c))) && (
               <div>
                 <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">GitHub URL</label>
                 <input type="text" value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} className="w-full admin-input" placeholder="https://github.com/..." />

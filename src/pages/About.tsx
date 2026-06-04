@@ -57,6 +57,7 @@ const skillModules = [
   { name: 'UI/UX Design', level: 82, tag: 'Interface · Interaction · Responsive', category: 'Digital' },
   { name: 'Frontend Dev', level: 78, tag: 'React · TypeScript · Tailwind', category: 'Digital' },
   { name: 'Full Stack Dev', level: 72, tag: 'Node.js · Supabase · PostgreSQL', category: 'Digital' },
+  { name: 'AI Explorer', level: 75, tag: 'Prompt Engineering · LLMs · Generative AI', category: 'Digital' },
   { name: 'Poetry', level: 85, tag: 'Verse · Prose · Spoken Word', category: 'Narrative' },
 ]
 
@@ -166,6 +167,7 @@ export default function About() {
               { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3 w-3 sm:h-5 sm:w-5"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>, radius: 450, speed: '45s', delay: '-36s', label: 'Creative Strategy' },
               { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3 w-3 sm:h-5 sm:w-5"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>, radius: 550, speed: '55s', delay: '0s', label: 'Narrative Design' },
               { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3 w-3 sm:h-5 sm:w-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>, radius: 550, speed: '55s', delay: '-27.5s', label: 'Poetry' },
+              { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3 w-3 sm:h-5 sm:w-5"><path d="M12 2a8 8 0 0 0-8 8c0 4 2 5 4.5 8.5a2 2 0 0 0 3.5 0C14 15 20 14 20 10a8 8 0 0 0-8-8z"/><circle cx="10" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="14" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>, radius: 550, speed: '55s', delay: '-13.75s', label: 'AI Explorer' },
             ].map((item) => {
               const orbitName = `orbit-${item.radius}`
               return (
@@ -214,7 +216,7 @@ export default function About() {
             transition={{ duration: 0.7, delay: 0.25 }}
             className="mt-4 text-sm font-semibold tracking-[0.15em] uppercase text-text-muted-light dark:text-text-muted-dark"
           >
-            Creative Technologist. Visual Storyteller. Builder of Experiences.
+            Creative Technologist. AI Explorer. Visual Storyteller. Builder of Experiences.
           </motion.p>
 
           <motion.p

@@ -3,7 +3,6 @@ export type CategorySlug =
   | "video-production"
   | "graphic-design"
   | "development"
-  | "ai-enthusiast"
   | "photo-editing"
 
 export interface Project {

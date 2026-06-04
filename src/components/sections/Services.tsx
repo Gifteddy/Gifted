@@ -16,7 +16,6 @@ const bgIcons: Record<string, React.ReactNode> = {
   'Video Production': <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
   'Graphic Design': <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5m0 0-7 7m7-7 7 7"/><path d="M12 3a9 9 0 1 0 9 9"/></svg>,
   'Development': <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
-  'AI Enthusiast': <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 4 2 5 4.5 8.5a2 2 0 0 0 3.5 0C14 15 20 14 20 10a8 8 0 0 0-8-8z"/></svg>,
   'Photo Editing': <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>,
 }
 
@@ -25,7 +24,6 @@ const serviceRoutes: Record<string, string> = {
   'Video Production': '/video-production',
   'Graphic Design': '/graphic-design',
   'Development': '/development',
-  'AI Enthusiast': '/ai-enthusiast',
   'Photo Editing': '/photo-editing',
 }
 
@@ -33,8 +31,7 @@ const fallback: ServiceItem[] = [
   { title: 'Photography', description: 'Professional photography services capturing moments with artistic vision and technical precision.', icon: '📷', glow: '#4dabf7' },
   { title: 'Video Production', description: 'End-to-end video production from concept to final cut, delivering compelling visual stories.', icon: '🎬', glow: '#f472b6' },
   { title: 'Graphic Design', description: 'Creative design solutions that communicate your brand identity across all media.', icon: '🎨', glow: '#a78bfa' },
-  { title: 'Development', description: 'Full-stack web development building modern, scalable applications with cutting-edge tech.', icon: '💻', glow: '#34d399' },
-  { title: 'AI Enthusiast', description: 'Exploring and implementing AI solutions to solve real-world problems creatively.', icon: '🤖', glow: '#a855f7' },
+  { title: 'Development', description: 'Modern web development building scalable applications with cutting-edge technology.', icon: '💻', glow: '#34d399' },
   { title: 'Photo Editing', description: 'Professional photo editing and retouching services for stunning visual results.', icon: '✨', glow: '#fb923c' },
 ]
 

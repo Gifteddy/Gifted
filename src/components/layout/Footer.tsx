@@ -12,7 +12,6 @@ const footerLinks = {
     { to: '/video-production', label: 'Video Production' },
     { to: '/graphic-design', label: 'Graphic Design' },
     { to: '/development', label: 'Development' },
-    { to: '/ai-enthusiast', label: 'AI Enthusiast' },
     { to: '/photo-editing', label: 'Photo Editing' },
   ],
   Social: [
@@ -32,7 +31,7 @@ export function Footer() {
             <Link to="/" className="flex items-center">
               <img src="/logo.png" alt="Gifted" className="h-12 w-auto" />
             </Link>
-            <p className="mt-3 text-sm text-text-muted-light dark:text-text-muted-dark">Designer. Developer. Storyteller.</p>
+            <p className="mt-3 text-sm text-text-muted-light dark:text-text-muted-dark">Designer. Developer. Storyteller. AI Explorer.</p>
             <p className="mt-1 text-sm text-text-muted-light dark:text-text-muted-dark">Creative Technologist</p>
           </div>
           {Object.entries(footerLinks).map(([title, links]) => (

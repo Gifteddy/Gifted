@@ -16,7 +16,6 @@ const Photography = lazy(() => import('@/pages/Photography'))
 const VideoProduction = lazy(() => import('@/pages/VideoProduction'))
 const GraphicDesign = lazy(() => import('@/pages/GraphicDesign'))
 const Development = lazy(() => import('@/pages/Development'))
-const AiEnthusiast = lazy(() => import('@/pages/AiEnthusiast'))
 const PhotoEditing = lazy(() => import('@/pages/PhotoEditing'))
 const SubmitTestimonial = lazy(() => import('@/pages/SubmitTestimonial'))
 const About = lazy(() => import('@/pages/About'))
@@ -60,7 +59,6 @@ export default function App() {
             <Route path="video-production" element={<VideoProduction />} />
             <Route path="graphic-design" element={<GraphicDesign />} />
             <Route path="development" element={<Development />} />
-            <Route path="ai-enthusiast" element={<AiEnthusiast />} />
             <Route path="photo-editing" element={<PhotoEditing />} />
             <Route path="frontend-development" element={<Navigate to="/development" replace />} />
             <Route path="full-stack-development" element={<Navigate to="/development" replace />} />

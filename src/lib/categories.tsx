@@ -95,32 +95,6 @@ export const categories: Record<string, CategoryConfig> = {
     seo: { title: 'Graphic Design | Gifted', description: 'Professional graphic design services: marketing creatives, social media assets, posters and digital design. Visual communication that makes an impact.' },
   },
 
-  'ai-enthusiast': {
-    slug: 'ai-enthusiast',
-    name: 'AI Enthusiast',
-    shortName: 'AI Enthusiast',
-    shortDescription: 'Exploring artificial intelligence through creative projects, from prompt engineering to intelligent applications.',
-    description: 'Diving deep into the world of artificial intelligence and machine learning. From crafting precise prompts and building intelligent chatbots to developing AI-powered applications and exploring generative models — I bridge the gap between cutting-edge AI technology and practical, creative applications.',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M12 2a8 8 0 0 0-8 8c0 4 2 5 4.5 8.5a2 2 0 0 0 3.5 0C14 15 20 14 20 10a8 8 0 0 0-8-8z"/><circle cx="10" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="14" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>,
-    gradient: 'from-[#a855f7] to-[#6366f1]',
-    heroGradient: 'radial-gradient(ellipse at 30% 20%, rgba(168,85,247,0.15), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(99,102,241,0.1), transparent 50%)',
-    accentColor: '#a855f7',
-    features: ['Prompt Engineering', 'AI Chat Applications', 'LLM Integration', 'Generative AI'],
-    subServices: [
-      { title: 'Prompt Engineering', description: 'Crafting precise, effective prompts for LLMs that deliver consistent, high-quality outputs for any use case.' },
-      { title: 'AI Chat Applications', description: 'Building intelligent chat interfaces and assistants powered by LLMs with custom knowledge bases and context awareness.' },
-      { title: 'LLM Integration', description: 'Integrating powerful language models into existing applications for content generation, analysis, automation, and more.' },
-      { title: 'Generative AI Projects', description: 'Exploring and implementing generative AI for images, text, code, and creative content using state-of-the-art models.' },
-    ],
-    process: [
-      { title: 'Discovery', description: 'Understanding your AI goals, data requirements, and the best models and approaches for your project.' },
-      { title: 'Prototyping', description: 'Rapid prototyping with different AI models and approaches to find the optimal solution.' },
-      { title: 'Integration', description: 'Seamlessly integrating AI capabilities into your existing workflows, applications, and systems.' },
-      { title: 'Optimization', description: 'Fine-tuning prompts, models, and pipelines for accuracy, performance, and cost efficiency.' },
-    ],
-    seo: { title: 'AI Enthusiast | Gifted', description: 'AI-powered creative projects: prompt engineering, intelligent chatbots, LLM integration, and generative AI applications. Exploring the frontier of artificial intelligence.' },
-  },
-
   'photo-editing': {
     slug: 'photo-editing',
     name: 'Photo Editing',
@@ -151,8 +125,8 @@ export const categories: Record<string, CategoryConfig> = {
     slug: 'development',
     name: 'Development',
     shortName: 'Development',
-    shortDescription: 'Modern web applications, full stack solutions, and interactive digital experiences built with precision.',
-    description: 'Comprehensive development services covering everything from frontend interfaces to full stack applications. Specializing in React, TypeScript, Supabase, and modern frameworks — building performant, accessible, and scalable digital products from concept to deployment.',
+    shortDescription: 'Modern web applications and interactive digital experiences built with precision.',
+    description: 'Comprehensive development services covering frontend interfaces, full stack applications, and everything in between. Specializing in React, TypeScript, Supabase, and modern frameworks — building performant, accessible, and scalable digital products from concept to deployment.',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
     gradient: 'from-[#4dabf7] to-[#f06595]',
     heroGradient: 'radial-gradient(ellipse at 30% 20%, rgba(77,171,247,0.15), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(240,101,149,0.1), transparent 50%)',
@@ -170,7 +144,7 @@ export const categories: Record<string, CategoryConfig> = {
       { title: 'Integration', description: 'Third-party service integration, API development, testing, and quality assurance.' },
       { title: 'Launch', description: 'Production deployment, performance optimization, and ongoing maintenance and support.' },
     ],
-    seo: { title: 'Development | Gifted', description: 'Professional development services: frontend, full stack, Supabase projects, dashboards and web applications. Modern digital solutions from concept to launch.' },
+    seo: { title: 'Development | Gifted', description: 'Professional development services: web applications, Supabase projects, dashboards and admin systems. Modern digital solutions from concept to launch.' },
   },
 }
 
