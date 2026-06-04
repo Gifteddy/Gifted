@@ -62,6 +62,34 @@ export async function getTestimonials() {
   return data as Testimonial[]
 }
 
+export async function getAllTestimonials() {
+  const { data, error } = await supabase
+    .from('testimonials')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as Testimonial[]
+}
+
+export async function updateTestimonial(id: string, updates: Partial<Testimonial>) {
+  const { data, error } = await supabase
+    .from('testimonials')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data as Testimonial
+}
+
+export async function deleteTestimonial(id: string) {
+  const { error } = await supabase
+    .from('testimonials')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function getSkills() {
   const { data, error } = await supabase
     .from('skills')

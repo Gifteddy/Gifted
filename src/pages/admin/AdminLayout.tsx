@@ -8,6 +8,7 @@ const adminLinks = [
   { to: '/admin/projects', label: 'Projects', icon: '◇' },
   { to: '/admin/media', label: 'Media', icon: '▣' },
   { to: '/admin/blog', label: 'Blog', icon: '◇' },
+  { to: '/admin/testimonials', label: 'Testimonials', icon: '★' },
   { to: '/admin/messages', label: 'Messages', icon: '□' },
   { to: '/admin/settings', label: 'Settings', icon: '△' },
 ]

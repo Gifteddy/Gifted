@@ -29,6 +29,7 @@ const AdminMedia = lazy(() => import('@/pages/admin/AdminMedia'))
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'))
 const AdminBlog = lazy(() => import('@/pages/admin/AdminBlog'))
 const AdminSettings = lazy(() => import('@/pages/admin/AdminSettings'))
+const AdminTestimonials = lazy(() => import('@/pages/admin/AdminTestimonials'))
 
 function PageLoader() {
   return (
@@ -77,6 +78,7 @@ export default function App() {
               <Route path="projects" element={<AdminProjects />} />
               <Route path="media" element={<AdminMedia />} />
               <Route path="blog" element={<AdminBlog />} />
+              <Route path="testimonials" element={<AdminTestimonials />} />
               <Route path="messages" element={<AdminMessages />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
