@@ -174,17 +174,6 @@ export default function AdminProjects() {
     </div>
   )
 }
-
-const categoryOptions = [
-  { value: '', label: 'Select category' },
-  { value: 'photography', label: 'Photography' },
-  { value: 'video-production', label: 'Video Production' },
-  { value: 'graphic-design', label: 'Graphic Design' },
-  { value: 'development', label: 'Development' },
-  { value: 'ai-enthusiast', label: 'AI Enthusiast' },
-  { value: 'photo-editing', label: 'Photo Editing' },
-]
-
 function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | null; onClose: () => void; onSaved: () => void }) {
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
