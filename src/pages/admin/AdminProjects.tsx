@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, cn } from '@/lib/utils'
+import { categoryList } from '@/lib/categories'
 
 interface ProjectItem {
   id: string
@@ -193,8 +194,17 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
   const [galleryTarget, setGalleryTarget] = useState<'cover' | 'video' | 'gallery'>('cover')
 
   useEffect(() => {
-    supabase.from('categories').select('id, slug, name').then(({ data }) => {
-      if (data) setAllCategories(data)
+    supabase.from('categories').select('id, slug, name').then(async ({ data, error }) => {
+      if (error || !data || data.length === 0) {
+        const { data: inserted } = await supabase.from('categories').insert(
+          categoryList.map(c => ({ name: c.name, slug: c.slug }))
+        ).select('id, slug, name')
+        if (inserted && inserted.length > 0) {
+          setAllCategories(inserted)
+        }
+      } else {
+        setAllCategories(data)
+      }
     })
   }, [])
 
@@ -213,9 +223,14 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
         setGithubUrl(data.github_url || '')
         setFeatured(data.featured || false)
         setPublished(data.published || data.status === 'published')
+        const categorySlugs: string[] = []
         if (data.categories) {
-          setSelectedCategories(data.categories.map((pc: any) => pc.category?.slug).filter(Boolean))
+          categorySlugs.push(...data.categories.map((pc: any) => pc.category?.slug).filter(Boolean))
         }
+        if (data.category && !categorySlugs.includes(data.category)) {
+          categorySlugs.push(data.category)
+        }
+        setSelectedCategories(categorySlugs)
       })
     }
   }, [projectId])
@@ -232,26 +247,29 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
       client: client.trim(), project_url: projectUrl.trim(), github_url: githubUrl.trim(),
       featured, published, status: published ? 'published' : 'draft', updated_at: new Date().toISOString(),
     }
-    if (projectId) {
-      await supabase.from('projects').update(payload).eq('id', projectId)
-      await supabase.from('project_categories').delete().eq('project_id', projectId)
-      if (selectedCategories.length > 0) {
-        const catIds = allCategories.filter(c => selectedCategories.includes(c.slug)).map(c => c.id)
-        if (catIds.length > 0) {
-          await supabase.from('project_categories').insert(catIds.map(categoryId => ({ project_id: projectId, category_id: categoryId })))
-        }
-      }
-    } else {
-      const { data: newProject } = await supabase.from('projects').insert({ ...payload, created_at: new Date().toISOString() }).select('id').single()
-      if (newProject && selectedCategories.length > 0) {
-        const catIds = allCategories.filter(c => selectedCategories.includes(c.slug)).map(c => c.id)
-        if (catIds.length > 0) {
-          await supabase.from('project_categories').insert(catIds.map(categoryId => ({ project_id: newProject.id, category_id: categoryId })))
-        }
-      }
+    async function saveProjectCategories(projectId: string, slugs: string[]) {
+      if (slugs.length === 0) return
+      const catIds = allCategories.filter(c => slugs.includes(c.slug)).map(c => c.id)
+      if (catIds.length === 0) return
+      await supabase.from('project_categories').insert(catIds.map(categoryId => ({ project_id: projectId, category_id: categoryId })))
     }
-    setSaving(false)
-    onSaved()
+
+    try {
+      if (projectId) {
+        await supabase.from('projects').update(payload).eq('id', projectId)
+        await supabase.from('project_categories').delete().eq('project_id', projectId)
+        await saveProjectCategories(projectId, selectedCategories)
+      } else {
+        const { data: newProject } = await supabase.from('projects').insert({ ...payload, created_at: new Date().toISOString() }).select('id').single()
+        if (newProject) {
+          await saveProjectCategories(newProject.id, selectedCategories)
+        }
+      }
+      setSaving(false)
+      onSaved()
+    } catch {
+      setSaving(false)
+    }
   }
 
   const generateSlug = (val: string) => val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')

@@ -49,7 +49,7 @@ export default function ProjectDetail() {
     )
   }
 
-  const isVideoProject = project.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) || project.category?.includes('video')
+  const isVideoProject = project.categories?.some(c => ((c as any)?.category?.name ?? (c as any)?.name)?.toLowerCase().includes('video') || ((c as any)?.category?.slug ?? (c as any)?.slug)?.includes('video')) || project.category?.includes('video')
 
   const scrollGallery = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return
@@ -81,7 +81,7 @@ export default function ProjectDetail() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <div className="mb-2 flex flex-wrap gap-2">
                 {project.categories?.map(cat => (
-                  <span key={cat.name} className="pointer-events-auto rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">{cat.name}</span>
+                  <span key={(cat as any)?.category?.slug ?? (cat as any)?.slug ?? (cat as any)?.name} className="pointer-events-auto rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">{(cat as any)?.category?.name ?? (cat as any)?.name}</span>
                 ))}
                 {(!project.categories || project.categories.length === 0) && project.category && (
                   <span className="pointer-events-auto rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">{project.category.replace(/-/g, ' ')}</span>
@@ -103,7 +103,7 @@ export default function ProjectDetail() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <div className="mb-2 flex flex-wrap gap-2">
               {project.categories?.map(cat => (
-                <span key={cat.name} className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{cat.name}</span>
+                <span key={(cat as any)?.category?.slug ?? (cat as any)?.slug ?? (cat as any)?.name} className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{(cat as any)?.category?.name ?? (cat as any)?.name}</span>
               ))}
               {(!project.categories || project.categories.length === 0) && project.category && (
                 <span className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{project.category.replace(/-/g, ' ')}</span>

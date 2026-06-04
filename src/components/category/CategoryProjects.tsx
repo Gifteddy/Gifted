@@ -19,7 +19,7 @@ export function CategoryProjects({ category }: { category: CategoryConfig }) {
         const { getProjects } = await import('@/lib/queries')
         const all = await getProjects()
         const filtered = all.filter(p =>
-          p.categories?.some(c => c?.name?.toLowerCase() === category.slug.replace(/-/g, ' ')) ||
+          p.categories?.some(c => ((c as any)?.category?.name ?? (c as any)?.name)?.toLowerCase() === category.slug.replace(/-/g, ' ')) ||
           p.category?.toLowerCase() === category.slug ||
           p.tags?.some(t => t.toLowerCase().includes(category.slug.replace(/-/g, '')))
         )
@@ -57,7 +57,7 @@ export function CategoryProjects({ category }: { category: CategoryConfig }) {
                     style={{ background: `linear-gradient(135deg, ${category.accentColor}18, ${category.accentColor}08)` }}>
                     {p.thumbnail ? (
                       <><img src={p.thumbnail} alt={p.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                        {(p.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug?.includes('video')) || p.category?.includes('video')) && (
+                        {(p.categories?.some(c => ((c as any)?.category?.name ?? (c as any)?.name)?.toLowerCase().includes('video') || ((c as any)?.category?.slug ?? (c as any)?.slug)?.includes('video')) || p.category?.includes('video')) && (
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-transform group-hover:scale-110">
                               <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>

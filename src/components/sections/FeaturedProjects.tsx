@@ -46,7 +46,7 @@ export function FeaturedProjects() {
                       : <span className="text-4xl opacity-30">🚀</span>}
                   </div>
                   <div className="p-5">
-                    <span className="text-xs font-medium text-brand-500 dark:text-brand-400">{p.categories?.[0]?.name || 'Project'}</span>
+                    <span className="text-xs font-medium text-brand-500 dark:text-brand-400">{(p.categories?.[0] as any)?.category?.name || (p.categories?.[0] as any)?.name || p.category?.replace(/-/g, ' ') || 'Project'}</span>
                     <h3 className="mt-1 text-lg font-semibold transition-colors group-hover:text-brand-500">{p.title}</h3>
                   </div>
                 </LiquidGlass>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { LiquidGlass } from '@/components/ui/LiquidGlass'
@@ -11,6 +11,7 @@ export default function Projects() {
   const [categories, setCategories] = useState<string[]>([])
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [loading, setLoading] = useState(true)
+  const slugToName = useRef<Record<string, string>>({})
 
   useEffect(() => {
     async function load() {
@@ -21,8 +22,11 @@ export default function Projects() {
         ])
         const [projData, catData] = await Promise.all([getProjects(), getCategories()])
         setProjects(projData)
-        const catNames = catData.map(c => c.name)
-        const usedCats = [...new Set([...catNames, ...projData.flatMap(p => p.category ? [p.category.replace(/-/g, ' ')] : [])])]
+        slugToName.current = Object.fromEntries(catData.map(c => [c.slug, c.name]))
+        const usedCats = [...new Set([
+          ...Object.values(slugToName.current),
+          ...projData.flatMap(p => p.category ? [slugToName.current[p.category] || p.category.replace(/-/g, ' ')] : [])
+        ])]
         setCategories(usedCats)
       } catch { /* silent */ } finally { setLoading(false) }
     }
@@ -31,7 +35,7 @@ export default function Projects() {
 
   const filtered = activeCategory === 'all'
     ? projects
-    : projects.filter(p => p.categories?.some(c => c.name === activeCategory) || p.category?.replace(/-/g, ' ') === activeCategory)
+    : projects.filter(p => p.categories?.some(c => ((c as any)?.category?.name ?? (c as any)?.name) === activeCategory) || (slugToName.current[p.category ?? ''] ?? p.category?.replace(/-/g, ' ')) === activeCategory)
 
   return (
     <section className="relative min-h-screen px-4 pt-32 pb-24">
@@ -65,7 +69,7 @@ export default function Projects() {
                   <div className="relative flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
                     {p.thumbnail ? <img src={p.thumbnail} alt={p.title} className="h-full w-full object-cover" />
                       : <span className="text-4xl opacity-30">🚀</span>}
-                    {(p.categories?.some(c => c.name?.toLowerCase().includes('video') || c.slug === 'video-production') || p.category === 'video-production') && (
+                    {(p.categories?.some(c => ((c as any)?.category?.name ?? (c as any)?.name)?.toLowerCase().includes('video') || ((c as any)?.category?.slug ?? (c as any)?.slug) === 'video-production') || p.category === 'video-production') && (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-transform group-hover:scale-110">
                           <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
@@ -74,7 +78,7 @@ export default function Projects() {
                     )}
                   </div>
                   <div className="p-5">
-                    <span className="text-xs font-medium text-brand-500 dark:text-brand-400">{p.categories?.[0]?.name || 'Project'}</span>
+                    <span className="text-xs font-medium text-brand-500 dark:text-brand-400">{(p.categories?.[0] as any)?.category?.name || (p.categories?.[0] as any)?.name || p.category?.replace(/-/g, ' ') || 'Project'}</span>
                     <h3 className="mt-1 text-lg font-semibold transition-colors group-hover:text-brand-500">{p.title}</h3>
                   </div>
                 </LiquidGlass>
