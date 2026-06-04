@@ -8,7 +8,7 @@ export function CategoryHero({ category }: { category: CategoryConfig }) {
   const isDark = theme === 'dark'
 
   return (
-    <section className="relative flex min-h-[70vh] items-center overflow-hidden px-4 pb-24">
+    <section className="relative flex min-h-[70vh] items-center overflow-hidden px-4 pb-24 pt-24">
       <div className={`pointer-events-none absolute inset-0 ${isDark ? '' : 'bg-white'}`} />
       <div className={`pointer-events-none absolute inset-0 transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`}
         style={{ background: category.heroGradient }}
@@ -23,6 +23,7 @@ export function CategoryHero({ category }: { category: CategoryConfig }) {
       </div>
 
       <div className="relative mx-auto max-w-7xl w-full">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
         <div className="max-w-3xl">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}>
             <span className="mb-6 inline-flex items-center gap-3 rounded-full border px-4 py-1.5 text-xs font-medium tracking-widest uppercase"
@@ -74,10 +75,21 @@ export function CategoryHero({ category }: { category: CategoryConfig }) {
             className="mt-10 flex flex-wrap gap-4"
           >
             <Button href="/contact">Start a Project</Button>
-            <Button href="#services" variant="secondary">Explore Services</Button>
+            <Button href="#projects" variant="secondary">View Projects</Button>
           </motion.div>
         </div>
+
+        <div className="relative">
+          <motion.img
+            src={category.heroImage}
+            alt={category.name}
+            className="h-auto w-full max-w-lg"
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
       </div>
+    </div>
     </section>
   )
 }

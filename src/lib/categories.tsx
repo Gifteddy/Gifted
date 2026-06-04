@@ -7,6 +7,7 @@ export interface CategoryConfig {
   shortDescription: string
   description: string
   icon: ReactNode
+  heroImage: string
   gradient: string
   heroGradient: string
   accentColor: string
@@ -24,6 +25,7 @@ export const categories: Record<string, CategoryConfig> = {
     shortDescription: 'Capturing moments that tell your story with precision, artistry, and emotion.',
     description: 'Professional photography services covering portrait, event, product, lifestyle, and brand photography. Every shot is crafted to communicate your unique vision and elevate your brand identity.',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+    heroImage: '/Services Assets/Photography.png',
     gradient: 'from-[#ff922b] to-[#ff6b6b]',
     heroGradient: 'radial-gradient(ellipse at 30% 20%, rgba(255,146,43,0.15), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(255,107,107,0.1), transparent 50%)',
     accentColor: '#ff922b',
@@ -50,6 +52,7 @@ export const categories: Record<string, CategoryConfig> = {
     shortDescription: 'End-to-end video production from concept to final cut for commercial, content, and motion projects.',
     description: 'Full-service video production covering commercial videos, content creation, short-form videos, and motion-based work. From pre-production planning to final color grading, every frame is crafted for impact.',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
+    heroImage: '/Services Assets/Video production.png',
     gradient: 'from-[#20c997] to-[#12b886]',
     heroGradient: 'radial-gradient(ellipse at 30% 20%, rgba(32,201,151,0.15), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(18,184,134,0.1), transparent 50%)',
     accentColor: '#20c997',
@@ -76,6 +79,7 @@ export const categories: Record<string, CategoryConfig> = {
     shortDescription: 'Visual identity, marketing creatives, and digital design assets that communicate your story.',
     description: 'Comprehensive graphic design services covering marketing creatives, social media assets, posters, digital design, and visual branding materials. Every design is strategically crafted to communicate your message effectively.',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M12 19V5m0 0-7 7m7-7 7 7"/><path d="M12 3a9 9 0 1 0 9 9"/></svg>,
+    heroImage: '/Services Assets/Graphic design.png',
     gradient: 'from-[#ff6b6b] to-[#ee5a24]',
     heroGradient: 'radial-gradient(ellipse at 30% 20%, rgba(255,107,107,0.15), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(238,90,36,0.1), transparent 50%)',
     accentColor: '#ff6b6b',
@@ -102,6 +106,7 @@ export const categories: Record<string, CategoryConfig> = {
     shortDescription: 'Professional photo retouching, color grading, and image enhancement that elevates every frame.',
     description: 'Expert photo editing and retouching services that transform raw captures into polished, stunning visuals. From advanced color grading and skin retouching to composite creation and restoration — every image is handled with the precision and artistry it deserves.',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>,
+    heroImage: '/Services Assets/Photoediting.png',
     gradient: 'from-[#f97316] to-[#eab308]',
     heroGradient: 'radial-gradient(ellipse at 30% 20%, rgba(249,115,22,0.15), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(234,179,8,0.1), transparent 50%)',
     accentColor: '#f97316',
@@ -128,6 +133,7 @@ export const categories: Record<string, CategoryConfig> = {
     shortDescription: 'Modern web applications and interactive digital experiences built with precision.',
     description: 'Comprehensive development services covering frontend interfaces, full stack applications, and everything in between. Specializing in React, TypeScript, Supabase, and modern frameworks — building performant, accessible, and scalable digital products from concept to deployment.',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+    heroImage: '/Services Assets/Development.png',
     gradient: 'from-[#4dabf7] to-[#f06595]',
     heroGradient: 'radial-gradient(ellipse at 30% 20%, rgba(77,171,247,0.15), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(240,101,149,0.1), transparent 50%)',
     accentColor: '#4dabf7',
