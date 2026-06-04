@@ -72,6 +72,26 @@ export function CategoryProjects({ category }: { category: CategoryConfig }) {
                   <div className="p-5">
                     <span className="text-xs font-medium" style={{ color: category.accentColor }}>{category.name}</span>
                     <h3 className={`mt-1 text-lg font-semibold transition-colors group-hover:text-brand-500 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>{p.title}</h3>
+                    {category.slug === 'development' && (p.project_url || p.github_url) && (
+                      <div className="mt-3 flex flex-wrap gap-2" onClick={e => e.stopPropagation()}>
+                        {p.project_url && (
+                          <a href={p.project_url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
+                            style={{ backgroundColor: `${category.accentColor}18`, color: category.accentColor }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            Live Site
+                          </a>
+                        )}
+                        {p.github_url && (
+                          <a href={p.github_url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
+                            style={{ backgroundColor: `${isDark ? '#ffffff' : '#000000'}12`, color: isDark ? '#fff' : '#000' }}>
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5"><path d="M12 2C6.5 2 2 6.5 2 12c0 4.4 2.9 8.2 6.9 9.5.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.4-3.4-1.4-.5-1.2-1.2-1.5-1.2-1.5-1-.7 0-.7 0-.7 1 .1 1.6 1.1 1.6 1.1.9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1.1-2.7-.1-.3-.5-1.3.1-2.7 0 0 .9-.3 2.9 1.1A10 10 0 0 1 12 7c1 0 2 .1 2.8.3 2-1.4 2.9-1.1 2.9-1.1.6 1.4.2 2.4.1 2.7.7.7 1.1 1.6 1.1 2.7 0 3.9-2.4 4.7-4.6 4.9.4.3.7 1 .7 1.9v2.8c0 .3.2.6.7.5C19.1 20.2 22 16.4 22 12c0-5.5-4.5-10-10-10z"/></svg>
+                            GitHub
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </LiquidGlass>
               </Link>

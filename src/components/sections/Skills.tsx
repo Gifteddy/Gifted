@@ -29,6 +29,7 @@ function ToolIcon({ name }: { name: string }) {
     'Framer Motion': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="4" fill="#0055FF"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="9" fontWeight="700">FM</text></svg>,
     'Vite': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="4" fill="#646CFF"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="12" fontWeight="700">V</text></svg>,
     'React Router': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="4" fill="#CA4245"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="8" fontWeight="700">RR</text></svg>,
+    'WordPress': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="4" fill="#21759B"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="8" fontWeight="700">WP</text></svg>,
     'Express.js': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="4" fill="#000" className="dark:fill-white"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="8" fontWeight="700" className="dark:fill-black">Ex</text></svg>,
     'Render': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="4" fill="#000" className="dark:fill-white"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="9" fontWeight="700" className="dark:fill-black">R</text></svg>,
     'Netlify': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="4" fill="#00C7B7"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="8" fontWeight="700">Nf</text></svg>,
@@ -43,6 +44,8 @@ function ToolIcon({ name }: { name: string }) {
     'DeepSeek': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="5" fill="#4F46E5"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="7" fontWeight="700">DS</text></svg>,
     'Grok': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="5" fill="#1DA1F2"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="8" fontWeight="700">Gk</text></svg>,
     'GitHub Copilot': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="5" fill="#58A6FF"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="7" fontWeight="700">GHC</text></svg>,
+    'ClickUp': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="5" fill="#7B68EE"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="7" fontWeight="700">CU</text></svg>,
+    'Slack': <svg viewBox="0 0 24 24" className="h-3.5 w-3.5"><rect width="24" height="24" rx="5" fill="#4A154B"/><text x="12" y="17" textAnchor="middle" fill="white" fontSize="8" fontWeight="700">Sl</text></svg>,
   }
   return <>{icons[name] || <span className="text-xs opacity-50">▸</span>}</>
 }
@@ -58,7 +61,7 @@ const toolGroups = [
   },
   {
     name: 'Frontend Development',
-    skills: ['HTML5', 'CSS3', 'JavaScript', 'TypeScript', 'React', 'Next.js', 'Tailwind CSS', 'Framer Motion', 'Vite', 'React Router', 'Redux'],
+    skills: ['HTML5', 'CSS3', 'JavaScript', 'TypeScript', 'React', 'Next.js', 'Tailwind CSS', 'Framer Motion', 'Vite', 'React Router', 'Redux', 'WordPress'],
   },
   {
     name: 'Backend & Database',
@@ -74,7 +77,7 @@ const toolGroups = [
   },
   {
     name: 'AI & Productivity',
-    skills: ['ChatGPT', 'Gemini', 'DeepSeek', 'Grok', 'GitHub Copilot'],
+    skills: ['ChatGPT', 'Gemini', 'DeepSeek', 'Grok', 'GitHub Copilot', 'ClickUp', 'Slack'],
   },
 ]
 
