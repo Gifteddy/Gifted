@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { cn } from '@/lib/utils'
 
 declare global {
   interface Window {
@@ -40,6 +41,35 @@ export default function AdminMedia() {
   const [previewType, setPreviewType] = useState<string>('image')
   const [previewItem, setPreviewItem] = useState<CloudinaryResource | null>(null)
   const [coverPickerOpen, setCoverPickerOpen] = useState(false)
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<CloudinaryResource | null>(null)
+  const [deleting, setDeleting] = useState<Set<string>>(new Set())
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false)
+
+  const notify = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification(null), 3500)
+  }
+
+  const toggleSelect = (publicId: string) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(publicId)) next.delete(publicId)
+      else next.add(publicId)
+      return next
+    })
+  }
+
+  const selectAll = () => {
+    if (selected.size === filtered.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filtered.map(m => m.public_id)))
+    }
+  }
+
+  const clearSelection = () => setSelected(new Set())
 
   const loadMedia = useCallback(async () => {
     setLoading(true)
@@ -68,17 +98,69 @@ export default function AdminMedia() {
 
   useEffect(() => { loadMedia() }, [loadMedia])
 
-  const handleDelete = async (item: CloudinaryResource) => {
+  const confirmDelete = (item: CloudinaryResource) => {
+    setDeleteConfirmItem(item)
+  }
+
+  const destroyFile = async (publicId: string, resourceType: string): Promise<boolean> => {
+    const rt = resourceType || 'image'
+    const res = await fetch(`/api/cloudinary/${rt}/destroy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ public_id: publicId, type: 'upload' }),
+    })
+    return res.ok
+  }
+
+  const handleDelete = async () => {
+    const item = deleteConfirmItem
+    if (!item) return
+    setDeleting(prev => new Set(prev).add(item.public_id))
     try {
-      const rt = item.resource_type || 'image'
-      const res = await fetch(`/api/cloudinary/resources/${rt}/destroy`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ public_ids: [item.public_id], type: 'upload' }),
-      })
-      if (res.ok) loadMedia()
+      const ok = await destroyFile(item.public_id, item.resource_type)
+      if (ok) {
+        notify('success', `"${item.public_id.split('/').pop()}" deleted`)
+        setDeleteConfirmItem(null)
+        setSelected(prev => { const n = new Set(prev); n.delete(item.public_id); return n })
+        loadMedia()
+      } else {
+        notify('error', 'Failed to delete file')
+      }
     } catch {
-      // silent
+      notify('error', 'Network error — could not delete file')
+    } finally {
+      setDeleting(prev => {
+        const next = new Set(prev)
+        next.delete(item.public_id)
+        return next
+      })
+    }
+  }
+
+  const handleBatchDelete = async () => {
+    const ids = Array.from(selected)
+    if (!ids.length) return
+    setBatchDeleteConfirm(false)
+    for (const id of ids) setDeleting(prev => new Set(prev).add(id))
+    try {
+      let deleted = 0
+      for (const id of ids) {
+        const item = media.find(m => m.public_id === id)
+        const ok = await destroyFile(id, item?.resource_type || 'image')
+        if (ok) deleted++
+      }
+      if (deleted > 0) {
+        notify('success', `${deleted} file${deleted !== 1 ? 's' : ''} deleted`)
+        setSelected(new Set())
+        loadMedia()
+      }
+      if (deleted !== ids.length) {
+        notify('error', `${ids.length - deleted} file${ids.length - deleted !== 1 ? 's' : ''} failed to delete`)
+      }
+    } catch {
+      notify('error', 'Network error — could not delete files')
+    } finally {
+      setDeleting(new Set())
     }
   }
 
@@ -185,7 +267,14 @@ export default function AdminMedia() {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Search media..." className="w-full sm:max-w-xs admin-input" />
-        <span className="text-xs text-gray-400 dark:text-white/30">{filtered.length} file{filtered.length !== 1 ? 's' : ''}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400 dark:text-white/30">{filtered.length} file{filtered.length !== 1 ? 's' : ''}</span>
+          {filtered.length > 0 && (
+            <button onClick={selectAll} className="text-xs text-gray-400 transition-colors hover:text-[#7700ff] dark:text-white/40 dark:hover:text-[#ad66ff]">
+              {selected.size === filtered.length ? 'Deselect All' : 'Select All'}
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -197,9 +286,27 @@ export default function AdminMedia() {
           <p className="text-sm text-gray-500 dark:text-white/40">{search ? 'No media found.' : 'No media uploaded yet.'}</p>
         </div>
       ) : (
+        <>
+        {selected.size > 0 && (
+          <div className="mb-3 flex items-center gap-3 rounded-2xl bg-[#7700ff]/10 px-4 py-2.5 text-sm dark:bg-[#9233ff]/15">
+            <span className="text-xs font-medium text-[#7700ff] dark:text-[#ad66ff]">{selected.size} selected</span>
+            <div className="flex-1" />
+            <button onClick={() => setBatchDeleteConfirm(true)}
+              className="flex items-center gap-1.5 rounded-xl bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600">
+              Delete Selected
+            </button>
+            <button onClick={clearSelection}
+              className="rounded-xl px-3 py-1.5 text-xs text-gray-400 transition-colors hover:bg-black/[0.04] dark:text-white/40 dark:hover:bg-white/[0.06]">
+              Clear
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {filtered.map(item => (
-            <div key={item.public_id} className="group relative">
+          {filtered.map(item => {
+            const isSelected = selected.has(item.public_id)
+            return (
+            <div key={item.public_id} className={cn('group relative', isSelected && 'ring-2 ring-[#7700ff] rounded-xl dark:ring-[#ad66ff]')}>
               <button
                 onClick={() => { setPreviewUrl(item.secure_url); setPreviewType(item.resource_type); setPreviewItem(item) }}
                 className="block w-full overflow-hidden rounded-xl"
@@ -235,16 +342,29 @@ export default function AdminMedia() {
                   <div className="flex aspect-square w-full items-center justify-center bg-black/[0.02] text-3xl dark:bg-white/[0.02]">📄</div>
                 )}
               </button>
-              <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+
+              <button onClick={(e) => { e.stopPropagation(); toggleSelect(item.public_id) }}
+                className={cn(
+                  'absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-lg border-2 backdrop-blur-sm transition-all',
+                  isSelected
+                    ? 'border-[#7700ff] bg-[#7700ff] dark:border-[#ad66ff] dark:bg-[#ad66ff]'
+                    : 'border-white/60 bg-black/20 hover:border-white'
+                )}>
+                {isSelected && (
+                  <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
+                )}
+              </button>
+
+              <div className="absolute right-2 top-2 flex gap-1 max-sm:opacity-100 opacity-0 transition-opacity group-hover:opacity-100">
                 {isVideo(item) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setPreviewItem(item); setCoverPickerOpen(true) }}
                     className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7700ff]/80 text-xs text-white backdrop-blur-sm hover:bg-[#7700ff]"
                     title="Set Cover Image">🖼</button>
                 )}
-                <button onClick={() => handleDelete(item)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/80 text-xs text-white backdrop-blur-sm hover:bg-red-500"
-                  title="Delete">✕</button>
+                <button onClick={(e) => { e.stopPropagation(); confirmDelete(item) }} disabled={deleting.has(item.public_id)}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/80 text-xs text-white backdrop-blur-sm hover:bg-red-500 disabled:opacity-40"
+                  title="Delete">{deleting.has(item.public_id) ? '⋯' : '✕'}</button>
               </div>
               <p className="mt-1 truncate px-1 text-xs text-gray-500 dark:text-white/40">{item.public_id.split('/').pop()}</p>
               <div className="flex items-center gap-1.5 px-1">
@@ -254,8 +374,10 @@ export default function AdminMedia() {
               </div>
               <p className="px-1 text-[10px] text-gray-400 dark:text-white/30">{formatDate(item.created_at)}</p>
             </div>
-          ))}
+            )
+          })}
         </div>
+        </>
       )}
 
       {previewUrl && previewItem && (
@@ -325,6 +447,65 @@ export default function AdminMedia() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {deleteConfirmItem && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={() => !deleting.has(deleteConfirmItem.public_id) && setDeleteConfirmItem(null)}>
+          <div className="w-full max-w-md overflow-hidden rounded-2xl admin-glass-strong" onClick={e => e.stopPropagation()}>
+            <div className="p-6">
+              <h3 className="mb-2 text-sm font-semibold text-gray-900 dark:text-white/90">Delete Media</h3>
+              <p className="text-sm text-gray-500 dark:text-white/50">
+                Are you sure you want to delete <span className="font-medium text-gray-700 dark:text-white/80">&ldquo;{deleteConfirmItem.public_id.split('/').pop()}&rdquo;</span>?
+              </p>
+              <p className="mt-1 text-xs text-gray-400 dark:text-white/30">This action cannot be undone.</p>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-white/10 p-4">
+              <button onClick={() => setDeleteConfirmItem(null)} disabled={deleting.has(deleteConfirmItem.public_id)}
+                className="rounded-xl px-4 py-2 text-xs text-gray-500 transition-colors hover:bg-black/5 dark:text-white/50 dark:hover:bg-white/5 disabled:opacity-40">
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleting.has(deleteConfirmItem.public_id)}
+                className="rounded-xl bg-red-500 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50">
+                {deleting.has(deleteConfirmItem.public_id) ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {batchDeleteConfirm && (
+        <div className="fixed inset-0 z-[75] flex items-center justify-center bg-black/50 p-4" onClick={() => !deleting.size && setBatchDeleteConfirm(false)}>
+          <div className="w-full max-w-md overflow-hidden rounded-2xl admin-glass-strong" onClick={e => e.stopPropagation()}>
+            <div className="p-6">
+              <h3 className="mb-2 text-sm font-semibold text-gray-900 dark:text-white/90">Delete {selected.size} file{selected.size !== 1 ? 's' : ''}</h3>
+              <p className="text-sm text-gray-500 dark:text-white/50">
+                Are you sure you want to delete the {selected.size} selected file{selected.size !== 1 ? 's' : ''}?
+              </p>
+              <p className="mt-1 text-xs text-gray-400 dark:text-white/30">This action cannot be undone.</p>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-white/10 p-4">
+              <button onClick={() => setBatchDeleteConfirm(false)} disabled={!!deleting.size}
+                className="rounded-xl px-4 py-2 text-xs text-gray-500 transition-colors hover:bg-black/5 dark:text-white/50 dark:hover:bg-white/5 disabled:opacity-40">
+                Cancel
+              </button>
+              <button onClick={handleBatchDelete} disabled={!!deleting.size}
+                className="rounded-xl bg-red-500 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50">
+                {deleting.size ? 'Deleting...' : `Delete ${selected.size}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notification && (
+        <div className={cn(
+          'fixed bottom-6 right-6 z-[80] rounded-2xl px-5 py-3 text-sm font-medium shadow-lg backdrop-blur-md transition-all',
+          notification.type === 'success'
+            ? 'bg-green-500/90 text-white'
+            : 'bg-red-500/90 text-white'
+        )}>
+          {notification.message}
         </div>
       )}
     </div>
