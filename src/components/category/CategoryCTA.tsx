@@ -26,14 +26,14 @@ export function CategoryCTA({ category }: { category: CategoryConfig }) {
               >
                 Book a Project
               </Link>
-              <a href="mailto:hello@gifted.com"
+              <a href="mailto:ibiamiheanyi@gmail.com"
                 className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-300 hover:scale-105 border ${
                   isDark ? 'border-gray-700 text-gray-300 hover:bg-white/5' : 'border-gray-300 text-gray-700 hover:bg-black/5'
                 }`}
               >
                 Email Us
               </a>
-              <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer"
+              <a href="https://wa.me/2347043881207" target="_blank" rel="noopener noreferrer"
                 className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-300 hover:scale-105 border ${
                   isDark ? 'border-gray-700 text-gray-300 hover:bg-white/5' : 'border-gray-300 text-gray-700 hover:bg-black/5'
                 }`}
