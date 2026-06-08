@@ -745,10 +745,10 @@ export default function About() {
                     Great ideas deserve exceptional execution. Whether you&apos;re building a brand, telling a story, creating a product, or shaping an experience, let&apos;s create something people won&apos;t forget.
                   </p>
                   <div className="mt-10 flex flex-wrap gap-4">
-                    <a href="mailto:hello@gifted.com" className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-7 py-3.5 text-sm font-semibold text-white transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/30 hover:scale-[1.02]">
+                    <a href="mailto:ibiamiheanyi@gmail.com" className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-7 py-3.5 text-sm font-semibold text-white transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/30 hover:scale-[1.02]">
                       Email
                     </a>
-                    <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-7 py-3.5 text-sm font-semibold text-text-light dark:text-text-dark transition-all duration-300 hover:bg-surface-secondary-light dark:hover:bg-surface-secondary-dark hover:scale-[1.02]">
+                    <a href="https://wa.me/2347043881207" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-7 py-3.5 text-sm font-semibold text-text-light dark:text-text-dark transition-all duration-300 hover:bg-surface-secondary-light dark:hover:bg-surface-secondary-dark hover:scale-[1.02]">
                       WhatsApp
                     </a>
                     <Link to="/projects" className="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-7 py-3.5 text-sm font-semibold text-text-light dark:text-text-dark transition-all duration-300 hover:bg-surface-secondary-light dark:hover:bg-surface-secondary-dark hover:scale-[1.02]">
