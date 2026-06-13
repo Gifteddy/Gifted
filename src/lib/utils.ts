@@ -20,18 +20,34 @@ export function uploadToCloudinary(accept = 'image/*'): Promise<string> {
       const file = input.files?.[0]
       if (!file) { reject(new Error('No file selected')); return }
       try {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('upload_preset', uploadPreset)
-        const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
-          { method: 'POST', body: formData }
-        )
-        const data = await res.json()
-        if (data.secure_url) resolve(data.secure_url)
-        else reject(new Error('Upload failed'))
+        const url = await uploadFileToCloudinary(file)
+        resolve(url)
       } catch (e) { reject(e) }
     }
     input.click()
   })
+}
+
+function getCloudinaryUploadUrl(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`
+  if (mimeType.startsWith('video/')) return `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`
+  return `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`
+}
+
+export async function uploadFileToCloudinary(
+  file: File,
+  folder?: string,
+): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('upload_preset', uploadPreset)
+  if (folder) formData.append('folder', folder)
+
+  const res = await fetch(getCloudinaryUploadUrl(file.type), {
+    method: 'POST',
+    body: formData,
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error?.message || 'Cloudinary upload failed')
+  return data.secure_url as string
 }

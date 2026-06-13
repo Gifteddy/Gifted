@@ -16,11 +16,31 @@ function showBrowser(title: string, body: string) {
   }
 }
 
+function subscribe(channelName: string, table: string, handler: (payload: RealtimePostgresChangesPayload<Row>) => void) {
+  return supabase
+    .channel(channelName)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table }, handler)
+    .subscribe((status, err) => {
+      if (status === 'SUBSCRIBED') {
+        console.log(`[Realtime] Subscribed to ${table}`)
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error(`[Realtime] ${table}: ${status}`, err)
+      } else if (status === 'CLOSED') {
+        console.log(`[Realtime] ${table} channel closed`)
+      }
+    })
+}
+
 export default function useRealtimeNotifications() {
   const addNotification = useNotifications(s => s.addNotification)
   const channelsRef = useRef<ReturnType<typeof supabase.channel>[]>([])
 
   useEffect(() => {
+    if (!('channel' in supabase)) {
+      console.warn('[Realtime] Supabase channel() not available (noop client)')
+      return
+    }
+
     const handleInsert = (
       type: 'message' | 'testimonial' | 'file_upload',
       getInfo: (row: Row) => { title: string; description: string; link: string },
@@ -34,44 +54,35 @@ export default function useRealtimeNotifications() {
       }
     }
 
-    const contactChannel = supabase
-      .channel('notif-contact-messages')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'contact_messages' },
-        handleInsert('message', (r) => ({
-          title: `New message from ${r.name || 'Someone'}`,
-          description: (r.subject as string) || (r.message as string)?.slice(0, 80) || '',
-          link: '/admin/messages',
-        })),
-      )
-      .subscribe()
+    const contactChannel = subscribe(
+      'notif-contact-messages',
+      'contact_messages',
+      handleInsert('message', (r) => ({
+        title: `New message from ${r.name || 'Someone'}`,
+        description: (r.subject as string) || (r.message as string)?.slice(0, 80) || '',
+        link: '/admin/messages',
+      })),
+    )
 
-    const testimonialChannel = supabase
-      .channel('notif-testimonials')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'testimonials' },
-        handleInsert('testimonial', (r) => ({
-          title: `New testimonial from ${r.name || 'Someone'}`,
-          description: (r.content as string)?.slice(0, 80) || '',
-          link: '/admin/testimonials',
-        })),
-      )
-      .subscribe()
+    const testimonialChannel = subscribe(
+      'notif-testimonials',
+      'testimonials',
+      handleInsert('testimonial', (r) => ({
+        title: `New testimonial from ${r.name || 'Someone'}`,
+        description: (r.content as string)?.slice(0, 80) || '',
+        link: '/admin/testimonials',
+      })),
+    )
 
-    const fileUploadChannel = supabase
-      .channel('notif-file-uploads')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'file_uploads' },
-        handleInsert('file_upload', (r) => ({
-          title: `Files uploaded by ${r.sender_name || 'Someone'}`,
-          description: (r.message as string)?.slice(0, 80) || `${((r.files as unknown[])?.length || 0)} file(s)`,
-          link: '/admin/file-uploads',
-        })),
-      )
-      .subscribe()
+    const fileUploadChannel = subscribe(
+      'notif-file-uploads',
+      'file_uploads',
+      handleInsert('file_upload', (r) => ({
+        title: `Files uploaded by ${r.sender_name || 'Someone'}`,
+        description: (r.message as string)?.slice(0, 80) || `${((r.files as unknown[])?.length || 0)} file(s)`,
+        link: '/admin/file-uploads',
+      })),
+    )
 
     channelsRef.current = [contactChannel, testimonialChannel, fileUploadChannel]
 

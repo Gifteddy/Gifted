@@ -18,14 +18,25 @@ CREATE POLICY "Users can read own profile"
   ON profiles FOR SELECT
   USING (auth.uid() = id);
 
+-- ===================== HELPER: is_admin =====================
+-- SECURITY DEFINER so it bypasses RLS, preventing infinite recursion
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$;
+
 DROP POLICY IF EXISTS "Admins can read all profiles" ON profiles;
 CREATE POLICY "Admins can read all profiles"
   ON profiles FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin());
 
 -- ===================== CATEGORIES =====================
 CREATE TABLE IF NOT EXISTS categories (
@@ -48,21 +59,21 @@ DROP POLICY IF EXISTS "Admins can insert categories" ON categories;
 CREATE POLICY "Admins can insert categories"
   ON categories FOR INSERT
   WITH CHECK (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can update categories" ON categories;
 CREATE POLICY "Admins can update categories"
   ON categories FOR UPDATE
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can delete categories" ON categories;
 CREATE POLICY "Admins can delete categories"
   ON categories FOR DELETE
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== PROJECTS =====================
@@ -104,28 +115,28 @@ DROP POLICY IF EXISTS "Admins can read all projects" ON projects;
 CREATE POLICY "Admins can read all projects"
   ON projects FOR SELECT
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can insert projects" ON projects;
 CREATE POLICY "Admins can insert projects"
   ON projects FOR INSERT
   WITH CHECK (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can update projects" ON projects;
 CREATE POLICY "Admins can update projects"
   ON projects FOR UPDATE
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can delete projects" ON projects;
 CREATE POLICY "Admins can delete projects"
   ON projects FOR DELETE
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== PROJECT CATEGORIES (Junction) =====================
@@ -146,7 +157,7 @@ DROP POLICY IF EXISTS "Admins can manage project_categories" ON project_categori
 CREATE POLICY "Admins can manage project_categories"
   ON project_categories FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== PROJECT GALLERY =====================
@@ -169,7 +180,7 @@ DROP POLICY IF EXISTS "Admins can manage project gallery" ON project_gallery;
 CREATE POLICY "Admins can manage project gallery"
   ON project_gallery FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== SERVICES =====================
@@ -193,7 +204,7 @@ DROP POLICY IF EXISTS "Admins can manage services" ON services;
 CREATE POLICY "Admins can manage services"
   ON services FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== TESTIMONIALS =====================
@@ -220,7 +231,7 @@ DROP POLICY IF EXISTS "Admins can manage testimonials" ON testimonials;
 CREATE POLICY "Admins can manage testimonials"
   ON testimonials FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Anyone can insert testimonials" ON testimonials;
@@ -250,7 +261,7 @@ DROP POLICY IF EXISTS "Admins can manage skills" ON skills;
 CREATE POLICY "Admins can manage skills"
   ON skills FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== BLOG POSTS =====================
@@ -281,14 +292,14 @@ DROP POLICY IF EXISTS "Admins can read all posts" ON blog_posts;
 CREATE POLICY "Admins can read all posts"
   ON blog_posts FOR SELECT
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can manage blog posts" ON blog_posts;
 CREATE POLICY "Admins can manage blog posts"
   ON blog_posts FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== CONTACT MESSAGES =====================
@@ -316,21 +327,21 @@ DROP POLICY IF EXISTS "Admins can read messages" ON contact_messages;
 CREATE POLICY "Admins can read messages"
   ON contact_messages FOR SELECT
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can update messages" ON contact_messages;
 CREATE POLICY "Admins can update messages"
   ON contact_messages FOR UPDATE
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can delete messages" ON contact_messages;
 CREATE POLICY "Admins can delete messages"
   ON contact_messages FOR DELETE
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== CHAT LOGS =====================
@@ -348,7 +359,7 @@ DROP POLICY IF EXISTS "Admins can read chat logs" ON chat_logs;
 CREATE POLICY "Admins can read chat logs"
   ON chat_logs FOR SELECT
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Anyone can insert chat logs" ON chat_logs;
@@ -372,7 +383,7 @@ DROP POLICY IF EXISTS "Admins can read analytics" ON analytics;
 CREATE POLICY "Admins can read analytics"
   ON analytics FOR SELECT
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Anyone can insert analytics" ON analytics;
@@ -394,7 +405,7 @@ CREATE POLICY "Admins can upload media"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'media' AND
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can delete media" ON storage.objects;
@@ -402,7 +413,7 @@ CREATE POLICY "Admins can delete media"
   ON storage.objects FOR DELETE
   USING (
     bucket_id = 'media' AND
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== FILE UPLOAD LINKS =====================
@@ -431,14 +442,14 @@ DROP POLICY IF EXISTS "Admins can read all upload links" ON file_upload_links;
 CREATE POLICY "Admins can read all upload links"
   ON file_upload_links FOR SELECT
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can manage upload links" ON file_upload_links;
 CREATE POLICY "Admins can manage upload links"
   ON file_upload_links FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== FILE UPLOADS =====================
@@ -463,7 +474,7 @@ DROP POLICY IF EXISTS "Admins can read file uploads" ON file_uploads;
 CREATE POLICY "Admins can read file uploads"
   ON file_uploads FOR SELECT
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Anyone can read their own uploads" ON file_uploads;
@@ -495,13 +506,14 @@ CREATE POLICY "Admins can delete file uploads"
   ON storage.objects FOR DELETE
   USING (
     bucket_id = 'file-uploads' AND
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin()
   );
 
 -- ===================== FILE SHARES (Client Review) =====================
 CREATE TABLE IF NOT EXISTS file_shares (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   label TEXT NOT NULL DEFAULT '',
+  description TEXT NOT NULL DEFAULT '',
   token TEXT NOT NULL UNIQUE,
   password_hash TEXT DEFAULT NULL,
   expires_at TIMESTAMPTZ NOT NULL,
@@ -556,6 +568,28 @@ DROP POLICY IF EXISTS "Admins can manage file share items" ON file_share_items;
 CREATE POLICY "Admins can manage file share items"
   ON file_share_items FOR ALL
   USING (public.is_admin());
+
+-- ===================== FILE SHARE COMMENTS =====================
+CREATE TABLE IF NOT EXISTS file_share_comments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  share_id UUID NOT NULL REFERENCES file_shares(id) ON DELETE CASCADE,
+  item_id UUID REFERENCES file_share_items(id) ON DELETE CASCADE,
+  author_name TEXT NOT NULL DEFAULT '',
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE file_share_comments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read comments" ON file_share_comments;
+CREATE POLICY "Anyone can read comments"
+  ON file_share_comments FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Anyone can insert comments" ON file_share_comments;
+CREATE POLICY "Anyone can insert comments"
+  ON file_share_comments FOR INSERT
+  WITH CHECK (true);
 
 INSERT INTO storage.buckets (id, name, public) VALUES ('file-shares', 'file-shares', true)
 ON CONFLICT (id) DO NOTHING;
@@ -615,5 +649,11 @@ BEGIN
     WHERE pubname = 'supabase_realtime' AND tablename = 'file_uploads'
   ) THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE file_uploads;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'file_share_comments'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE file_share_comments;
   END IF;
 END $$;

@@ -129,11 +129,21 @@ export interface FileUpload {
 export interface FileShare {
   id: string
   label: string
+  description: string
   token: string
   password_hash: string | null
   expires_at: string
   is_active: boolean
   file_count: number
+  created_at: string
+}
+
+export interface FileShareComment {
+  id: string
+  share_id: string
+  item_id: string | null
+  author_name: string
+  content: string
   created_at: string
 }
 

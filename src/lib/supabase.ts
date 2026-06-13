@@ -22,6 +22,9 @@ const hasCredentials = supabaseUrl && supabaseAnonKey
 function createNoopClient() {
   return {
     from: () => noopQuery,
+    channel: () => ({
+      on: () => ({ subscribe: (cb?: (status: string) => void) => { cb?.('SUBSCRIBED'); return {} } }),
+    }),
     auth: {
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),

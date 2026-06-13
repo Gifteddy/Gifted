@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { formatDate, cn } from '@/lib/utils'
-import type { FileShare, FileShareItem } from '@/lib/types'
+import { formatDate, cn, uploadFileToCloudinary } from '@/lib/utils'
+import type { FileShare, FileShareItem, FileShareComment } from '@/lib/types'
 
 const DURATION_PRESETS = [
   { label: '1 Hour', minutes: 60 },
@@ -97,14 +97,19 @@ export default function AdminFileShares() {
 
 function ShareCard({ share, url, isExpired, onDelete }: { share: FileShare; url: string; isExpired: boolean; onDelete: () => void }) {
   const [items, setItems] = useState<FileShareItem[] | null>(null)
+  const [comments, setComments] = useState<FileShareComment[]>([])
   const [expanded, setExpanded] = useState(false)
 
   const toggleExpand = async () => {
     if (expanded) { setExpanded(false); return }
     setExpanded(true)
     if (!items) {
-      const { data } = await supabase.from('file_share_items').select('*').eq('share_id', share.id).order('sort_order', { ascending: true })
-      setItems((data || []) as FileShareItem[])
+      const [itemsRes, commentsRes] = await Promise.all([
+        supabase.from('file_share_items').select('*').eq('share_id', share.id).order('sort_order', { ascending: true }),
+        supabase.from('file_share_comments').select('*').eq('share_id', share.id).order('created_at', { ascending: true }),
+      ])
+      setItems((itemsRes.data || []) as FileShareItem[])
+      setComments((commentsRes.data || []) as FileShareComment[])
     }
   }
 
@@ -177,6 +182,23 @@ function ShareCard({ share, url, isExpired, onDelete }: { share: FileShare; url:
               ))}
             </div>
           )}
+          {comments.length > 0 && (
+            <div className="border-t border-black/[0.04] px-4 py-3 dark:border-white/[0.04]">
+              <p className="text-xs font-medium text-gray-500 dark:text-white/50">{comments.length} comment{comments.length !== 1 ? 's' : ''}</p>
+              <div className="mt-2 space-y-2">
+                {comments.map(c => (
+                  <div key={c.id} className="rounded-lg bg-black/[0.03] p-2.5 dark:bg-white/[0.03]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-gray-900 dark:text-white/90">{c.author_name}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-white/30">{new Date(c.created_at).toLocaleDateString()}</span>
+                      {c.item_id && <span className="text-[10px] text-gray-400 dark:text-white/30">· on a file</span>}
+                    </div>
+                    <p className="mt-0.5 text-xs text-gray-600 dark:text-white/60">{c.content}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -185,6 +207,7 @@ function ShareCard({ share, url, isExpired, onDelete }: { share: FileShare; url:
 
 function CreateShareModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [label, setLabel] = useState('')
+  const [description, setDescription] = useState('')
   const [duration, setDuration] = useState(1440)
   const [password, setPassword] = useState('')
   const [saving, setSaving] = useState(false)
@@ -235,6 +258,7 @@ function CreateShareModal({ onClose, onCreated }: { onClose: () => void; onCreat
 
       const { data: share, error: shareErr } = await supabase.from('file_shares').insert([{
         label: label.trim() || 'Untitled Share',
+        description: description.trim(),
         token,
         password_hash: passwordHash,
         expires_at: expiresAt,
@@ -252,23 +276,10 @@ function CreateShareModal({ onClose, onCreated }: { onClose: () => void; onCreat
           continue
         }
 
-        const ext = file.name.split('.').pop()
-        const fileName = `${crypto.randomUUID()}.${ext}`
-        const filePath = `${token}/${fileName}`
-
-        const { error: uploadErr } = await supabase.storage
-          .from('file-shares')
-          .upload(filePath, file)
-
-        if (uploadErr) throw new Error(`Failed to upload ${file.name}: ${uploadErr.message}`)
-
-        const { data: urlData } = supabase.storage
-          .from('file-shares')
-          .getPublicUrl(filePath)
-
+        const url = await uploadFileToCloudinary(file, `file-shares/${token}`)
         items.push({
           name: file.name,
-          url: urlData.publicUrl,
+          url,
           type: file.type,
           size: file.size,
           sort_order: i,
@@ -306,6 +317,12 @@ function CreateShareModal({ onClose, onCreated }: { onClose: () => void; onCreat
             <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Label</label>
             <input type="text" value={label} onChange={e => setLabel(e.target.value)}
               className="w-full admin-input" placeholder="e.g. Wedding Photos - John & Sarah" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Description (optional)</label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)}
+              className="w-full admin-input min-h-[60px] resize-none" placeholder="A short message to accompany these files..." rows={2} />
           </div>
 
           <div>

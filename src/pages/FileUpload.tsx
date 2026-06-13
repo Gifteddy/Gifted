@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { cn } from '@/lib/utils'
+import { cn, uploadFileToCloudinary } from '@/lib/utils'
 import type { FileUploadLink } from '@/lib/types'
 
 type UploadFile = { file: File; id: string }
@@ -110,23 +110,10 @@ export default function FileUpload() {
       const uploaded: { name: string; url: string; size: number; type: string }[] = []
 
       for (const { file } of files) {
-        const ext = file.name.split('.').pop()
-        const fileName = `${crypto.randomUUID()}.${ext}`
-        const filePath = `${token}/${fileName}`
-
-        const { error: uploadError } = await supabase.storage
-          .from('file-uploads')
-          .upload(filePath, file)
-
-        if (uploadError) throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`)
-
-        const { data: urlData } = supabase.storage
-          .from('file-uploads')
-          .getPublicUrl(filePath)
-
+        const url = await uploadFileToCloudinary(file, `file-uploads/${token}`)
         uploaded.push({
           name: file.name,
-          url: urlData.publicUrl,
+          url,
           size: file.size,
           type: file.type,
         })
