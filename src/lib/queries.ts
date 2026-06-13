@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Project, Category, Service, Testimonial, Skill, BlogPost, ContactMessage } from './types'
+import type { Project, Category, Service, Testimonial, Skill, BlogPost, ContactMessage, FileUploadLink, FileUpload, FileShare, FileShareItem } from './types'
 
 export async function getProjects() {
   const { data, error } = await supabase
@@ -128,4 +128,116 @@ export async function createContactMessage(message: Omit<ContactMessage, 'id' | 
     .single()
   if (error) throw error
   return data as ContactMessage
+}
+
+export async function getFileUploadLinkByToken(token: string) {
+  const { data, error } = await supabase
+    .from('file_upload_links')
+    .select('*')
+    .eq('token', token)
+    .eq('is_active', true)
+    .gt('expires_at', new Date().toISOString())
+    .single()
+  if (error) throw error
+  return data as FileUploadLink
+}
+
+export async function createFileUploadLink(link: Omit<FileUploadLink, 'id' | 'token' | 'upload_count' | 'created_at'>) {
+  const token = crypto.randomUUID()
+  const { data, error } = await supabase
+    .from('file_upload_links')
+    .insert([{ ...link, token }])
+    .select()
+    .single()
+  if (error) throw error
+  return data as FileUploadLink
+}
+
+export async function getFileUploadLinks() {
+  const { data, error } = await supabase
+    .from('file_upload_links')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as FileUploadLink[]
+}
+
+export async function deleteFileUploadLink(id: string) {
+  const { error } = await supabase
+    .from('file_upload_links')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function getFileUploadsByLinkId(linkId: string) {
+  const { data, error } = await supabase
+    .from('file_uploads')
+    .select('*')
+    .eq('link_id', linkId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as FileUpload[]
+}
+
+export async function createFileUpload(upload: Omit<FileUpload, 'id' | 'created_at'>) {
+  const { data, error } = await supabase
+    .from('file_uploads')
+    .insert([upload])
+    .select()
+    .single()
+  if (error) throw error
+  return data as FileUpload
+}
+
+export async function getFileShareByToken(token: string) {
+  const { data, error } = await supabase
+    .from('file_shares')
+    .select('*')
+    .eq('token', token)
+    .eq('is_active', true)
+    .gt('expires_at', new Date().toISOString())
+    .single()
+  if (error) throw error
+  return data as FileShare
+}
+
+export async function getFileShareItems(shareId: string) {
+  const { data, error } = await supabase
+    .from('file_share_items')
+    .select('*')
+    .eq('share_id', shareId)
+    .order('sort_order', { ascending: true })
+  if (error) throw error
+  return data as FileShareItem[]
+}
+
+export async function getFileShares() {
+  const { data, error } = await supabase
+    .from('file_shares')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as FileShare[]
+}
+
+export async function deleteFileShare(id: string) {
+  const { error } = await supabase
+    .from('file_shares')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function incrementUploadCount(linkId: string) {
+  const { data: link } = await supabase
+    .from('file_upload_links')
+    .select('upload_count')
+    .eq('id', linkId)
+    .single()
+  if (!link) return
+  await supabase
+    .from('file_upload_links')
+    .update({ upload_count: (link.upload_count || 0) + 1 })
+    .eq('id', linkId)
 }

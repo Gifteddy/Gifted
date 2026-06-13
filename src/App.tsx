@@ -18,6 +18,8 @@ const GraphicDesign = lazy(() => import('@/pages/GraphicDesign'))
 const Development = lazy(() => import('@/pages/Development'))
 const PhotoEditing = lazy(() => import('@/pages/PhotoEditing'))
 const SubmitTestimonial = lazy(() => import('@/pages/SubmitTestimonial'))
+const FileUpload = lazy(() => import('@/pages/FileUpload'))
+const FileShare = lazy(() => import('@/pages/FileShare'))
 const About = lazy(() => import('@/pages/About'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
@@ -30,6 +32,8 @@ const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'))
 const AdminBlog = lazy(() => import('@/pages/admin/AdminBlog'))
 const AdminSettings = lazy(() => import('@/pages/admin/AdminSettings'))
 const AdminTestimonials = lazy(() => import('@/pages/admin/AdminTestimonials'))
+const AdminFileUploads = lazy(() => import('@/pages/admin/AdminFileUploads'))
+const AdminFileShares = lazy(() => import('@/pages/admin/AdminFileShares'))
 
 function PageLoader() {
   return (
@@ -68,6 +72,9 @@ export default function App() {
             <Route path="submit-testimonial" element={<SubmitTestimonial />} />
           </Route>
 
+          <Route path="upload/:token" element={<FileUpload />} />
+          <Route path="share/:token" element={<FileShare />} />
+
           <Route path="*" element={<NotFound />} />
 
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -79,6 +86,8 @@ export default function App() {
               <Route path="media" element={<AdminMedia />} />
               <Route path="blog" element={<AdminBlog />} />
               <Route path="testimonials" element={<AdminTestimonials />} />
+              <Route path="file-uploads" element={<AdminFileUploads />} />
+              <Route path="file-shares" element={<AdminFileShares />} />
               <Route path="messages" element={<AdminMessages />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />

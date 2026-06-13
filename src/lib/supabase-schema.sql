@@ -405,6 +405,180 @@ CREATE POLICY "Admins can delete media"
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
   );
 
+-- ===================== FILE UPLOAD LINKS =====================
+CREATE TABLE IF NOT EXISTS file_upload_links (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  label TEXT NOT NULL DEFAULT '',
+  token TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  max_file_size BIGINT DEFAULT 52428800,
+  max_files_per_upload INTEGER DEFAULT 5,
+  max_total_uploads INTEGER DEFAULT NULL,
+  allowed_extensions TEXT DEFAULT '',
+  is_active BOOLEAN DEFAULT true,
+  upload_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE file_upload_links ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read valid upload links" ON file_upload_links;
+CREATE POLICY "Anyone can read valid upload links"
+  ON file_upload_links FOR SELECT
+  USING (is_active = true AND expires_at > NOW());
+
+DROP POLICY IF EXISTS "Admins can read all upload links" ON file_upload_links;
+CREATE POLICY "Admins can read all upload links"
+  ON file_upload_links FOR SELECT
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+DROP POLICY IF EXISTS "Admins can manage upload links" ON file_upload_links;
+CREATE POLICY "Admins can manage upload links"
+  ON file_upload_links FOR ALL
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- ===================== FILE UPLOADS =====================
+CREATE TABLE IF NOT EXISTS file_uploads (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  link_id UUID NOT NULL REFERENCES file_upload_links(id) ON DELETE CASCADE,
+  sender_name TEXT NOT NULL DEFAULT '',
+  sender_email TEXT NOT NULL DEFAULT '',
+  message TEXT NOT NULL DEFAULT '',
+  files JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE file_uploads ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can insert file uploads" ON file_uploads;
+CREATE POLICY "Anyone can insert file uploads"
+  ON file_uploads FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can read file uploads" ON file_uploads;
+CREATE POLICY "Admins can read file uploads"
+  ON file_uploads FOR SELECT
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+DROP POLICY IF EXISTS "Anyone can read their own uploads" ON file_uploads;
+CREATE POLICY "Anyone can read their own uploads"
+  ON file_uploads FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM file_upload_links
+      WHERE id = link_id AND is_active = true AND expires_at > NOW()
+    )
+  );
+
+-- ===================== FILE UPLOADS STORAGE BUCKET =====================
+INSERT INTO storage.buckets (id, name, public) VALUES ('file-uploads', 'file-uploads', true)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Anyone can read file uploads storage" ON storage.objects;
+CREATE POLICY "Anyone can read file uploads storage"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'file-uploads');
+
+DROP POLICY IF EXISTS "Anyone can upload to file-uploads" ON storage.objects;
+CREATE POLICY "Anyone can upload to file-uploads"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'file-uploads');
+
+DROP POLICY IF EXISTS "Admins can delete file uploads" ON storage.objects;
+CREATE POLICY "Admins can delete file uploads"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'file-uploads' AND
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- ===================== FILE SHARES (Client Review) =====================
+CREATE TABLE IF NOT EXISTS file_shares (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  label TEXT NOT NULL DEFAULT '',
+  token TEXT NOT NULL UNIQUE,
+  password_hash TEXT DEFAULT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  file_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE file_shares ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read file shares" ON file_shares;
+CREATE POLICY "Anyone can read file shares"
+  ON file_shares FOR SELECT
+  USING (is_active = true AND expires_at > NOW());
+
+DROP POLICY IF EXISTS "Admins can read all file shares" ON file_shares;
+CREATE POLICY "Admins can read all file shares"
+  ON file_shares FOR SELECT
+  USING (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins can manage file shares" ON file_shares;
+CREATE POLICY "Admins can manage file shares"
+  ON file_shares FOR ALL
+  USING (public.is_admin());
+
+CREATE TABLE IF NOT EXISTS file_share_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  share_id UUID NOT NULL REFERENCES file_shares(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT '',
+  size BIGINT DEFAULT 0,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE file_share_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read file share items" ON file_share_items;
+CREATE POLICY "Anyone can read file share items"
+  ON file_share_items FOR SELECT
+  USING (
+    EXISTS (SELECT 1 FROM file_shares WHERE id = share_id AND is_active = true AND expires_at > NOW())
+  );
+
+DROP POLICY IF EXISTS "Admins can read all file share items" ON file_share_items;
+CREATE POLICY "Admins can read all file share items"
+  ON file_share_items FOR SELECT
+  USING (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins can manage file share items" ON file_share_items;
+CREATE POLICY "Admins can manage file share items"
+  ON file_share_items FOR ALL
+  USING (public.is_admin());
+
+INSERT INTO storage.buckets (id, name, public) VALUES ('file-shares', 'file-shares', true)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Anyone can read file shares storage" ON storage.objects;
+CREATE POLICY "Anyone can read file shares storage"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'file-shares');
+
+DROP POLICY IF EXISTS "Admins can upload file shares" ON storage.objects;
+CREATE POLICY "Admins can upload file shares"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'file-shares' AND public.is_admin()
+  );
+
+DROP POLICY IF EXISTS "Admins can delete file shares" ON storage.objects;
+CREATE POLICY "Admins can delete file shares"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'file-shares' AND public.is_admin()
+  );
+
 -- ===================== HELPER FUNCTION =====================
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
@@ -419,3 +593,27 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+-- ===================== REALTIME (ADMIN NOTIFICATIONS) =====================
+-- Enable Realtime for tables the admin needs push notifications on
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'contact_messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE contact_messages;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'testimonials'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE testimonials;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'file_uploads'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE file_uploads;
+  END IF;
+END $$;

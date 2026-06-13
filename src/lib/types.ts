@@ -102,6 +102,64 @@ export interface Skill {
   created_at: string
 }
 
+export interface FileUploadLink {
+  id: string
+  label: string
+  token: string
+  expires_at: string
+  max_file_size: number
+  max_files_per_upload: number
+  max_total_uploads: number | null
+  allowed_extensions: string
+  is_active: boolean
+  upload_count: number
+  created_at: string
+}
+
+export interface FileUpload {
+  id: string
+  link_id: string
+  sender_name: string
+  sender_email: string
+  message: string
+  files: { name: string; url: string; size: number; type: string }[]
+  created_at: string
+}
+
+export interface FileShare {
+  id: string
+  label: string
+  token: string
+  password_hash: string | null
+  expires_at: string
+  is_active: boolean
+  file_count: number
+  created_at: string
+}
+
+export interface FileShareItem {
+  id: string
+  share_id: string
+  name: string
+  url: string
+  type: string
+  size: number
+  sort_order: number
+  created_at: string
+}
+
+export type NotificationType = 'message' | 'testimonial' | 'file_upload' | 'share_viewed'
+
+export interface AppNotification {
+  id: string
+  type: NotificationType
+  title: string
+  description: string
+  link: string
+  read: boolean
+  created_at: string
+}
+
 export interface BlogPost {
   id: string
   title: string

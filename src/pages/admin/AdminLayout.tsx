@@ -2,6 +2,8 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useAdminStore } from '@/store/admin'
 import { useTheme } from '@/store/theme'
+import NotificationBell from '@/components/admin/NotificationBell'
+import useRealtimeNotifications from '@/hooks/useRealtimeNotifications'
 import { useState, useEffect, useRef } from 'react'
 
 const adminLinks = [
@@ -10,6 +12,8 @@ const adminLinks = [
   { to: '/admin/media', label: 'Media', icon: '▣' },
   { to: '/admin/blog', label: 'Blog', icon: '◇' },
   { to: '/admin/testimonials', label: 'Testimonials', icon: '★' },
+  { to: '/admin/file-uploads', label: 'File Uploads', icon: '↗' },
+  { to: '/admin/file-shares', label: 'Client Shares', icon: '⊕' },
   { to: '/admin/messages', label: 'Messages', icon: '□' },
   { to: '/admin/settings', label: 'Settings', icon: '△' },
 ]
@@ -19,6 +23,7 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const { user, signOut } = useAdminStore()
   const { theme, setTheme } = useTheme()
+  useRealtimeNotifications()
   const [showMenu, setShowMenu] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -125,6 +130,7 @@ export default function AdminLayout() {
           <div className="flex-1" />
 
           <div className="flex items-center gap-1">
+            <NotificationBell />
             <button
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
               className="flex h-8 w-8 items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-black/[0.04] dark:text-white/40 dark:hover:bg-white/[0.06]"

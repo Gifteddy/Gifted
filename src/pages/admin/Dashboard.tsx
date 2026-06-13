@@ -6,6 +6,8 @@ const links = [
   { to: '/admin/projects', label: 'Projects', icon: '◇', desc: 'Create and manage portfolio projects' },
   { to: '/admin/media', label: 'Media', icon: '▣', desc: 'Upload and manage images, videos & files' },
   { to: '/admin/blog', label: 'Blog', icon: '◇', desc: 'Write and manage blog posts' },
+  { to: '/admin/file-uploads', label: 'File Uploads', icon: '↗', desc: 'Generate secure file upload links for clients' },
+  { to: '/admin/file-shares', label: 'Client Shares', icon: '⊕', desc: 'Send files to clients for review' },
   { to: '/admin/messages', label: 'Messages', icon: '□', desc: 'View and respond to inquiries' },
   { to: '/admin/settings', label: 'Settings', icon: '△', desc: 'Account and system configuration' },
 ]
