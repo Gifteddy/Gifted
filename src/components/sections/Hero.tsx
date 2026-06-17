@@ -40,7 +40,10 @@ export function Hero() {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
             className="relative">
             <motion.img
-              src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto/v1781724436/heo_avdylx.png" alt="Gifted" loading="eager" decoding="async" fetchPriority="high"
+              src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto:eco,w_800/v1781724436/heo_avdylx.png"
+              srcSet="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto:eco,w_400/v1781724436/heo_avdylx.png 400w, https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto:eco,w_600/v1781724436/heo_avdylx.png 600w, https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto:eco,w_800/v1781724436/heo_avdylx.png 800w, https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto:eco,w_1000/v1781724436/heo_avdylx.png 1000w"
+              sizes="(max-width: 640px) 400px, (max-width: 1024px) 600px, 800px"
+              alt="Gifted" loading="eager" decoding="async" fetchPriority="high" width="800" height="800"
               className="ml-auto h-auto max-w-lg w-full"
               animate={{ y: [0, -8, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
