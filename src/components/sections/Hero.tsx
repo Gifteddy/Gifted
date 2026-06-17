@@ -40,7 +40,7 @@ export function Hero() {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
             className="relative">
             <motion.img
-              src="/heo.png" alt="Gifted"
+              src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto/v1781724436/heo_avdylx.png" alt="Gifted" loading="eager" decoding="async" fetchPriority="high"
               className="ml-auto h-auto max-w-lg w-full"
               animate={{ y: [0, -8, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}

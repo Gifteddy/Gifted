@@ -1,5 +1,11 @@
 {
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "@vercel/node@3"
+    }
+  },
   "rewrites": [
+    { "source": "/api/cloudinary/:path*", "destination": "/api/cloudinary?path=:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

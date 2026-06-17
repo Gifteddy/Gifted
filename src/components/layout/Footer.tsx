@@ -29,7 +29,7 @@ export function Footer() {
         <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/" className="flex items-center">
-              <img src="/logo.png" alt="Gifted" className="h-12 w-auto" />
+              <img src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto/v1781723693/logo_u7assw.png" alt="Gifted" className="h-12 w-auto" loading="lazy" decoding="async" />
             </Link>
             <p className="mt-3 text-sm text-text-muted-light dark:text-text-muted-dark">Designer. Developer. Storyteller.</p>
             <p className="mt-1 text-sm text-text-muted-light dark:text-text-muted-dark">Creative Technologist</p>

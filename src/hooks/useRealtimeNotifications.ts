@@ -8,10 +8,10 @@ type Row = Record<string, unknown>
 function showBrowser(title: string, body: string) {
   if (!('Notification' in window)) return
   if (Notification.permission === 'granted') {
-    new Notification(title, { body, icon: '/logo-G.png' })
+    new Notification(title, { body, icon: 'https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto,w_48,h_48,c_fit/v1781723693/logo_u7assw.png' })
   } else if (Notification.permission !== 'denied') {
     Notification.requestPermission().then(p => {
-      if (p === 'granted') new Notification(title, { body, icon: '/logo-G.png' })
+      if (p === 'granted') new Notification(title, { body, icon: 'https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto,w_48,h_48,c_fit/v1781723693/logo_u7assw.png' })
     })
   }
 }

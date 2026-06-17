@@ -55,7 +55,7 @@ export default function AdminLayout() {
       >
         <div className="flex h-14 items-center gap-3 border-b px-4 border-black/[0.04] dark:border-white/[0.04]">
           <Link to="/admin" className="flex shrink-0 items-center gap-2.5">
-            <img src="/logo-G.png" alt="Gifted" className="h-7 w-7 rounded-lg object-contain" />
+            <img src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto,w_28,h_28,c_fit/v1781723693/logo_u7assw.png" alt="Gifted" className="h-7 w-7 rounded-lg object-contain" />
             <span className="text-sm font-semibold tracking-tight text-gray-800 dark:text-white/90">Admin</span>
           </Link>
           <Link to="/" className="ml-auto flex h-7 items-center rounded-lg px-2.5 text-[11px] font-medium text-gray-400 transition-colors hover:bg-black/[0.04] hover:text-gray-600 dark:text-white/40 dark:hover:bg-white/[0.06] dark:hover:text-white/60">

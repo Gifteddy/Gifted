@@ -138,7 +138,7 @@ export function Nav() {
       }`}>
         <nav className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="relative z-10 flex items-center">
-            <img src="/logo.png" alt="Gifted" className="h-12 w-auto" />
+            <img src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto/v1781723693/logo_u7assw.png" alt="Gifted" className="h-12 w-auto" />
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">

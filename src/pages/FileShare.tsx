@@ -267,7 +267,7 @@ export default function FileShareViewer() {
     <div className="min-h-screen bg-surface-light dark:bg-surface-dark">
       <div className="flex items-center justify-between border-b border-border-light px-4 py-3 sm:px-6 sm:py-4 dark:border-border-dark">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src="/logo-G.png" alt="Gifted" className="h-7 w-7 rounded-lg object-contain" />
+          <img src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto,w_28,h_28,c_fit/v1781723693/logo_u7assw.png" alt="Gifted" className="h-7 w-7 rounded-lg object-contain" />
           <span className="text-sm font-semibold text-text-light dark:text-text-dark">Gifted</span>
         </Link>
         <div className="flex items-center gap-2">
