@@ -2,6 +2,24 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, cn } from '@/lib/utils'
 import { categoryList } from '@/lib/categories'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface ProjectItem {
   id: string
@@ -13,6 +31,7 @@ interface ProjectItem {
   featured: boolean
   published: boolean
   status: string
+  display_order: number
   created_at: string
   updated_at: string
 }
@@ -36,6 +55,14 @@ export default function AdminProjects() {
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [reorderSaving, setReorderSaving] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
 
   const loadProjects = useCallback(async () => {
     setLoading(true)
@@ -43,7 +70,7 @@ export default function AdminProjects() {
       const { data } = await supabase
         .from('projects')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('display_order', { ascending: true, nullsFirst: false })
       setProjects((data || []) as ProjectItem[])
     } catch {
       // silent
@@ -54,10 +81,65 @@ export default function AdminProjects() {
 
   useEffect(() => { loadProjects() }, [loadProjects])
 
+  const saveDisplayOrder = async (ordered: ProjectItem[]) => {
+    setReorderSaving(true)
+    const updates = ordered.map((p, i) => ({
+      id: p.id,
+      display_order: i + 1,
+    }))
+    try {
+      await Promise.all(
+        updates.map(u =>
+          supabase.from('projects').update({ display_order: u.display_order }).eq('id', u.id)
+        )
+      )
+    } catch {
+      loadProjects()
+    } finally {
+      setReorderSaving(false)
+    }
+  }
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveId(null)
+    if (!over || active.id === over.id) return
+
+    const oldIndex = projects.findIndex(p => p.id === active.id)
+    const newIndex = projects.findIndex(p => p.id === over.id)
+
+    const reordered = arrayMove(projects, oldIndex, newIndex)
+    const updated = reordered.map((p, i) => ({ ...p, display_order: i + 1 }))
+    setProjects(updated as ProjectItem[])
+    saveDisplayOrder(updated)
+  }
+
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return
+    const reordered = arrayMove(projects, index, index - 1)
+    const updated = reordered.map((p, i) => ({ ...p, display_order: i + 1 }))
+    setProjects(updated as ProjectItem[])
+    saveDisplayOrder(updated)
+  }
+
+  const handleMoveDown = (index: number) => {
+    if (index === projects.length - 1) return
+    const reordered = arrayMove(projects, index, index + 1)
+    const updated = reordered.map((p, i) => ({ ...p, display_order: i + 1 }))
+    setProjects(updated as ProjectItem[])
+    saveDisplayOrder(updated)
+  }
+
   const handleDelete = async (id: string) => {
     await supabase.from('projects').delete().eq('id', id)
     setDeleteId(null)
-    loadProjects()
+    const remaining = projects.filter(p => p.id !== id).map((p, i) => ({ ...p, display_order: i + 1 }))
+    setProjects(remaining as ProjectItem[])
+    saveDisplayOrder(remaining)
   }
 
   const handleTogglePublish = async (project: ProjectItem) => {
@@ -78,22 +160,90 @@ export default function AdminProjects() {
     loadProjects()
   }
 
+  const handleRestoreDefault = async () => {
+    setShowRestoreConfirm(false)
+    try {
+      const { data: savedDefault } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'project_default_order')
+        .single()
+
+      if (savedDefault?.value?.order) {
+        const defaultIds: string[] = savedDefault.value.order
+        const reordered: ProjectItem[] = []
+        const idSet = new Set(defaultIds)
+        for (const id of defaultIds) {
+          const p = projects.find(pr => pr.id === id)
+          if (p) reordered.push(p)
+        }
+        const newProjects = projects
+          .filter(p => !idSet.has(p.id))
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        const fullOrder = [...reordered, ...newProjects]
+        const updated = fullOrder.map((p, i) => ({ ...p, display_order: i + 1 }))
+        setProjects(updated as ProjectItem[])
+        await saveDisplayOrder(updated)
+      } else {
+        const reordered = [...projects].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+        const updated = reordered.map((p, i) => ({ ...p, display_order: i + 1 }))
+        setProjects(updated as ProjectItem[])
+        await saveDisplayOrder(updated)
+      }
+    } catch {
+      loadProjects()
+    }
+  }
+
+  const handleSaveDefaultOrder = async () => {
+    const order = projects.map(p => p.id)
+    await supabase
+      .from('settings')
+      .upsert({
+        key: 'project_default_order',
+        value: { order },
+        updated_at: new Date().toISOString(),
+      })
+  }
+
+  const nextDisplayOrder = projects.length > 0
+    ? Math.max(...projects.map(p => p.display_order)) + 1
+    : 1
+
   const filtered = projects.filter(p =>
     !search || p.title.toLowerCase().includes(search.toLowerCase())
   )
+  const isSearching = search.trim().length > 0
 
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white/90">Projects</h1>
-        <button onClick={() => { setEditorMode('create'); setEditId(null) }} className="w-full sm:w-auto admin-btn-primary">
-          New Project
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleSaveDefaultOrder}
+            className="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/80"
+            title="Save Current Order as Default">
+            Save Default
+          </button>
+          <button onClick={() => setShowRestoreConfirm(true)}
+            className="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/80"
+            title="Restore Default Order">
+            Restore Default
+          </button>
+          <button onClick={() => { setEditorMode('create'); setEditId(null) }} className="w-full sm:w-auto admin-btn-primary">
+            New Project
+          </button>
+        </div>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex items-center gap-3">
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Search projects..." className="w-full sm:max-w-xs admin-input" />
+        {reorderSaving && (
+          <span className="text-xs text-gray-400 dark:text-white/30">Saving order...</span>
+        )}
       </div>
 
       {loading ? (
@@ -106,58 +256,46 @@ export default function AdminProjects() {
             {search ? 'No projects match your search.' : 'No projects yet. Create your first project.'}
           </p>
         </div>
-      ) : (
+      ) : isSearching ? (
         <div className="space-y-2">
           {filtered.map(project => (
-            <div key={project.id} className="relative overflow-hidden rounded-2xl p-4 transition-all hover:scale-[1.002] admin-glass">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                <div className="flex items-center gap-4 min-w-0 flex-1">
-                  {project.cover_image ? (
-                    <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl">
-                      <img src={project.cover_image} alt="" className="h-full w-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-[#7700ff]/10 text-lg text-[#7700ff] dark:text-[#ad66ff]">◇</div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium text-gray-900 dark:text-white/90">{project.title}</span>
-                      {project.featured && <span className="shrink-0 text-xs text-amber-500">★</span>}
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-white/40">
-                      {project.category && <span className="truncate">{project.category.replace(/-/g, ' ')}</span>}
-                      <span>·</span>
-                      <span className={cn('shrink-0', (project.published || project.status === 'published') ? 'text-emerald-500' : 'text-amber-500')}>
-                        {project.published || project.status === 'published' ? 'Published' : 'Draft'}
-                      </span>
-                      <span>·</span>
-                      <span className="shrink-0">{formatDate(project.created_at)}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-1 pl-0 sm:pl-0">
-                  <button onClick={() => handleTogglePublish(project)}
-                    className="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/80"
-                    title={project.published || project.status === 'published' ? 'Unpublish' : 'Publish'}>
-                    {(project.published || project.status === 'published') ? '✓' : '○'}
-                  </button>
-                  <button onClick={() => handleToggleFeatured(project)}
-                    className={cn('rounded-lg px-2.5 py-1.5 text-xs transition-colors', project.featured ? 'text-amber-500' : 'text-gray-500 hover:text-amber-500 dark:text-white/50')}
-                    title={project.featured ? 'Unfeature' : 'Feature'}>★</button>
-                  <button onClick={() => { setEditorMode('edit'); setEditId(project.id) }}
-                    className="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/80">Edit</button>
-                  <button onClick={() => setDeleteId(project.id)}
-                    className="rounded-lg px-2.5 py-1.5 text-xs text-red-500 transition-colors hover:bg-red-500/10">Delete</button>
-                </div>
-              </div>
-            </div>
+            <ProjectCardBase key={project.id} project={project} showOrder showMoveButtons={false}
+              onTogglePublish={handleTogglePublish} onToggleFeatured={handleToggleFeatured}
+              onEdit={(id) => { setEditorMode('edit'); setEditId(id) }}
+              onDelete={(id) => setDeleteId(id)} />
           ))}
+          {filtered.length < projects.length && (
+            <p className="pt-2 text-center text-xs text-gray-400 dark:text-white/30">
+              Showing {filtered.length} of {projects.length} projects. Clear search to reorder.
+            </p>
+          )}
         </div>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={projects.map(p => p.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {projects.map((project, index) => (
+                <SortableProjectCard key={project.id} project={project} index={index}
+                  total={projects.length} activeId={activeId}
+                  onTogglePublish={handleTogglePublish} onToggleFeatured={handleToggleFeatured}
+                  onEdit={(id) => { setEditorMode('edit'); setEditId(id) }}
+                  onDelete={(id) => setDeleteId(id)}
+                  onMoveUp={handleMoveUp} onMoveDown={handleMoveDown} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {editorMode && (
         <ProjectEditor projectId={editId} onClose={() => { setEditorMode(null); setEditId(null) }}
-          onSaved={() => { setEditorMode(null); setEditId(null); loadProjects() }} />
+          onSaved={() => { setEditorMode(null); setEditId(null); loadProjects() }}
+          nextDisplayOrder={nextDisplayOrder} />
       )}
 
       {deleteId && (
@@ -172,10 +310,151 @@ export default function AdminProjects() {
           </div>
         </div>
       )}
+
+      {showRestoreConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="relative w-full max-w-sm overflow-hidden rounded-2xl p-6 admin-glass-strong">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white/90">Restore Default Order</h3>
+            <p className="mt-2 text-sm text-gray-500 dark:text-white/40">
+              Are you sure you want to restore the default project order? This will overwrite your current custom ordering.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button onClick={() => setShowRestoreConfirm(false)} className="rounded-xl px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-black/5 dark:text-white/50 dark:hover:bg-white/5">Cancel</button>
+              <button onClick={handleRestoreDefault} className="rounded-xl bg-[#7700ff] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#9900ff]">Restore</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | null; onClose: () => void; onSaved: () => void }) {
+
+function SortableProjectCard({
+  project, index, total, activeId,
+  onTogglePublish, onToggleFeatured, onEdit, onDelete, onMoveUp, onMoveDown,
+}: {
+  project: ProjectItem; index: number; total: number; activeId: string | null
+  onTogglePublish: (p: ProjectItem) => void; onToggleFeatured: (p: ProjectItem) => void
+  onEdit: (id: string) => void; onDelete: (id: string) => void
+  onMoveUp: (i: number) => void; onMoveDown: (i: number) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: project.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    position: 'relative' as const,
+    zIndex: isDragging ? 50 : 'auto' as const,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}
+      className={cn('relative overflow-hidden rounded-2xl p-4 transition-all hover:scale-[1.002] admin-glass',
+        isDragging && 'shadow-xl shadow-black/20 dark:shadow-black/40 scale-[1.01]')}>
+      <ProjectCardContent project={project} showOrder showMoveButtons={!activeId}
+        index={index} total={total}
+        onTogglePublish={onTogglePublish} onToggleFeatured={onToggleFeatured}
+        onEdit={onEdit} onDelete={onDelete}
+        onMoveUp={onMoveUp} onMoveDown={onMoveDown}
+        dragHandle={<button {...attributes} {...listeners}
+          className="cursor-grab active:cursor-grabbing touch-none text-gray-400 hover:text-gray-600 dark:text-white/30 dark:hover:text-white/50"
+          title="Drag to reorder">
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 6h2v2H8V6zm6 0h2v2h-2V6zM8 11h2v2H8v-2zm6 0h2v2h-2v-2zm-6 5h2v2H8v-2zm6 0h2v2h-2v-2z"/></svg>
+        </button>} />
+    </div>
+  )
+}
+
+function ProjectCardBase({
+  project, showOrder, showMoveButtons, index, total,
+  onTogglePublish, onToggleFeatured, onEdit, onDelete, onMoveUp, onMoveDown,
+}: {
+  project: ProjectItem; showOrder: boolean; showMoveButtons: boolean; index?: number; total?: number
+  onTogglePublish: (p: ProjectItem) => void; onToggleFeatured: (p: ProjectItem) => void
+  onEdit: (id: string) => void; onDelete: (id: string) => void
+  onMoveUp?: (i: number) => void; onMoveDown?: (i: number) => void
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl p-4 transition-all hover:scale-[1.002] admin-glass">
+      <ProjectCardContent project={project} showOrder={showOrder} showMoveButtons={showMoveButtons}
+        index={index} total={total}
+        onTogglePublish={onTogglePublish} onToggleFeatured={onToggleFeatured}
+        onEdit={onEdit} onDelete={onDelete}
+        onMoveUp={onMoveUp} onMoveDown={onMoveDown} />
+    </div>
+  )
+}
+
+function ProjectCardContent({
+  project, showOrder, showMoveButtons, index, total, dragHandle,
+  onTogglePublish, onToggleFeatured, onEdit, onDelete, onMoveUp, onMoveDown,
+}: {
+  project: ProjectItem; showOrder: boolean; showMoveButtons: boolean; index?: number; total?: number; dragHandle?: React.ReactNode
+  onTogglePublish: (p: ProjectItem) => void; onToggleFeatured: (p: ProjectItem) => void
+  onEdit: (id: string) => void; onDelete: (id: string) => void
+  onMoveUp?: (i: number) => void; onMoveDown?: (i: number) => void
+}) {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex items-center gap-4 min-w-0 flex-1">
+        {dragHandle}
+        {showOrder && (
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#7700ff]/10 text-xs font-medium text-[#7700ff] dark:text-[#ad66ff]">
+            {project.display_order}
+          </span>
+        )}
+        {project.cover_image ? (
+          <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl">
+            <img src={project.cover_image} alt="" className="h-full w-full object-cover" />
+          </div>
+        ) : (
+          <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-[#7700ff]/10 text-lg text-[#7700ff] dark:text-[#ad66ff]">◇</div>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-medium text-gray-900 dark:text-white/90">{project.title}</span>
+            {project.featured && <span className="shrink-0 text-xs text-amber-500">★</span>}
+          </div>
+          <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-white/40">
+            {project.category && <span className="truncate">{project.category.replace(/-/g, ' ')}</span>}
+            <span>·</span>
+            <span className={cn('shrink-0', (project.published || project.status === 'published') ? 'text-emerald-500' : 'text-amber-500')}>
+              {project.published || project.status === 'published' ? 'Published' : 'Draft'}
+            </span>
+            <span>·</span>
+            <span className="shrink-0">{formatDate(project.created_at)}</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1 pl-0 sm:pl-0">
+        {showMoveButtons && typeof index === 'number' && typeof total === 'number' && (
+          <>
+            <button onClick={() => onMoveUp?.(index)} disabled={index === 0}
+              className="rounded-lg px-2 py-1.5 text-xs text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/80 disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Move Up">↑</button>
+            <button onClick={() => onMoveDown?.(index)} disabled={index === total - 1}
+              className="rounded-lg px-2 py-1.5 text-xs text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/80 disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Move Down">↓</button>
+          </>
+        )}
+        <button onClick={() => onTogglePublish(project)}
+          className="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/80"
+          title={project.published || project.status === 'published' ? 'Unpublish' : 'Publish'}>
+          {(project.published || project.status === 'published') ? '✓' : '○'}
+        </button>
+        <button onClick={() => onToggleFeatured(project)}
+          className={cn('rounded-lg px-2.5 py-1.5 text-xs transition-colors', project.featured ? 'text-amber-500' : 'text-gray-500 hover:text-amber-500 dark:text-white/50')}
+          title={project.featured ? 'Unfeature' : 'Feature'}>★</button>
+        <button onClick={() => onEdit(project.id)}
+          className="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/80">Edit</button>
+        <button onClick={() => onDelete(project.id)}
+          className="rounded-lg px-2.5 py-1.5 text-xs text-red-500 transition-colors hover:bg-red-500/10">Delete</button>
+      </div>
+    </div>
+  )
+}
+function ProjectEditor({ projectId, onClose, onSaved, nextDisplayOrder }: { projectId: string | null; onClose: () => void; onSaved: () => void; nextDisplayOrder: number }) {
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
   const [description, setDescription] = useState('')
@@ -241,11 +520,14 @@ function ProjectEditor({ projectId, onClose, onSaved }: { projectId: string | nu
     setSaving(true)
     const techArray = technologies.split(',').map(t => t.trim()).filter(Boolean)
     const firstCategory = selectedCategories[0] || ''
-    const payload = {
+    const payload: Record<string, unknown> = {
       title: title.trim(), slug: slug.trim(), description: description.trim(), category: firstCategory,
       cover_image: coverImage, thumbnail: coverImage, gallery, technologies: techArray, tools: techArray,
       client: client.trim(), project_url: projectUrl.trim(), github_url: githubUrl.trim(),
       featured, published, status: published ? 'published' : 'draft', updated_at: new Date().toISOString(),
+    }
+    if (!projectId) {
+      payload.display_order = nextDisplayOrder
     }
     async function saveProjectCategories(projectId: string, slugs: string[]) {
       if (slugs.length === 0) return

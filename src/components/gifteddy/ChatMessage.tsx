@@ -1,5 +1,17 @@
+import { useState, useEffect } from 'react'
 import { renderMarkdown } from '@/lib/markdown'
 import type { Message } from '@/store/gifteddy'
+
+const loadingMessages = [
+  'Thinking',
+  'Looking into that',
+  'One moment',
+  'Finding the answer',
+  'Exploring',
+  'Working on it',
+  'Processing',
+  'Searching the portfolio',
+]
 
 interface ChatMessageProps {
   message: Message
@@ -9,6 +21,15 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, isStreaming, isDark }: ChatMessageProps) {
   const isUser = message.role === 'user'
+  const [loadingIndex, setLoadingIndex] = useState(0)
+
+  useEffect(() => {
+    if (message.content || !isStreaming) return
+    const interval = setInterval(() => {
+      setLoadingIndex(i => Math.min(i + 1, loadingMessages.length - 1))
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [message.content, isStreaming])
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-4`}>
@@ -26,10 +47,13 @@ export function ChatMessage({ message, isStreaming, isDark }: ChatMessageProps) 
             {renderMarkdown(message.content)}
           </div>
         ) : isStreaming ? (
-          <span className="inline-flex gap-1">
-            <span className="h-2 w-2 animate-bounce rounded-full bg-current opacity-60" style={{ animationDelay: '0ms' }} />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-current opacity-60" style={{ animationDelay: '150ms' }} />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-current opacity-60" style={{ animationDelay: '300ms' }} />
+          <span className="inline-flex items-center gap-2">
+            <span className="text-xs opacity-60">{loadingMessages[loadingIndex]}</span>
+            <span className="inline-flex gap-0.5">
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current opacity-60" style={{ animationDelay: '0ms' }} />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current opacity-60" style={{ animationDelay: '150ms' }} />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current opacity-60" style={{ animationDelay: '300ms' }} />
+            </span>
           </span>
         ) : null}
       </div>

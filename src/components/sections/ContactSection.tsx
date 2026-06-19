@@ -104,14 +104,14 @@ export function ContactSection() {
               >
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <input type="text" name="name" placeholder="Your Name" required
+                    <input type="text" name="name" placeholder="Your Name" autoComplete="name" required
                       className="w-full rounded-xl border border-border-light bg-surface-secondary-light px-4 py-3 text-sm text-text-light placeholder:text-text-muted-light/60 focus:border-brand-500/50 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-text-dark dark:placeholder:text-text-muted-dark/50" />
-                    <input type="email" name="email" placeholder="Your Email" required
+                    <input type="email" name="email" placeholder="Your Email" autoComplete="email" required
                       className="w-full rounded-xl border border-border-light bg-surface-secondary-light px-4 py-3 text-sm text-text-light placeholder:text-text-muted-light/60 focus:border-brand-500/50 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-text-dark dark:placeholder:text-text-muted-dark/50" />
                   </div>
-                  <input type="text" name="subject" placeholder="Subject" required
+                  <input type="text" name="subject" placeholder="Subject" autoComplete="off" required
                     className="w-full rounded-xl border border-border-light bg-surface-secondary-light px-4 py-3 text-sm text-text-light placeholder:text-text-muted-light/60 focus:border-brand-500/50 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-text-dark dark:placeholder:text-text-muted-dark/50" />
-                  <textarea name="message" placeholder="Your Message" rows={4} required
+                  <textarea name="message" placeholder="Your Message" rows={4} autoComplete="off" required
                     className="w-full resize-none rounded-xl border border-border-light bg-surface-secondary-light px-4 py-3 text-sm text-text-light placeholder:text-text-muted-light/60 focus:border-brand-500/50 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-text-dark dark:placeholder:text-text-muted-dark/50" />
                   {error && <p className="text-sm text-red-500">{error}</p>}
                   <Button type="submit" className="w-full" disabled={loading}>

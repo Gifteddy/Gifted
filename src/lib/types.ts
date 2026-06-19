@@ -29,6 +29,7 @@ export interface Project {
   published?: boolean
   project_url?: string
   github_url?: string
+  display_order: number
   created_at: string
   updated_at: string
 }

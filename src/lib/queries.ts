@@ -6,7 +6,7 @@ export async function getProjects() {
     .from('projects')
     .select('*, categories:project_categories(category:categories(*))')
     .eq('status', 'published')
-    .order('created_at', { ascending: false })
+    .order('display_order', { ascending: true })
   if (error) throw error
   return data as unknown as Project[]
 }
@@ -17,8 +17,8 @@ export async function getFeaturedProjects() {
     .select('*, categories:project_categories(category:categories(*))')
     .eq('status', 'published')
     .eq('featured', true)
-    .order('created_at', { ascending: false })
-    .limit(3)
+    .order('display_order', { ascending: true })
+    .limit(6)
   if (error) throw error
   return data as unknown as Project[]
 }

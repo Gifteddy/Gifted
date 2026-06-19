@@ -7,6 +7,7 @@ import { useGifteddyStore, nextId } from '@/store/gifteddy'
 import { useTheme } from '@/store/theme'
 import { streamChat } from './openrouter'
 import { getSystemPrompt } from './systemPrompt'
+import { fetchChatContext, needsContext } from './context'
 import type { ChatMessage as ChatMessageType } from './openrouter'
 
 export function ChatWindow() {
@@ -59,8 +60,14 @@ export function ChatWindow() {
 
     abortRef.current = new AbortController()
 
+    const systemPrompt = getSystemPrompt()
+    const liveContext = needsContext(content) ? await fetchChatContext() : ''
+    const enhancedPrompt = liveContext
+      ? { ...systemPrompt, content: `${systemPrompt.content}\n\nCURRENT DATA FROM PORTFOLIO DATABASE:\n${liveContext}` }
+      : systemPrompt
+
     const allMessages: ChatMessageType[] = [
-      getSystemPrompt(),
+      enhancedPrompt,
       ...useGifteddyStore.getState().messages
         .filter(m => m.content)
         .map(m => ({ role: m.role === 'user' ? 'user' as const : 'assistant' as const, content: m.content })),
@@ -76,7 +83,7 @@ export function ChatWindow() {
       onError: (err) => {
         setStreaming(false)
         console.error('Chat error:', err)
-        setError("I'm having trouble connecting right now. Please check that your API key is set and try again.")
+        setError("I'm having trouble connecting right now. Please check your API key and try again in a moment.")
       },
     }, abortRef.current.signal)
   }, [isStreaming, addMessage, updateLastMessage, setStreaming, setError])
@@ -92,8 +99,8 @@ export function ChatWindow() {
 
   const glassStyle: React.CSSProperties = {
     background: isDark ? 'rgba(18,18,24,0.88)' : 'rgba(255,255,255,0.75)',
-    backdropFilter: 'blur(28px) saturate(150%)',
     WebkitBackdropFilter: 'blur(28px) saturate(150%)',
+    backdropFilter: 'blur(28px) saturate(150%)',
     border: `1px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)'}`,
     boxShadow: isDark
       ? '0 25px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)'
@@ -117,14 +124,8 @@ export function ChatWindow() {
     >
       <div className="flex h-full flex-col overflow-hidden" style={{ borderRadius: '32px' }}>
         <div className={`flex items-center gap-3 px-5 py-4 ${isDark ? 'border-b border-white/8' : 'border-b border-black/5'}`}>
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-full"
-            style={{
-              background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            <GifteddyMark className={`h-6 w-6 ${isDark ? 'text-[#ad66ff]' : 'text-[#7700ff]'}`} />
+          <div className="h-10 w-10 overflow-hidden rounded-full">
+            <GifteddyMark className="h-full w-full object-cover" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -209,6 +210,7 @@ export function ChatWindow() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me about Gifted..."
               disabled={isStreaming}
+              autoComplete="off"
               className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
               style={{
                 background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',

@@ -27,11 +27,11 @@ export function FeaturedProjects() {
             <span className="mb-4 block text-xs font-semibold tracking-widest uppercase text-brand-500 dark:text-brand-400">Portfolio</span>
             <h2 className="font-display text-3xl font-bold sm:text-4xl lg:text-5xl">Featured <span className="text-gradient">Work</span></h2>
           </div>
-          <Button href="/projects" variant="ghost" className="hidden sm:flex">View All Projects</Button>
+          <Button href="/projects" variant="ghost" className="shrink-0">View All Projects</Button>
         </motion.div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {loading ? Array.from({ length: 3 }).map((_, i) => (
+          {loading ? Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
               <Skeleton className="aspect-[4/3] w-full" />
               <div className="p-5 space-y-2"><Skeleton className="h-3 w-20" /><Skeleton className="h-5 w-40" /></div>
@@ -59,9 +59,6 @@ export function FeaturedProjects() {
           <p className="text-center text-text-muted-light dark:text-text-muted-dark">No featured projects yet.</p>
         )}
 
-        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="mt-8 text-center sm:hidden">
-          <Button href="/projects" variant="secondary">View All Projects</Button>
-        </motion.div>
       </div>
     </section>
   )

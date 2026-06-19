@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS projects (
   project_url TEXT DEFAULT '',
   github_url TEXT DEFAULT '',
   external_links JSONB DEFAULT '[]'::jsonb,
+  display_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -612,6 +613,28 @@ CREATE POLICY "Admins can delete file shares"
   USING (
     bucket_id = 'file-shares' AND public.is_admin()
   );
+
+-- ===================== SETTINGS =====================
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins can manage settings" ON settings;
+CREATE POLICY "Admins can manage settings"
+  ON settings FOR ALL
+  USING (public.is_admin());
+
+-- ===================== MIGRATION: Set initial display_order =====================
+UPDATE projects SET display_order = sub.row_num
+FROM (
+  SELECT id, ROW_NUMBER() OVER (ORDER BY created_at DESC) as row_num
+  FROM projects
+) sub
+WHERE projects.id = sub.id AND projects.display_order = 0;
 
 -- ===================== HELPER FUNCTION =====================
 CREATE OR REPLACE FUNCTION handle_new_user()

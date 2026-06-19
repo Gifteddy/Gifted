@@ -141,23 +141,25 @@ export function Nav() {
             <img src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto/v1781723693/logo_u7assw.png" alt="Gifted" className="h-12 w-auto" />
           </Link>
 
-          <div className="hidden items-center gap-1 md:flex">
-            <Link to="/"
-              className={`relative rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-                isActive('/') && pathname === '/'
-                  ? 'text-brand-500 dark:text-brand-400'
-                  : 'text-text-muted-light dark:text-text-muted-dark hover:text-text-light dark:hover:text-text-dark'
-              }`}
-            >
-              Home
-              {isActive('/') && pathname === '/' && (
-                <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-brand-500/10 dark:bg-brand-500/15"
-                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                />
-              )}
-            </Link>
+          <ul className="hidden items-center gap-1 md:flex">
+            <li>
+              <Link to="/"
+                className={`relative rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                  isActive('/') && pathname === '/'
+                    ? 'text-brand-500 dark:text-brand-400'
+                    : 'text-text-muted-light dark:text-text-muted-dark hover:text-text-light dark:hover:text-text-dark'
+                }`}
+              >
+                Home
+                {isActive('/') && pathname === '/' && (
+                  <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-brand-500/10 dark:bg-brand-500/15"
+                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                  />
+                )}
+              </Link>
+            </li>
 
-            <li ref={desktopServicesRef} className="relative list-none">
+            <li ref={desktopServicesRef} className="relative">
               <button
                 onClick={() => setDesktopServicesOpen(!desktopServicesOpen)}
                 className={`relative flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
@@ -222,7 +224,7 @@ export function Nav() {
                 )}
               </Link>
             ))}
-          </div>
+          </ul>
 
           <div className="flex items-center gap-2">
             <ThemeToggle />

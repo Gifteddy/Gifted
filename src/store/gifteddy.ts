@@ -39,11 +39,12 @@ export const useGifteddyStore = create<GifteddyState>((set) => ({
   addMessage: (message) => set(s => ({ messages: [...s.messages, message], error: null })),
 
   updateLastMessage: (content) => set(s => {
-    const msgs = [...s.messages]
-    if (msgs.length > 0) {
-      msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: msgs[msgs.length - 1].content + content }
-    }
-    return { messages: msgs }
+    if (!content || s.messages.length === 0) return {}
+    const msgs = s.messages
+    const i = msgs.length - 1
+    const copy = msgs.slice()
+    copy[i] = { ...copy[i], content: copy[i].content + content }
+    return { messages: copy }
   }),
 
   setStreaming: (streaming) => set({ isStreaming: streaming }),
