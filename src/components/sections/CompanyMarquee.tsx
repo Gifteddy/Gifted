@@ -59,7 +59,7 @@ export function CompanyMarquee() {
               {[...logos, ...logos].map((logo, i) => (
                 <div
                   key={`${logo.id}-${i}`}
-                  className="flex h-12 w-36 shrink-0 items-center justify-center px-4"
+                  className="flex h-16 w-44 shrink-0 items-center justify-center px-4"
                   title={logo.name}
                 >
                   <img
