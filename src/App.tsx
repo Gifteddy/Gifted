@@ -34,6 +34,7 @@ const AdminSettings = lazy(() => import('@/pages/admin/AdminSettings'))
 const AdminTestimonials = lazy(() => import('@/pages/admin/AdminTestimonials'))
 const AdminFileUploads = lazy(() => import('@/pages/admin/AdminFileUploads'))
 const AdminFileShares = lazy(() => import('@/pages/admin/AdminFileShares'))
+const AdminCompanyLogos = lazy(() => import('@/pages/admin/AdminCompanyLogos'))
 
 function PageLoader() {
   return (
@@ -88,6 +89,7 @@ export default function App() {
               <Route path="testimonials" element={<AdminTestimonials />} />
               <Route path="file-uploads" element={<AdminFileUploads />} />
               <Route path="file-shares" element={<AdminFileShares />} />
+              <Route path="company-logos" element={<AdminCompanyLogos />} />
               <Route path="messages" element={<AdminMessages />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />

@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Project, Category, Service, Testimonial, Skill, BlogPost, ContactMessage, FileUploadLink, FileUpload, FileShare, FileShareItem } from './types'
+import type { Project, Category, Service, Testimonial, Skill, BlogPost, ContactMessage, FileUploadLink, FileUpload, FileShare, FileShareItem, CompanyLogo } from './types'
 
 export async function getProjects() {
   const { data, error } = await supabase
@@ -226,6 +226,55 @@ export async function deleteFileShare(id: string) {
     .from('file_shares')
     .delete()
     .eq('id', id)
+  if (error) throw error
+}
+
+export async function getCompanyLogos() {
+  const { data, error } = await supabase
+    .from('company_logos')
+    .select('*')
+    .order('sort_order', { ascending: true })
+  if (error) throw error
+  return data as CompanyLogo[]
+}
+
+export async function createCompanyLogo(logo: { name: string; url: string; sort_order: number }) {
+  const { data, error } = await supabase
+    .from('company_logos')
+    .insert([logo])
+    .select()
+    .single()
+  if (error) throw error
+  return data as CompanyLogo
+}
+
+export async function updateCompanyLogo(id: string, updates: Partial<CompanyLogo>) {
+  const { data, error } = await supabase
+    .from('company_logos')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data as CompanyLogo
+}
+
+export async function deleteCompanyLogo(id: string) {
+  const { error } = await supabase
+    .from('company_logos')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function reorderCompanyLogos(ids: string[]) {
+  const updates = ids.map((id, index) => ({
+    id,
+    sort_order: index,
+  }))
+  const { error } = await supabase
+    .from('company_logos')
+    .upsert(updates)
   if (error) throw error
 }
 

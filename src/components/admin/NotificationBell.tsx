@@ -11,11 +11,20 @@ const TYPE_ICONS: Record<NotificationType, string> = {
   share_viewed: '⊕',
 }
 
+const ORIGINAL_TITLE = document.title
+
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    document.title = unreadCount > 0
+      ? `(${unreadCount > 99 ? '99+' : unreadCount}) ${ORIGINAL_TITLE}`
+      : ORIGINAL_TITLE
+    return () => { document.title = ORIGINAL_TITLE }
+  }, [unreadCount])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {

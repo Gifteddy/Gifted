@@ -23,6 +23,7 @@ export default function AdminFileShares() {
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [editId, setEditId] = useState<string | null>(null)
 
   const loadShares = useCallback(async () => {
     setLoading(true)
@@ -69,7 +70,7 @@ export default function AdminFileShares() {
             const url = `${window.location.origin}/share/${share.token}`
             return (
               <ShareCard key={share.id} share={share} url={url} isExpired={isExpired}
-                onDelete={() => setDeleteId(share.id)} />
+                onDelete={() => setDeleteId(share.id)} onEdit={() => setEditId(share.id)} />
             )
           })}
         </div>
@@ -91,11 +92,15 @@ export default function AdminFileShares() {
           </div>
         </div>
       )}
+
+      {editId && (
+        <EditShareModal shareId={editId} onClose={() => setEditId(null)} onSaved={() => { setEditId(null); loadShares() }} />
+      )}
     </div>
   )
 }
 
-function ShareCard({ share, url, isExpired, onDelete }: { share: FileShare; url: string; isExpired: boolean; onDelete: () => void }) {
+function ShareCard({ share, url, isExpired, onDelete, onEdit }: { share: FileShare; url: string; isExpired: boolean; onDelete: () => void; onEdit: () => void }) {
   const [items, setItems] = useState<FileShareItem[] | null>(null)
   const [comments, setComments] = useState<FileShareComment[]>([])
   const [expanded, setExpanded] = useState(false)
@@ -145,6 +150,8 @@ function ShareCard({ share, url, isExpired, onDelete }: { share: FileShare; url:
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <button onClick={onEdit}
+              className="rounded-lg px-2.5 py-1.5 text-xs text-blue-500 transition-colors hover:bg-blue-500/10">Edit</button>
             <button onClick={toggleExpand}
               className="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/80">
               {expanded ? 'Hide' : items ? `View (${items.length})` : 'View'}
@@ -395,6 +402,304 @@ function CreateShareModal({ onClose, onCreated }: { onClose: () => void; onCreat
             <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-black/5 dark:text-white/50 dark:hover:bg-white/5">Cancel</button>
             <button type="submit" disabled={saving || files.length === 0} className="admin-btn-primary">
               {saving ? 'Creating...' : `Create Share (${files.length} file${files.length !== 1 ? 's' : ''})`}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function EditShareModal({ shareId, onClose, onSaved }: { shareId: string; onClose: () => void; onSaved: () => void }) {
+  const [loading, setLoading] = useState(true)
+  const [label, setLabel] = useState('')
+  const [description, setDescription] = useState('')
+  const [duration, setDuration] = useState(1440)
+  const [customDate, setCustomDate] = useState('')
+  const [password, setPassword] = useState('')
+  const [isActive, setIsActive] = useState(true)
+  const [existingItems, setExistingItems] = useState<(FileShareItem & { _deleted?: boolean })[]>([])
+  const [newFiles, setNewFiles] = useState<{ file: File; id: string; preview?: string }[]>([])
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const urlInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    ;(async () => {
+      const [shareRes, itemsRes] = await Promise.all([
+        supabase.from('file_shares').select('*').eq('id', shareId).single(),
+        supabase.from('file_share_items').select('*').eq('share_id', shareId).order('sort_order', { ascending: true }),
+      ])
+      const share = shareRes.data as FileShare | null
+      if (!share) { setError('Share not found'); setLoading(false); return }
+
+      setLabel(share.label)
+      setDescription(share.description)
+      setIsActive(share.is_active)
+      const msLeft = new Date(share.expires_at).getTime() - Date.now()
+      const minutesLeft = Math.round(msLeft / 60000)
+      if (minutesLeft > 0) {
+        const match = DURATION_PRESETS.find(p => p.minutes === minutesLeft)
+        if (match) setDuration(match.minutes)
+        else { setDuration(minutesLeft); setCustomDate(share.expires_at) }
+      } else {
+        setCustomDate(share.expires_at)
+      }
+      setExistingItems((itemsRes.data || []) as FileShareItem[])
+      setLoading(false)
+    })()
+  }, [shareId])
+
+  const addFiles = (newFilesList: FileList | File[]) => {
+    const list = Array.from(newFilesList)
+    setNewFiles(prev => [...prev, ...list.map(f => ({
+      file: f, id: crypto.randomUUID(),
+      preview: f.type.startsWith('image/') ? URL.createObjectURL(f) : undefined,
+    }))])
+  }
+
+  const removeNewFile = (id: string) => {
+    setNewFiles(prev => prev.filter(f => f.id !== id))
+  }
+
+  const removeExistingItem = (id: string) => {
+    setExistingItems(prev => prev.map(item => item.id === id ? { ...item, _deleted: true } : item))
+  }
+
+  const restoreExistingItem = (id: string) => {
+    setExistingItems(prev => prev.map(item => item.id === id ? { ...item, _deleted: false } : item))
+  }
+
+  const addUrl = () => {
+    const url = urlInputRef.current?.value.trim()
+    if (!url) return
+    const name = url.split('/').pop() || url
+    setNewFiles(prev => [...prev, {
+      file: new File([], name),
+      id: crypto.randomUUID(),
+      preview: url,
+    }])
+    if (urlInputRef.current) urlInputRef.current.value = ''
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true); setError('')
+
+    const keptItems = existingItems.filter(i => !i._deleted)
+    if (keptItems.length === 0 && newFiles.length === 0) {
+      setError('Share must have at least one file.')
+      setSaving(false); return
+    }
+
+    let passwordHash: string | null = null
+    if (password) {
+      const data = new TextEncoder().encode(password)
+      const hash = await crypto.subtle.digest('SHA-256', data)
+      passwordHash = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('')
+    }
+
+    try {
+      const expiresAt = customDate || new Date(Date.now() + duration * 60000).toISOString()
+
+      const { error: shareErr } = await supabase.from('file_shares').update({
+        label: label.trim() || 'Untitled Share',
+        description: description.trim(),
+        expires_at: expiresAt,
+        password_hash: passwordHash,
+        is_active: isActive,
+      }).eq('id', shareId)
+      if (shareErr) throw new Error(shareErr.message)
+
+      const deletedIds = existingItems.filter(i => i._deleted).map(i => i.id)
+      if (deletedIds.length > 0) {
+        const { error: delErr } = await supabase.from('file_share_items').delete().in('id', deletedIds)
+        if (delErr) throw new Error(delErr.message)
+      }
+
+      const itemsToInsert: { name: string; url: string; type: string; size: number; sort_order: number }[] = []
+      for (let i = 0; i < newFiles.length; i++) {
+        const { file, preview } = newFiles[i]
+        if (preview && file.size === 0) {
+          itemsToInsert.push({ name: file.name, url: preview, type: '', size: 0, sort_order: keptItems.length + i })
+          continue
+        }
+        const url = await uploadFileToCloudinary(file, `file-shares/${shareId}`)
+        itemsToInsert.push({ name: file.name, url, type: file.type, size: file.size, sort_order: keptItems.length + i })
+      }
+
+      if (itemsToInsert.length > 0) {
+        const { error: insErr } = await supabase.from('file_share_items').insert(
+          itemsToInsert.map(item => ({ ...item, share_id: shareId }))
+        )
+        if (insErr) throw new Error(insErr.message)
+      }
+
+      const totalCount = keptItems.length + itemsToInsert.length
+      const { error: countErr } = await supabase.from('file_shares').update({ file_count: totalCount }).eq('id', shareId)
+      if (countErr) throw new Error(countErr.message)
+
+      onSaved()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="flex items-center justify-center rounded-2xl p-12 admin-glass-strong">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#7700ff] border-t-transparent" />
+        </div>
+      </div>
+    )
+  }
+
+  const activeItems = existingItems.filter(i => !i._deleted)
+  const totalCount = activeItems.length + newFiles.length
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-8">
+      <div className="relative w-full max-w-2xl rounded-2xl p-6 admin-glass-strong">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white/90">Edit Share</h2>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-xl text-gray-500 hover:bg-black/5 dark:text-white/50 dark:hover:bg-white/5">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Label</label>
+            <input type="text" value={label} onChange={e => setLabel(e.target.value)}
+              className="w-full admin-input" placeholder="e.g. Wedding Photos - John & Sarah" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Description (optional)</label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)}
+              className="w-full admin-input min-h-[60px] resize-none" placeholder="A short message to accompany these files..." rows={2} />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Expires After</label>
+            <div className="flex flex-wrap gap-1.5">
+              {DURATION_PRESETS.map(p => (
+                <button key={p.minutes} type="button" onClick={() => { setDuration(p.minutes); setCustomDate('') }}
+                  className={cn('rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                    !customDate && duration === p.minutes
+                      ? 'bg-[#7700ff] text-white'
+                      : 'bg-black/[0.04] text-gray-600 hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-white/60 dark:hover:bg-white/[0.1]'
+                  )}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <input type="datetime-local" value={customDate ? new Date(customDate).toISOString().slice(0, 16) : ''}
+              onChange={e => { setCustomDate(e.target.value ? new Date(e.target.value).toISOString() : ''); setDuration(1440) }}
+              className="mt-2 w-full admin-input" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">
+              Password {existingItems[0]?.share_id && !password ? '(leave blank to keep current)' : ''}
+            </label>
+            <input type="text" value={password} onChange={e => setPassword(e.target.value)}
+              className="w-full admin-input" placeholder="Leave blank to keep current password" />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-medium text-gray-700 dark:text-white/70">Active</label>
+            <button type="button" onClick={() => setIsActive(!isActive)}
+              className={cn('relative h-5 w-9 rounded-full transition-colors',
+                isActive ? 'bg-[#7700ff]' : 'bg-black/[0.15] dark:bg-white/[0.15]'
+              )}>
+              <span className={cn('absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform',
+                isActive && 'translate-x-4'
+              )} />
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Files</label>
+
+            {existingItems.length > 0 && (
+              <div className="mb-2 space-y-1.5">
+                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Existing Files</p>
+                {existingItems.map(item => (
+                  <div key={item.id} className={cn('flex items-center gap-3 rounded-lg border px-3 py-2',
+                    item._deleted
+                      ? 'border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10'
+                      : 'border-black/[0.04] bg-black/[0.02] dark:border-white/[0.04] dark:bg-white/[0.02]'
+                  )}>
+                    {item.type.startsWith('image/') ? (
+                      <img src={item.url} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
+                    ) : (
+                      <span className="text-base leading-none shrink-0">
+                        {item.type.startsWith('video/') ? '🎬' : '📄'}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1 truncate text-xs text-gray-700 dark:text-white/70">{item.name}</span>
+                    <span className="shrink-0 text-xs text-gray-400">{formatSize(item.size)}</span>
+                    {item._deleted ? (
+                      <button type="button" onClick={() => restoreExistingItem(item.id)}
+                        className="text-xs font-medium text-green-600 hover:text-green-700">Undo</button>
+                    ) : (
+                      <button type="button" onClick={() => removeExistingItem(item.id)}
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-400 hover:bg-black/5 hover:text-red-500 dark:hover:bg-white/10">✕</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2 mb-2">
+              <input ref={urlInputRef} type="text" className="flex-1 admin-input" placeholder="Or paste a file URL..." />
+              <button type="button" onClick={addUrl} className="shrink-0 rounded-xl bg-black/[0.04] px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-white/60 dark:hover:bg-white/[0.1]">Add URL</button>
+            </div>
+
+            <div onClick={() => inputRef.current?.click()}
+              className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-black/[0.08] p-6 transition-colors hover:border-[#7700ff]/50 dark:border-white/[0.08] dark:hover:border-[#7700ff]/50">
+              <span className="text-2xl">📁</span>
+              <p className="text-sm text-gray-500 dark:text-white/60">Click to add more files</p>
+              <p className="text-xs text-gray-400 dark:text-white/30">Images, videos, documents — any file type</p>
+            </div>
+
+            <input ref={inputRef} type="file" multiple
+              onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = '' }}
+              className="hidden" />
+
+            {newFiles.length > 0 && (
+              <div className="mt-2 space-y-1.5">
+                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">New Files</p>
+                {newFiles.map(f => (
+                  <div key={f.id} className="flex items-center gap-3 rounded-lg border border-black/[0.04] bg-black/[0.02] px-3 py-2 dark:border-white/[0.04] dark:bg-white/[0.02]">
+                    {f.preview && f.file.type.startsWith('image/') ? (
+                      <img src={f.preview} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
+                    ) : (
+                      <span className="text-base leading-none shrink-0">
+                        {f.file.type.startsWith('video/') ? '🎬' : f.file.type.startsWith('image/') ? '🖼️' : '📄'}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1 truncate text-xs text-gray-700 dark:text-white/70">{f.file.name}</span>
+                    <span className="shrink-0 text-xs text-gray-400">{f.file.size > 0 ? formatSize(f.file.size) : 'URL'}</span>
+                    <button type="button" onClick={() => removeNewFile(f.id)}
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-400 hover:bg-black/5 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white/70">✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-black/5 dark:text-white/50 dark:hover:bg-white/5">Cancel</button>
+            <button type="submit" disabled={saving || totalCount === 0} className="admin-btn-primary">
+              {saving ? 'Saving...' : `Save Changes (${totalCount} file${totalCount !== 1 ? 's' : ''})`}
             </button>
           </div>
         </form>

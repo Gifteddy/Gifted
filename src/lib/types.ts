@@ -159,6 +159,14 @@ export interface FileShareItem {
   created_at: string
 }
 
+export interface CompanyLogo {
+  id: string
+  name: string
+  url: string
+  sort_order: number
+  created_at: string
+}
+
 export type NotificationType = 'message' | 'testimonial' | 'file_upload' | 'share_viewed'
 
 export interface AppNotification {

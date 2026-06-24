@@ -523,6 +523,8 @@ CREATE TABLE IF NOT EXISTS file_shares (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE file_shares ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
+
 ALTER TABLE file_shares ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Anyone can read file shares" ON file_shares;
@@ -613,6 +615,27 @@ CREATE POLICY "Admins can delete file shares"
   USING (
     bucket_id = 'file-shares' AND public.is_admin()
   );
+
+-- ===================== COMPANY LOGOS =====================
+CREATE TABLE IF NOT EXISTS company_logos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE company_logos ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read company logos" ON company_logos;
+CREATE POLICY "Anyone can read company logos"
+  ON company_logos FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Admins can manage company logos" ON company_logos;
+CREATE POLICY "Admins can manage company logos"
+  ON company_logos FOR ALL
+  USING (public.is_admin());
 
 -- ===================== SETTINGS =====================
 CREATE TABLE IF NOT EXISTS settings (

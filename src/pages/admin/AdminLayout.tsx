@@ -14,6 +14,7 @@ const adminLinks = [
   { to: '/admin/testimonials', label: 'Testimonials', icon: '★' },
   { to: '/admin/file-uploads', label: 'File Uploads', icon: '↗' },
   { to: '/admin/file-shares', label: 'Client Shares', icon: '⊕' },
+  { to: '/admin/company-logos', label: 'Company Logos', icon: '⊡' },
   { to: '/admin/messages', label: 'Messages', icon: '□' },
   { to: '/admin/settings', label: 'Settings', icon: '△' },
 ]
