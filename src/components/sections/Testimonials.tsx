@@ -49,7 +49,7 @@ export function Testimonials() {
               ref={trackRef}
               className="flex gap-6 w-max"
               style={{
-                animation: `marquee 40s linear infinite`,
+                animation: `marquee-reverse 40s linear infinite`,
                 animationPlayState: isPaused ? 'paused' : 'running',
               }}
             >

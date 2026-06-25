@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils'
 import { useAdminStore } from '@/store/admin'
 import { useTheme } from '@/store/theme'
 import NotificationBell from '@/components/admin/NotificationBell'
-import useRealtimeNotifications from '@/hooks/useRealtimeNotifications'
 import { useState, useEffect, useRef } from 'react'
 
 const adminLinks = [
@@ -24,7 +23,6 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const { user, signOut } = useAdminStore()
   const { theme, setTheme } = useTheme()
-  useRealtimeNotifications()
   const [showMenu, setShowMenu] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)

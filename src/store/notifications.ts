@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { AppNotification } from '@/lib/types'
 
 const MAX_NOTIFICATIONS = 100
+const STORAGE_KEY = 'gifted-notifications'
 
 interface NotificationsState {
   notifications: AppNotification[]
@@ -12,16 +13,34 @@ interface NotificationsState {
   clearAll: () => void
 }
 
-const saved = (() => {
+function loadPersisted() {
   try {
-    const v = localStorage.getItem('gifted-notification-count')
-    return v ? Number(v) : 0
-  } catch { return 0 }
-})()
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return { notifications: [], unreadCount: 0 }
+    const parsed = JSON.parse(raw)
+    return {
+      notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
+      unreadCount: typeof parsed.unreadCount === 'number' ? parsed.unreadCount : 0,
+    }
+  } catch {
+    return { notifications: [], unreadCount: 0 }
+  }
+}
+
+function persist(state: { notifications: AppNotification[]; unreadCount: number }) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      notifications: state.notifications,
+      unreadCount: state.unreadCount,
+    }))
+  } catch { /* quota exceeded or unavailable */ }
+}
+
+const initial = loadPersisted()
 
 export const useNotifications = create<NotificationsState>((set) => ({
-  notifications: [],
-  unreadCount: saved,
+  notifications: initial.notifications,
+  unreadCount: initial.unreadCount,
 
   addNotification: (n) => set((state) => {
     const notification: AppNotification = {
@@ -31,9 +50,10 @@ export const useNotifications = create<NotificationsState>((set) => ({
       created_at: new Date().toISOString(),
     }
     const notifications = [notification, ...state.notifications].slice(0, MAX_NOTIFICATIONS)
-    const count = state.unreadCount + 1
-    localStorage.setItem('gifted-notification-count', String(count))
-    return { notifications, unreadCount: count }
+    const unreadCount = state.unreadCount + 1
+    const next = { notifications, unreadCount }
+    persist(next)
+    return next
   }),
 
   markAsRead: (id) => set((state) => {
@@ -41,18 +61,20 @@ export const useNotifications = create<NotificationsState>((set) => ({
       n.id === id ? { ...n, read: true } : n
     )
     const unreadCount = notifications.filter(n => !n.read).length
-    localStorage.setItem('gifted-notification-count', String(unreadCount))
-    return { notifications, unreadCount }
+    const next = { notifications, unreadCount }
+    persist(next)
+    return next
   }),
 
   markAllAsRead: () => set((state) => {
     const notifications = state.notifications.map(n => ({ ...n, read: true }))
-    localStorage.setItem('gifted-notification-count', '0')
-    return { notifications, unreadCount: 0 }
+    const next = { notifications, unreadCount: 0 }
+    persist(next)
+    return next
   }),
 
   clearAll: () => {
-    localStorage.removeItem('gifted-notification-count')
+    try { localStorage.removeItem(STORAGE_KEY) } catch { /* noop */ }
     return set({ notifications: [], unreadCount: 0 })
   },
 }))

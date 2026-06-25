@@ -5,6 +5,7 @@ import { AnimatedLayout } from '@/components/layout/AnimatedLayout'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Gifteddy } from '@/components/gifteddy/Gifteddy'
 import { ProtectedRoute } from '@/components/admin/ProtectedRoute'
+import { AdminOverlay } from '@/components/admin/AdminOverlay'
 
 const Home = lazy(() => import('@/pages/Home'))
 const Projects = lazy(() => import('@/pages/Projects'))
@@ -53,6 +54,7 @@ export default function App() {
     <>
       <AmbientGlow />
       <Gifteddy />
+      <AdminOverlay />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route element={<AnimatedLayout />}>

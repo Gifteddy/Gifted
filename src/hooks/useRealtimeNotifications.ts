@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useNotifications } from '@/store/notifications'
+import { useAdminStore } from '@/store/admin'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 type Row = Record<string, unknown>
@@ -50,9 +51,11 @@ function subscribe(channelName: string, table: string, handler: (payload: Realti
 
 export default function useRealtimeNotifications() {
   const addNotification = useNotifications(s => s.addNotification)
+  const user = useAdminStore(s => s.user)
   const channelsRef = useRef<ReturnType<typeof supabase.channel>[]>([])
 
   useEffect(() => {
+    if (!user) return
     if (!('channel' in supabase)) {
       console.warn('[Realtime] Supabase channel() not available (noop client)')
       return
@@ -119,5 +122,5 @@ export default function useRealtimeNotifications() {
       }
       channelsRef.current = []
     }
-  }, [addNotification])
+  }, [addNotification, user])
 }

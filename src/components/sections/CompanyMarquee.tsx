@@ -57,18 +57,18 @@ export function CompanyMarquee() {
               }}
             >
               {[...logos, ...logos].map((logo, i) => (
-                <div
-                  key={`${logo.id}-${i}`}
-                  className="flex h-16 w-44 shrink-0 items-center justify-center px-4"
-                  title={logo.name}
-                >
-                  <img
-                    src={logo.url}
-                    alt={logo.name}
-                    className="max-h-full max-w-full object-contain opacity-50 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0"
-                    loading="lazy"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                  />
+                  <div
+                    key={`${logo.id}-${i}`}
+                    className="flex h-32 w-72 shrink-0 items-center justify-center px-4"
+                    title={logo.name}
+                  >
+                    <img
+                      src={logo.url}
+                      alt={logo.name}
+                      className="max-h-full max-w-full object-contain transition-all duration-300"
+                      loading="lazy"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
                 </div>
               ))}
             </div>
