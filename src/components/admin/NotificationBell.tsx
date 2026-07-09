@@ -9,6 +9,10 @@ const TYPE_ICONS: Record<NotificationType, string> = {
   testimonial: '★',
   file_upload: '↗',
   share_viewed: '⊕',
+  order: '⊞',
+  affiliate: '⊡',
+  inventory: '⊟',
+  customer: '◉',
 }
 
 const ORIGINAL_TITLE = document.title

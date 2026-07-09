@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion'
+import { CountUp } from '@/components/ui/CountUp'
 
 const bio = 'I bridge the gap between design and engineering, creating digital experiences that are as functional as they are beautiful.'
 
 const stats = [
-  { value: '5+', label: 'Years Experience' },
-  { value: '50+', label: 'Projects Delivered' },
-  { value: '30+', label: 'Happy Clients' },
-  { value: '10+', label: 'Industries Served' },
+  { value: 5, suffix: '+', label: 'Years Experience' },
+  { value: 50, suffix: '+', label: 'Projects Delivered' },
+  { value: 30, suffix: '+', label: 'Happy Clients' },
+  { value: 10, suffix: '+', label: 'Industries Served' },
 ]
 
 export function About() {
@@ -24,7 +25,9 @@ export function About() {
             transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }} className="grid grid-cols-2 gap-4">
             {stats.map(stat => (
               <div key={stat.label} className="rounded-2xl border border-border-light dark:border-border-dark bg-surface-secondary-light dark:bg-surface-secondary-dark p-6 text-center">
-                <div className="font-display text-3xl font-bold text-gradient sm:text-4xl">{stat.value}</div>
+                <div className="font-display text-3xl font-bold text-gradient sm:text-4xl">
+                  <CountUp end={stat.value} suffix={stat.suffix} />
+                </div>
                 <div className="mt-1 text-xs text-text-muted-light dark:text-text-muted-dark">{stat.label}</div>
               </div>
             ))}

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ThemeToggle } from './ThemeToggle'
 import { useTheme } from '@/store/theme'
+import { useCart } from '@/store/cart'
 
 interface ServiceItem {
   title: string
@@ -40,6 +41,7 @@ const serviceItems: ServiceItem[] = [
 
 const navLinks = [
   { to: '/', label: 'Home' },
+  { to: '/shop', label: 'Shop' },
   { to: '/about', label: 'About' },
   { to: '/blog', label: 'Blog' },
   { to: '/contact', label: 'Contact' },
@@ -64,8 +66,10 @@ export function Nav() {
   const [servicesOpen, setServicesOpen] = useState(false)
   const [desktopServicesOpen, setDesktopServicesOpen] = useState(false)
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const itemCount = useCart(s => s.itemCount())
   const menuRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const desktopServicesRef = useRef<HTMLLIElement>(null)
@@ -227,6 +231,17 @@ export function Nav() {
           </ul>
 
           <div className="flex items-center gap-2">
+            <button onClick={() => navigate('/shop/checkout')} className="relative flex h-9 w-9 items-center justify-center rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Cart">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              {itemCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold leading-none text-white">
+                  {itemCount > 9 ? '9+' : itemCount}
+                </span>
+              )}
+            </button>
             <ThemeToggle />
             <button ref={buttonRef}
               className="relative z-10 flex h-9 w-9 items-center justify-center rounded-xl md:hidden hover:bg-black/5 dark:hover:bg-white/5"

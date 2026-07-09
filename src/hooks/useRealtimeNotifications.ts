@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useNotifications } from '@/store/notifications'
 import { useAdminStore } from '@/store/admin'
+import type { NotificationType } from '@/lib/types'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 type Row = Record<string, unknown>
@@ -62,7 +63,7 @@ export default function useRealtimeNotifications() {
     }
 
     const handleInsert = (
-      type: 'message' | 'testimonial' | 'file_upload' | 'share_viewed',
+      type: NotificationType,
       getInfo: (row: Row) => { title: string; description: string; link: string },
     ) => {
       return (payload: RealtimePostgresChangesPayload<Row>) => {
@@ -114,7 +115,27 @@ export default function useRealtimeNotifications() {
       })),
     )
 
-    channelsRef.current = [contactChannel, testimonialChannel, fileUploadChannel, commentChannel]
+    const orderChannel = subscribe(
+      'notif-orders',
+      'orders',
+      handleInsert('order', (r) => ({
+        title: `New order — ₦${(r.total as number)?.toLocaleString() || '0'}`,
+        description: `Payment: ${r.payment_reference as string || ''}`,
+        link: '/admin/orders',
+      })),
+    )
+
+    const affiliateChannel = subscribe(
+      'notif-affiliates',
+      'affiliates',
+      handleInsert('affiliate', (r) => ({
+        title: `New affiliate: ${(r.name as string) || 'Someone'}`,
+        description: r.status === 'pending' ? 'Application needs review' : `Status: ${r.status as string}`,
+        link: '/admin/affiliates',
+      })),
+    )
+
+    channelsRef.current = [contactChannel, testimonialChannel, fileUploadChannel, commentChannel, orderChannel, affiliateChannel]
 
     return () => {
       for (const ch of channelsRef.current) {
