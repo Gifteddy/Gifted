@@ -4,14 +4,14 @@ import { Icons } from '@/lib/admin-icons'
 import { useAdminStore } from '@/store/admin'
 import { useTheme } from '@/store/theme'
 import NotificationBell from '@/components/admin/NotificationBell'
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 type NavItem = {
   to: string
   label: string
-  icon: (className?: string) => JSX.Element
+  icon: (className?: string) => React.ReactNode
 }
-type NavGroup = { label: string; icon: (className?: string) => JSX.Element; items: NavItem[] }
+type NavGroup = { label: string; icon: (className?: string) => React.ReactNode; items: NavItem[] }
 
 const navGroups: NavGroup[] = [
   {

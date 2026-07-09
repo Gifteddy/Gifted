@@ -6,7 +6,7 @@ export function useCounter(end: number, duration = 1500, startOnView = true) {
   const ref = useRef<HTMLSpanElement>(null)
   const inView = useInView(ref, { once: true })
   const startedRef = useRef(false)
-  const rafRef = useRef<number>()
+  const rafRef = useRef<number>(undefined)
 
   useEffect(() => {
     if (startOnView && !inView) return
