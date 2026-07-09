@@ -96,6 +96,21 @@
   to { transform: translateX(500%); }
 }
 
+@keyframes admin-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes admin-glow {
+  0%, 100% { box-shadow: 0 0 20px -4px rgba(119,0,255,0.1); }
+  50% { box-shadow: 0 0 30px -2px rgba(119,0,255,0.2); }
+}
+
+@keyframes admin-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .gifteddy-prose a {
   color: var(--color-brand-400);
   text-decoration: underline;
@@ -196,28 +211,32 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 @utility admin-glass {
   border-radius: 16px;
-  background: rgba(255,255,255,0.72);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
+  background: rgba(255,255,255,0.62);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  backdrop-filter: blur(32px) saturate(200%);
   border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02), 0 8px 32px -8px rgba(0,0,0,0.04);
   @variant dark {
-    background: rgba(18,18,24,0.72);
-    -webkit-backdrop-filter: blur(24px) saturate(120%);
-    backdrop-filter: blur(24px) saturate(120%);
+    background: rgba(10,10,18,0.72);
+    -webkit-backdrop-filter: blur(32px) saturate(120%);
+    backdrop-filter: blur(32px) saturate(120%);
     border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15), 0 8px 32px -8px rgba(119,0,255,0.06);
   }
 }
 @utility admin-glass-strong {
   border-radius: 16px;
-  background: rgba(255,255,255,0.82);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  backdrop-filter: blur(28px) saturate(180%);
+  background: rgba(255,255,255,0.75);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  backdrop-filter: blur(36px) saturate(200%);
   border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03), 0 24px 48px -12px rgba(0,0,0,0.08);
   @variant dark {
-    background: rgba(18,18,24,0.82);
-    -webkit-backdrop-filter: blur(28px) saturate(120%);
-    backdrop-filter: blur(28px) saturate(120%);
+    background: rgba(10,10,18,0.82);
+    -webkit-backdrop-filter: blur(36px) saturate(120%);
+    backdrop-filter: blur(36px) saturate(120%);
     border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 24px 48px -12px rgba(119,0,255,0.08);
   }
 }
 @utility admin-input {
@@ -225,14 +244,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   outline: none;
-  transition: all 0.15s;
-  background: rgba(255,255,255,0.75);
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.7);
   border: 1px solid rgba(0,0,0,0.06);
   color: #1a1a1a;
+  &:focus {
+    border-color: var(--color-brand-400);
+    box-shadow: 0 0 0 3px rgba(119,0,255,0.08);
+  }
   @variant dark {
-    background: rgba(18,18,24,0.50);
+    background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.06);
     color: rgba(255,255,255,0.9);
+    &:focus {
+      border-color: var(--color-brand-400);
+      box-shadow: 0 0 0 3px rgba(146,51,255,0.12);
+    }
   }
 }
 @utility admin-btn {
@@ -240,16 +267,89 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
 @utility admin-btn-primary {
   @apply admin-btn;
-  background: #7700ff;
+  background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-400));
   color: white;
-  &:hover { background: #5f00cc; }
-  &:disabled { opacity: 0.5; }
+  box-shadow: 0 2px 8px rgba(119,0,255,0.2);
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(119,0,255,0.3);
+  }
+  &:active { transform: translateY(0); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
   @variant dark {
-    background: #9233ff;
-    &:hover { background: #7700ff; }
+    background: linear-gradient(135deg, var(--color-brand-400), var(--color-brand-300));
+    box-shadow: 0 2px 8px rgba(146,51,255,0.2);
+    &:hover {
+      box-shadow: 0 4px 16px rgba(146,51,255,0.3);
+    }
+  }
+}
+@utility admin-btn-secondary {
+  @apply admin-btn;
+  background: rgba(0,0,0,0.04);
+  color: var(--color-text-light);
+  border: 1px solid rgba(0,0,0,0.06);
+  &:hover {
+    background: rgba(0,0,0,0.08);
+  }
+  @variant dark {
+    background: rgba(255,255,255,0.04);
+    color: var(--color-text-dark);
+    border: 1px solid rgba(255,255,255,0.06);
+    &:hover {
+      background: rgba(255,255,255,0.08);
+    }
+  }
+}
+@utility admin-btn-danger {
+  @apply admin-btn;
+  background: rgba(239,68,68,0.1);
+  color: #ef4444;
+  &:hover {
+    background: rgba(239,68,68,0.15);
+  }
+  @variant dark {
+    background: rgba(239,68,68,0.08);
+    &:hover {
+      background: rgba(239,68,68,0.12);
+    }
+  }
+}
+@utility admin-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+@utility admin-card {
+  @apply admin-glass;
+  padding: 1.25rem;
+  transition: all 0.2s;
+  &:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02), 0 12px 40px -8px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
+  }
+  @variant dark {
+    &:hover {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 12px 40px -8px rgba(119,0,255,0.06);
+    }
+  }
+}
+@utility admin-table-header {
+  padding: 0.625rem 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted-light);
+  @variant dark {
+    color: var(--color-text-muted-dark);
   }
 }

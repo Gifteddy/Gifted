@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { Button } from '@/components/ui/Button'
+import { Meta } from '@/lib/meta'
 import { formatDate } from '@/lib/utils'
 import type { BlogPost as BlogPostType } from '@/lib/types'
 
@@ -50,6 +51,12 @@ export default function BlogPost() {
 
   return (
     <article className="relative min-h-screen px-4 pt-32 pb-24">
+      <Meta
+        title={post.title}
+        description={post.excerpt}
+        image={post.cover_image}
+        url={`${window.location.origin}/blog/${post.slug}`}
+      />
       <div className="mx-auto max-w-3xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Link to="/blog" className="mb-8 inline-flex items-center gap-2 text-sm text-text-muted-light transition-colors hover:text-brand-500 dark:text-text-muted-dark dark:hover:text-brand-400">

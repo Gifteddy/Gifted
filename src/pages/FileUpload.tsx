@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { Meta } from '@/lib/meta'
 import { cn, uploadFileToCloudinary } from '@/lib/utils'
 import type { FileUploadLink } from '@/lib/types'
 
@@ -46,7 +47,11 @@ export default function FileUpload() {
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  const [rejectedFiles, setRejectedFiles] = useState<{ name: string; reason: string }[]>([])
+  const [uploadStatus, setUploadStatus] = useState('')
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; percent: number } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const dragCounter = useRef(0)
 
   useEffect(() => {
     if (!token) { setLoading(false); setError('Invalid link.'); return }
@@ -68,23 +73,45 @@ export default function FileUpload() {
 
   const addFiles = useCallback((newFiles: FileList | File[]) => {
     if (!link) return
+
     const maxFiles = link.max_files_per_upload
     const maxSize = link.max_file_size
     const allowed = link.allowed_extensions
+    const newRejected: { name: string; reason: string }[] = []
 
     setFiles(prev => {
       const remaining = maxFiles - prev.length
-      const list = Array.from(newFiles).slice(0, remaining)
-      const valid = list.filter(f => {
-        if (f.size > maxSize) return false
+      const fileArray = Array.from(newFiles)
+      const valid: UploadFile[] = []
+
+      if (fileArray.length > remaining) {
+        newRejected.push({
+          name: `${fileArray.length - remaining} file(s)`,
+          reason: `Only ${remaining} slot(s) remaining (max ${maxFiles})`
+        })
+      }
+
+      for (const f of fileArray.slice(0, remaining)) {
+        if (f.size > maxSize) {
+          newRejected.push({ name: f.name, reason: `File exceeds ${formatSize(maxSize)} limit` })
+          continue
+        }
         if (allowed) {
           const ext = '.' + f.name.split('.').pop()?.toLowerCase()
-          if (!allowed.split(',').map(e => e.trim().toLowerCase()).includes(ext)) return false
+          if (!allowed.split(',').map(e => e.trim().toLowerCase()).includes(ext)) {
+            newRejected.push({ name: f.name, reason: 'File type not accepted' })
+            continue
+          }
         }
-        return true
-      })
-      return [...prev, ...valid.map(f => ({ file: f, id: crypto.randomUUID() }))]
+        valid.push({ file: f, id: crypto.randomUUID() })
+      }
+
+      return [...prev, ...valid]
     })
+
+    if (newRejected.length > 0) {
+      setRejectedFiles(prev => [...prev, ...newRejected])
+    }
   }, [link])
 
   const removeFile = (id: string) => {
@@ -96,6 +123,8 @@ export default function FileUpload() {
     if (!link || !token || files.length === 0) return
     setSubmitting(true)
     setError('')
+    setUploadProgress({ current: 0, total: files.length, percent: 0 })
+    setUploadStatus('Checking link validity...')
 
     const { data: fresh } = await supabase
       .from('file_upload_links')
@@ -103,14 +132,26 @@ export default function FileUpload() {
       .eq('id', link.id)
       .single()
     if (fresh?.max_total_uploads && (fresh.upload_count || 0) >= fresh.max_total_uploads) {
-      setLinkFull(true); setSubmitting(false); return
+      setLinkFull(true); setSubmitting(false); setUploadStatus(''); return
     }
 
     try {
       const uploaded: { name: string; url: string; size: number; type: string }[] = []
 
-      for (const { file } of files) {
-        const url = await uploadFileToCloudinary(file, `file-uploads/${token}`)
+      for (let i = 0; i < files.length; i++) {
+        const { file } = files[i]
+        setUploadStatus(`Uploading ${i + 1} of ${files.length}: ${file.name}`)
+        setUploadProgress({ current: i + 1, total: files.length, percent: 0 })
+
+        const url = await uploadFileToCloudinary(
+          file,
+          `file-uploads/${token}`,
+          (percent) => {
+            setUploadProgress({ current: i + 1, total: files.length, percent })
+          },
+        )
+
+        setUploadProgress({ current: i + 1, total: files.length, percent: 100 })
         uploaded.push({
           name: file.name,
           url,
@@ -119,6 +160,7 @@ export default function FileUpload() {
         })
       }
 
+      setUploadStatus('Saving to database...')
       const { error: insertError } = await supabase
         .from('file_uploads')
         .insert([{
@@ -131,18 +173,36 @@ export default function FileUpload() {
 
       if (insertError) throw new Error(insertError.message)
 
-      await supabase.from('file_upload_links').update({ upload_count: (fresh?.upload_count || 0) + 1 }).eq('id', link.id)
+      setUploadStatus('Finalizing...')
+      await supabase
+        .from('file_upload_links')
+        .update({ upload_count: (fresh?.upload_count || 0) + 1 })
+        .eq('id', link.id)
 
+      setUploadStatus('')
+      setUploadProgress(null)
       setSuccess(true)
       setSenderName('')
       setSenderEmail('')
       setMessage('')
       setFiles([])
+      setRejectedFiles([])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed. Please try again.')
+      const msg = err instanceof Error ? err.message : 'Upload failed. Please try again.'
+      setError(msg)
+      setUploadStatus('')
+      setUploadProgress(null)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const dismissRejected = (index: number) => {
+    setRejectedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const clearAllRejected = () => {
+    setRejectedFiles([])
   }
 
   if (loading) {
@@ -156,6 +216,7 @@ export default function FileUpload() {
   if (linkFull) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-light p-4 dark:bg-surface-dark">
+        <Meta title="Upload — Link is Full" description="This upload link has reached its maximum number of uploads." />
         <div className="w-full max-w-md rounded-2xl border border-border-light p-8 text-center dark:border-border-dark admin-glass-strong">
           <span className="text-4xl">🔒</span>
           <h1 className="mt-4 text-lg font-semibold text-text-light dark:text-text-dark">Link is Full</h1>
@@ -171,6 +232,7 @@ export default function FileUpload() {
   if (error && !link) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-light p-4 dark:bg-surface-dark">
+        <Meta title="Upload — Invalid Link" description="This upload link is invalid or has expired." />
         <div className="w-full max-w-md rounded-2xl border border-border-light p-8 text-center dark:border-border-dark admin-glass-strong">
           <span className="text-4xl">🔗</span>
           <h1 className="mt-4 text-lg font-semibold text-text-light dark:text-text-dark">Link Expired or Invalid</h1>
@@ -186,6 +248,7 @@ export default function FileUpload() {
   if (success) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-light p-4 dark:bg-surface-dark">
+        <Meta title="Upload — Success" description="Files uploaded successfully." />
         <div className="w-full max-w-md rounded-2xl border border-border-light p-8 text-center dark:border-border-dark admin-glass-strong">
           <span className="text-4xl">✅</span>
           <h1 className="mt-4 text-lg font-semibold text-text-light dark:text-text-dark">Files Uploaded!</h1>
@@ -201,6 +264,10 @@ export default function FileUpload() {
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-light dark:bg-surface-dark">
+      <Meta
+        title={`Upload — ${link?.label || 'File Upload'}`}
+        description="Upload files securely with a message."
+      />
       <div className="flex items-center justify-between border-b border-border-light px-6 py-4 dark:border-border-dark">
         <Link to="/" className="flex items-center gap-2.5">
           <img src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto,w_28,h_28,c_fit/v1781723693/logo_u7assw.png" alt="Gifted" className="h-7 w-7 rounded-lg object-contain" />
@@ -232,9 +299,9 @@ export default function FileUpload() {
               className="w-full resize-none rounded-xl border border-border-light bg-surface-secondary-light px-4 py-2.5 text-sm text-text-light placeholder:text-text-muted-light/50 focus:border-[#7700ff]/50 focus:outline-none dark:border-border-dark dark:bg-surface-secondary-dark/50 dark:text-text-dark dark:placeholder:text-text-muted-dark/60" />
 
             <div
-              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files) }}
+              onDragOver={e => { e.preventDefault(); dragCounter.current++; setDragOver(true) }}
+              onDragLeave={() => { dragCounter.current--; if (dragCounter.current === 0) setDragOver(false) }}
+              onDrop={e => { e.preventDefault(); dragCounter.current = 0; setDragOver(false); addFiles(e.dataTransfer.files) }}
               onClick={() => inputRef.current?.click()}
               className={cn(
                 'flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed p-8 transition-colors',
@@ -252,6 +319,29 @@ export default function FileUpload() {
               onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = '' }}
               className="hidden" />
 
+            {rejectedFiles.length > 0 && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-900/20">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                    {rejectedFiles.length} file{rejectedFiles.length > 1 ? 's' : ''} not added
+                  </p>
+                  <button type="button" onClick={clearAllRejected}
+                    className="text-xs text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300">
+                    Dismiss all
+                  </button>
+                </div>
+                <ul className="mt-1 space-y-0.5">
+                  {rejectedFiles.map((r, i) => (
+                    <li key={i} className="flex items-center justify-between text-xs text-amber-600 dark:text-amber-300/80">
+                      <span className="truncate">{r.name} &mdash; {r.reason}</span>
+                      <button type="button" onClick={() => dismissRejected(i)}
+                        className="ml-2 shrink-0 text-amber-400 hover:text-amber-600">✕</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {files.length > 0 && (
               <div className="space-y-1.5">
                 {files.map(f => (
@@ -268,13 +358,43 @@ export default function FileUpload() {
               </div>
             )}
 
+            {uploadStatus && (
+              <div className="rounded-lg border border-[#7700ff]/20 bg-[#7700ff]/5 px-3 py-2.5 dark:border-[#7700ff]/30 dark:bg-[#7700ff]/10">
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[#7700ff] border-t-transparent" />
+                  <p className="text-xs font-medium text-[#7700ff] dark:text-[#ad66ff]">{uploadStatus}</p>
+                </div>
+                {uploadProgress && uploadProgress.total > 0 && (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between text-[10px] text-text-muted-light dark:text-text-muted-dark">
+                      <span>File {uploadProgress.current} of {uploadProgress.total}</span>
+                      <span>{uploadProgress.percent}%</span>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
+                      <div
+                        className="h-full rounded-full bg-[#7700ff] transition-all duration-300"
+                        style={{ width: `${uploadProgress.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {error && (
-              <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 dark:border-red-800 dark:bg-red-900/20">
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">Upload failed</p>
+                <p className="mt-0.5 text-xs text-red-500 dark:text-red-300/80">{error}</p>
+              </div>
             )}
 
             <button type="submit" disabled={submitting || files.length === 0}
               className="w-full rounded-xl bg-[#7700ff] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#9900ff] disabled:opacity-50">
-              {submitting ? 'Uploading...' : `Upload ${files.length > 0 ? `(${files.length} file${files.length > 1 ? 's' : ''})` : ''}`}
+              {submitting
+                ? `Uploading ${uploadProgress ? `${uploadProgress.current}/${uploadProgress.total}` : ''}...`
+                : files.length > 0
+                  ? `Upload ${files.length} file${files.length > 1 ? 's' : ''}`
+                  : 'Select files to upload'}
             </button>
           </form>
         </div>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Button } from '@/components/ui/Button'
+import { Meta } from '@/lib/meta'
 import type { Project } from '@/lib/types'
 
 export default function ProjectDetail() {
@@ -65,6 +66,12 @@ export default function ProjectDetail() {
 
   return (
     <section className="relative min-h-screen pb-24">
+      <Meta
+        title={project.title}
+        description={project.description}
+        image={project.thumbnail || project.gallery?.[0]}
+        url={`${window.location.origin}/projects/${project.slug}`}
+      />
       {isVideoProject && project.project_url ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="relative h-screen w-full overflow-hidden">

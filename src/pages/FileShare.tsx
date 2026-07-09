@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import JSZip from 'jszip'
 import { supabase } from '@/lib/supabase'
+import { Meta } from '@/lib/meta'
 import { cn } from '@/lib/utils'
 import type { FileShare, FileShareItem, FileShareComment } from '@/lib/types'
 
@@ -229,6 +230,7 @@ export default function FileShareViewer() {
   if (error) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-light p-4 dark:bg-surface-dark">
+        <Meta title="File Share" description="View shared files and media." />
         <div className="w-full max-w-md rounded-2xl border border-border-light p-8 text-center dark:border-border-dark admin-glass-strong">
           <span className="text-4xl">🔗</span>
           <h1 className="mt-4 text-lg font-semibold text-text-light dark:text-text-dark">Link Expired or Invalid</h1>
@@ -242,6 +244,10 @@ export default function FileShareViewer() {
   if (!unlocked) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-light p-4 dark:bg-surface-dark">
+        <Meta
+          title={`${share?.label || 'File Share'} — Shared Files`}
+          description={share?.description || 'View shared files and media.'}
+        />
         <div className="w-full max-w-sm rounded-2xl border border-border-light p-8 dark:border-border-dark admin-glass-strong">
           <div className="text-center">
             <span className="text-4xl">🔒</span>
@@ -265,6 +271,10 @@ export default function FileShareViewer() {
 
   return (
     <div className="min-h-screen bg-surface-light dark:bg-surface-dark">
+      <Meta
+        title={`${share?.label || 'File Share'} — Shared Files`}
+        description={share?.description || 'View shared files and media.'}
+      />
       <div className="flex items-center justify-between border-b border-border-light px-4 py-3 sm:px-6 sm:py-4 dark:border-border-dark">
         <Link to="/" className="flex items-center gap-2.5">
           <img src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto,w_28,h_28,c_fit/v1781723693/logo_u7assw.png" alt="Gifted" className="h-7 w-7 rounded-lg object-contain" />
