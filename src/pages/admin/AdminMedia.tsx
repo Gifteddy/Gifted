@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from 'react'
-import { cn } from '@/lib/utils'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { cn, uploadFileToCloudinary } from '@/lib/utils'
 
 declare global {
   interface Window {
@@ -31,9 +32,10 @@ interface CloudinaryResource {
 
 const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || ''
 const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || ''
-const JUNE_2026 = new Date('2026-06-01T00:00:00Z').getTime()
+
 
 export default function AdminMedia() {
+  const navigate = useNavigate()
   const [media, setMedia] = useState<CloudinaryResource[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -46,6 +48,12 @@ export default function AdminMedia() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false)
+  const [cursors, setCursors] = useState<Record<string, string | undefined>>({})
+  const cursorsRef = useRef<Record<string, string | undefined>>({})
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [capturing, setCapturing] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const notify = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message })
@@ -71,8 +79,9 @@ export default function AdminMedia() {
 
   const clearSelection = () => setSelected(new Set())
 
-  const loadMedia = useCallback(async () => {
-    setLoading(true)
+  const loadMedia = useCallback(async (reset = true) => {
+    if (reset) setLoading(true)
+    else setLoadingMore(true)
     try {
       if (!cloudName) {
         setMedia([])
@@ -80,21 +89,42 @@ export default function AdminMedia() {
       }
       const types = ['image', 'video', 'raw']
       const results: CloudinaryResource[] = []
+      const newCursors: Record<string, string | undefined> = {}
       for (const t of types) {
-        const res = await fetch(`/api/cloudinary/resources/${t}?max_results=100&context=true&tags=true`)
+        let url = `/api/cloudinary/resources/${t}?max_results=100&context=true&tags=true`
+        if (!reset && cursorsRef.current[t]) {
+          url += `&next_cursor=${cursorsRef.current[t]}`
+        }
+        const res = await fetch(url)
         if (res.ok) {
           const data = await res.json()
           if (data.resources) results.push(...data.resources)
+          newCursors[t] = data.next_cursor
         }
       }
       results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      setMedia(results)
+      if (reset) {
+        setMedia(results)
+      } else {
+        setMedia(prev => {
+          const existing = new Set(prev.map(m => m.public_id))
+          const merged = [...prev]
+          for (const r of results) {
+            if (!existing.has(r.public_id)) merged.push(r)
+          }
+          merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          return merged
+        })
+      }
+      cursorsRef.current = newCursors
+      setCursors(newCursors)
     } catch {
       // silent
     } finally {
-      setLoading(false)
+      if (reset) setLoading(false)
+      else setLoadingMore(false)
     }
-  }, [])
+  }, [cloudName])
 
   useEffect(() => { loadMedia() }, [loadMedia])
 
@@ -215,9 +245,29 @@ export default function AdminMedia() {
     }
   }
 
+  const handleCaptureFrame = async () => {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas || !previewItem) return
+    setCapturing(true)
+    try {
+      canvas.width = video.videoWidth || 1280
+      canvas.height = video.videoHeight || 720
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92))
+      if (!blob) return
+      const file = new File([blob], `frame-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      const coverUrl = await uploadFileToCloudinary(file)
+      await handleSetCover(previewItem.public_id, coverUrl)
+      notify('success', 'Cover frame captured')
+    } catch {
+      notify('error', 'Failed to capture frame')
+    } finally { setCapturing(false) }
+  }
+
   const filtered = media.filter(m => {
-    const created = new Date(m.created_at).getTime()
-    if (created < JUNE_2026) return false
     if (!search) return true
     return m.public_id.toLowerCase().includes(search.toLowerCase())
   })
@@ -291,6 +341,13 @@ export default function AdminMedia() {
           <div className="mb-3 flex items-center gap-3 rounded-2xl bg-[#7700ff]/10 px-4 py-2.5 text-sm dark:bg-[#9233ff]/15">
             <span className="text-xs font-medium text-[#7700ff] dark:text-[#ad66ff]">{selected.size} selected</span>
             <div className="flex-1" />
+            <button onClick={() => {
+              const urls = media.filter(m => selected.has(m.public_id)).map(m => m.secure_url)
+              navigate('/admin/projects', { state: { preselectedMedia: urls } })
+            }}
+              className="flex items-center gap-1.5 rounded-xl bg-[#7700ff] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#9900ff]">
+              Create Project with Selected
+            </button>
             <button onClick={() => setBatchDeleteConfirm(true)}
               className="flex items-center gap-1.5 rounded-xl bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600">
               Delete Selected
@@ -377,6 +434,14 @@ export default function AdminMedia() {
             )
           })}
         </div>
+        {Object.values(cursors).some(c => c) && (
+          <div className="mt-4 flex justify-center">
+            <button onClick={() => loadMedia(false)} disabled={loadingMore}
+              className="rounded-xl bg-[#7700ff]/10 px-5 py-2 text-xs font-medium text-[#7700ff] transition-colors hover:bg-[#7700ff]/20 dark:text-[#ad66ff] disabled:opacity-50">
+              {loadingMore ? 'Loading...' : 'Load More'}
+            </button>
+          </div>
+        )}
         </>
       )}
 
@@ -384,17 +449,24 @@ export default function AdminMedia() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => { setPreviewUrl(null); setPreviewItem(null) }}>
           <div className="relative max-h-[90vh] max-w-[90vw]">
             {previewType === 'video' ? (
-              <video src={previewUrl} controls autoPlay className="max-h-[85vh] max-w-full rounded-2xl" onClick={(e) => e.stopPropagation()} />
+              <><video ref={videoRef} src={previewUrl} crossOrigin="anonymous" controls autoPlay className="max-h-[85vh] max-w-full rounded-2xl" onClick={(e) => e.stopPropagation()} />
+                <canvas ref={canvasRef} className="hidden" /></>
             ) : (
               <img src={previewUrl} alt="Preview" className="max-h-[85vh] rounded-2xl object-contain" onClick={(e) => e.stopPropagation()} />
             )}
             <button onClick={() => { setPreviewUrl(null); setPreviewItem(null) }}
               className="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm shadow-lg dark:bg-[#121218]">✕</button>
             {isVideo(previewItem) && (
-              <button onClick={(e) => { e.stopPropagation(); setCoverPickerOpen(true) }}
-                className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-xl bg-[#7700ff] px-4 py-2 text-xs font-medium text-white shadow-lg transition-colors hover:bg-[#9900ff] whitespace-nowrap">
-                {previewItem.context?.custom?.cover ? 'Change Cover Image' : 'Set Cover Image'}
-              </button>
+              <div className="absolute -bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2">
+                <button onClick={(e) => { e.stopPropagation(); handleCaptureFrame() }} disabled={capturing}
+                  className="rounded-xl bg-white/20 px-4 py-2 text-xs font-medium text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-white/30 whitespace-nowrap disabled:opacity-50">
+                  {capturing ? 'Capturing...' : 'Capture Frame as Cover'}
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); setCoverPickerOpen(true) }}
+                  className="rounded-xl bg-[#7700ff] px-4 py-2 text-xs font-medium text-white shadow-lg transition-colors hover:bg-[#9900ff] whitespace-nowrap">
+                  {previewItem.context?.custom?.cover ? 'Change Cover Image' : 'Pick Cover from Gallery'}
+                </button>
+              </div>
             )}
           </div>
         </div>

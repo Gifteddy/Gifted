@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { formatDate, cn } from '@/lib/utils'
+import { formatDate, cn, uploadFileToCloudinary } from '@/lib/utils'
 import { categoryList } from '@/lib/categories'
 import {
   DndContext,
@@ -49,6 +50,8 @@ interface MediaItem {
 }
 
 export default function AdminProjects() {
+  const location = useLocation()
+  const preselectedMedia = (location.state as { preselectedMedia?: string[] } | null)?.preselectedMedia
   const [projects, setProjects] = useState<ProjectItem[]>([])
   const [loading, setLoading] = useState(true)
   const [editorMode, setEditorMode] = useState<EditorMode>(null)
@@ -58,6 +61,7 @@ export default function AdminProjects() {
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [reorderSaving, setReorderSaving] = useState(false)
+  const [initialGallery, setInitialGallery] = useState<string[] | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -80,6 +84,15 @@ export default function AdminProjects() {
   }, [])
 
   useEffect(() => { loadProjects() }, [loadProjects])
+
+  useEffect(() => {
+    if (preselectedMedia && preselectedMedia.length > 0) {
+      setInitialGallery(preselectedMedia)
+      setEditorMode('create')
+      setEditId(null)
+      window.history.replaceState({}, '')
+    }
+  }, [])
 
   const saveDisplayOrder = async (ordered: ProjectItem[]) => {
     setReorderSaving(true)
@@ -293,9 +306,10 @@ export default function AdminProjects() {
       )}
 
       {editorMode && (
-        <ProjectEditor projectId={editId} onClose={() => { setEditorMode(null); setEditId(null) }}
-          onSaved={() => { setEditorMode(null); setEditId(null); loadProjects() }}
-          nextDisplayOrder={nextDisplayOrder} />
+        <ProjectEditor projectId={editId} onClose={() => { setEditorMode(null); setEditId(null); setInitialGallery(null) }}
+          onSaved={() => { setEditorMode(null); setEditId(null); setInitialGallery(null); loadProjects() }}
+          nextDisplayOrder={nextDisplayOrder}
+          initialGallery={initialGallery} />
       )}
 
       {deleteId && (
@@ -454,7 +468,7 @@ function ProjectCardContent({
     </div>
   )
 }
-function ProjectEditor({ projectId, onClose, onSaved, nextDisplayOrder }: { projectId: string | null; onClose: () => void; onSaved: () => void; nextDisplayOrder: number }) {
+function ProjectEditor({ projectId, onClose, onSaved, nextDisplayOrder, initialGallery }: { projectId: string | null; onClose: () => void; onSaved: () => void; nextDisplayOrder: number; initialGallery?: string[] | null }) {
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
   const [description, setDescription] = useState('')
@@ -471,6 +485,12 @@ function ProjectEditor({ projectId, onClose, onSaved, nextDisplayOrder }: { proj
   const [gallery, setGallery] = useState<string[]>([])
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [galleryTarget, setGalleryTarget] = useState<'cover' | 'video' | 'gallery'>('cover')
+
+  useEffect(() => {
+    if (initialGallery && initialGallery.length > 0 && !projectId) {
+      setGallery(initialGallery)
+    }
+  }, [])
 
   useEffect(() => {
     supabase.from('categories').select('id, slug, name').then(async ({ data, error }) => {
@@ -753,69 +773,216 @@ function ProjectEditor({ projectId, onClose, onSaved, nextDisplayOrder }: { proj
         </form>
       </div>
 
-      {galleryOpen && <MediaPicker onPick={pickImage} onClose={() => setGalleryOpen(false)} />}
+      {galleryOpen && (
+        <MediaPicker
+          onPick={pickImage}
+          onClose={() => setGalleryOpen(false)}
+          onMultiPick={(urls) => {
+            if (galleryTarget === 'gallery') setGallery(prev => [...prev, ...urls])
+            else if (urls.length > 0) {
+              if (galleryTarget === 'cover') setCoverImage(urls[0])
+              else if (galleryTarget === 'video') setProjectUrl(urls[0])
+            }
+            setGalleryOpen(false)
+          }}
+        />
+      )}
     </div>
   )
 }
 
-function MediaPicker({ onPick, onClose }: { onPick: (url: string) => void; onClose: () => void }) {
+function MediaPicker({ onPick, onClose, onMultiPick }: {
+  onPick: (url: string) => void
+  onClose: () => void
+  onMultiPick?: (urls: string[]) => void
+}) {
   const [items, setItems] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [cursors, setCursors] = useState<Record<string, string | undefined>>({})
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [capturing, setCapturing] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     async function load() {
       try {
         const types = ['image', 'video', 'raw']
         const results = await Promise.allSettled(
-          types.map(t => fetch(`/api/cloudinary/resources/${t}`).then(r => r.json()))
+          types.map(t => fetch(`/api/cloudinary/resources/${t}?max_results=100&context=true`).then(r => r.json()))
         )
         const all: MediaItem[] = []
-        for (const r of results) {
+        const newCursors: Record<string, string | undefined> = {}
+        for (let i = 0; i < results.length; i++) {
+          const r = results[i]
           if (r.status === 'fulfilled' && r.value?.resources) {
-            for (const res of r.value.resources) {
-              if (res.created_at && new Date(res.created_at) >= new Date('2026-06-01T00:00:00Z')) {
-                all.push(res)
-              }
-            }
+            all.push(...r.value.resources)
+            newCursors[types[i]] = r.value.next_cursor
           }
         }
         all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         setItems(all)
+        setCursors(newCursors)
       } catch { /* silent */ } finally { setLoading(false) }
     }
     load()
   }, [])
 
-  const handleUpload = () => {
+  const loadMore = async () => {
+    setLoadingMore(true)
+    try {
+      const types = ['image', 'video', 'raw']
+      const all: MediaItem[] = []
+      const newCursors: Record<string, string | undefined> = {}
+      for (let i = 0; i < types.length; i++) {
+        const t = types[i]
+        if (!cursors[t]) continue
+        const res = await fetch(`/api/cloudinary/resources/${t}?max_results=100&context=true&next_cursor=${cursors[t]}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.resources) all.push(...data.resources)
+          newCursors[t] = data.next_cursor
+        }
+      }
+      if (all.length > 0) {
+        setItems(prev => {
+          const existing = new Set(prev.map(m => m.public_id))
+          const merged = [...prev]
+          for (const r of all) {
+            if (!existing.has(r.public_id)) merged.push(r)
+          }
+          merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          return merged
+        })
+      }
+      setCursors(prev => ({ ...prev, ...newCursors }))
+    } catch { /* silent */ } finally { setLoadingMore(false) }
+  }
+
+  const filtered = items.filter(item => {
+    if (dateFrom) {
+      const from = new Date(dateFrom).getTime()
+      if (new Date(item.created_at).getTime() < from) return false
+    }
+    if (dateTo) {
+      const to = new Date(dateTo + 'T23:59:59').getTime()
+      if (new Date(item.created_at).getTime() > to) return false
+    }
+    return true
+  })
+
+  const isVideo = (item: MediaItem) =>
+    item.resource_type === 'video' || ['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(item.format)
+
+  const toggleSelect = (publicId: string) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(publicId)) next.delete(publicId)
+      else next.add(publicId)
+      return next
+    })
+  }
+
+  const handlePickItem = (item: MediaItem) => {
+    if (selectMode) {
+      toggleSelect(item.public_id)
+    } else if (isVideo(item)) {
+      setPreviewItem(item)
+    } else {
+      onPick(item.secure_url)
+    }
+  }
+
+  const handleConfirmVideo = () => {
+    if (previewItem) {
+      if (selectMode) {
+        toggleSelect(previewItem.public_id)
+        setPreviewItem(null)
+      } else {
+        onPick(previewItem.secure_url)
+        setPreviewItem(null)
+      }
+    }
+  }
+
+  const handleUseSelected = () => {
+    if (!onMultiPick) return
+    const urls = items.filter(m => selected.has(m.public_id)).map(m => m.secure_url)
+    onMultiPick(urls)
+    onClose()
+  }
+
+  const handleCaptureFrame = async () => {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas || !previewItem) return
+    setCapturing(true)
+    try {
+      canvas.width = video.videoWidth || 1280
+      canvas.height = video.videoHeight || 720
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92))
+      if (!blob) return
+      const file = new File([blob], `frame-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      const coverUrl = await uploadFileToCloudinary(file)
+      await fetch('/api/cloudinary/resources/video/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          public_ids: [previewItem.public_id],
+          context: `cover=${encodeURIComponent(coverUrl)}`,
+          type: 'upload',
+        }),
+      })
+      setItems(prev => prev.map(item =>
+        item.public_id === previewItem.public_id
+          ? { ...item, context: { custom: { cover: coverUrl } } }
+          : item
+      ))
+    } catch { /* silent */ } finally { setCapturing(false) }
+  }
+
+  const handleUpload = async () => {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'image/*,video/*'
+    input.multiple = true
     input.onchange = async () => {
-      const file = input.files?.[0]
-      if (!file) return
-      try {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '')
-        const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/auto/upload`,
-          { method: 'POST', body: formData }
-        )
-        const data = await res.json()
-        if (data.secure_url) {
+      const files = Array.from(input.files || [])
+      if (files.length === 0) return
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        setUploadProgress(0)
+        try {
+          const url = await uploadFileToCloudinary(file, undefined, setUploadProgress)
+          const isVid = file.type.startsWith('video/')
           setItems(prev => [{
-            public_id: data.public_id, secure_url: data.secure_url,
-            format: data.format, resource_type: data.resource_type,
-            width: data.width || 0, height: data.height || 0,
-            created_at: data.created_at,
+            public_id: file.name.replace(/\.[^.]+$/, ''),
+            secure_url: url,
+            format: file.name.split('.').pop() || '',
+            resource_type: isVid ? 'video' : 'image',
+            width: 0, height: 0,
+            created_at: new Date().toISOString(),
           }, ...prev])
-          onPick(data.secure_url)
+          onPick(url)
           onClose()
-        }
-      } catch { /* silent */ }
+          return
+        } catch { /* silent */ }
+      }
+      setUploadProgress(null)
     }
     input.click()
   }
+
+  const hasMore = Object.values(cursors).some(c => c)
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
@@ -823,6 +990,22 @@ function MediaPicker({ onPick, onClose }: { onPick: (url: string) => void; onClo
         <div className="flex items-center justify-between border-b border-white/10 p-4">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white/90">Media Gallery</h3>
           <div className="flex items-center gap-2">
+            {selectMode && selected.size > 0 && onMultiPick && (
+              <button type="button" onClick={handleUseSelected}
+                className="rounded-xl bg-[#7700ff] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#9900ff]">
+                Use Selected ({selected.size})
+              </button>
+            )}
+            {onMultiPick && (
+              <button type="button" onClick={() => { setSelectMode(!selectMode); setSelected(new Set()) }}
+                className={cn('rounded-xl px-3 py-2 text-xs font-medium transition-colors',
+                  selectMode
+                    ? 'bg-[#7700ff] text-white'
+                    : 'bg-[#7700ff]/10 text-[#7700ff] hover:bg-[#7700ff]/20 dark:text-[#ad66ff]'
+                )}>
+                {selectMode ? 'Selecting...' : 'Select'}
+              </button>
+            )}
             <button type="button" onClick={handleUpload}
               className="rounded-xl bg-[#7700ff] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#9900ff]">Upload</button>
             <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-xl text-gray-500 hover:bg-black/5 dark:text-white/50 dark:hover:bg-white/5">
@@ -830,34 +1013,110 @@ function MediaPicker({ onPick, onClose }: { onPick: (url: string) => void; onClo
             </button>
           </div>
         </div>
+        <div className="flex items-center gap-3 border-b border-white/10 px-4 py-2">
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+            className="admin-input !py-1 !text-xs" placeholder="From" title="Filter from date" />
+          <span className="text-xs text-gray-400 dark:text-white/30">to</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+            className="admin-input !py-1 !text-xs" placeholder="To" title="Filter to date" />
+          {(dateFrom || dateTo) && (
+            <button onClick={() => { setDateFrom(''); setDateTo('') }}
+              className="text-xs text-gray-400 transition-colors hover:text-[#7700ff] dark:text-white/40 dark:hover:text-[#ad66ff]">
+              Clear dates
+            </button>
+          )}
+          <span className="ml-auto text-[10px] text-gray-400 dark:text-white/30">{filtered.length} items</span>
+        </div>
+        {uploadProgress !== null && (
+          <div className="px-4 pt-3">
+            <div className="h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+              <div className="h-full rounded-full bg-[#7700ff] transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }} />
+            </div>
+            <p className="mt-1 text-[10px] text-gray-400 dark:text-white/30">Uploading... {uploadProgress}%</p>
+          </div>
+        )}
         <div className="max-h-[60vh] overflow-y-auto p-4">
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#7700ff] border-t-transparent" />
             </div>
-          ) : items.length === 0 ? (
-            <p className="py-16 text-center text-sm text-gray-500 dark:text-white/40">No media found.</p>
+          ) : filtered.length === 0 ? (
+            <p className="py-16 text-center text-sm text-gray-500 dark:text-white/40">
+              {dateFrom || dateTo ? 'No media in this date range.' : 'No media found.'}
+            </p>
           ) : (
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-              {items.map(item => (
-                <button key={item.public_id} type="button" onClick={() => onPick(item.secure_url)}
-                  className="group relative aspect-square overflow-hidden rounded-xl bg-black/10 transition-all hover:ring-2 hover:ring-[#7700ff] dark:bg-white/5">
-                  {item.resource_type === 'video' ? (
-                    <><img src={item.secure_url.replace('/upload/', '/upload/w_200,q_auto/')} alt="" className="h-full w-full object-cover" />
-                      <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 transition-opacity group-hover:opacity-100">
-                        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                      </span>
-                      <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[10px] text-white">{item.format}</span>
-                    </>
-                  ) : (
-                    <img src={item.secure_url.replace('/upload/', '/upload/w_200,q_auto/')} alt="" className="h-full w-full object-cover" />
-                  )}
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                {filtered.map(item => {
+                  const isSelected = selected.has(item.public_id)
+                  const isVid = isVideo(item)
+                  return (
+                    <div key={item.public_id}
+                      className={cn('group relative', isSelected && 'ring-2 ring-[#7700ff] rounded-xl dark:ring-[#ad66ff]')}>
+                      <button type="button" onClick={() => handlePickItem(item)}
+                        className="relative aspect-square overflow-hidden rounded-xl bg-black/10 transition-all hover:ring-2 hover:ring-[#7700ff] dark:bg-white/5">
+                        {isVid ? (
+                          <><img src={item.secure_url.replace('/upload/', '/upload/w_200,q_auto/')} alt="" className="h-full w-full object-cover" />
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                            </span>
+                            <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[10px] text-white">{item.format}</span>
+                          </>
+                        ) : (
+                          <img src={item.secure_url.replace('/upload/', '/upload/w_200,q_auto/')} alt="" className="h-full w-full object-cover" />
+                        )}
+                      </button>
+                      {selectMode && (
+                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(item.public_id) }}
+                          className={cn(
+                            'absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-md border-2 backdrop-blur-sm transition-all',
+                            isSelected
+                              ? 'border-[#7700ff] bg-[#7700ff] dark:border-[#ad66ff] dark:bg-[#ad66ff]'
+                              : 'border-white/60 bg-black/20 hover:border-white'
+                          )}>
+                          {isSelected && (
+                            <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              {hasMore && (
+                <div className="mt-4 flex justify-center">
+                  <button onClick={loadMore} disabled={loadingMore}
+                    className="rounded-xl bg-[#7700ff]/10 px-5 py-2 text-xs font-medium text-[#7700ff] transition-colors hover:bg-[#7700ff]/20 dark:text-[#ad66ff] disabled:opacity-50">
+                    {loadingMore ? 'Loading...' : 'Load More'}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
+
+      {previewItem && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4" onClick={() => setPreviewItem(null)}>
+          <div className="relative max-h-[90vh] max-w-[90vw]">
+            <video ref={videoRef} src={previewItem.secure_url} crossOrigin="anonymous" controls autoPlay className="max-h-[85vh] max-w-full rounded-2xl" onClick={(e) => e.stopPropagation()} />
+            <canvas ref={canvasRef} className="hidden" />
+            <button onClick={() => setPreviewItem(null)}
+              className="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm shadow-lg dark:bg-[#121218]">✕</button>
+            <div className="absolute -bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2">
+              <button onClick={(e) => { e.stopPropagation(); handleCaptureFrame() }} disabled={capturing}
+                className="rounded-xl bg-white/20 px-4 py-2 text-xs font-medium text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-white/30 whitespace-nowrap disabled:opacity-50">
+                {capturing ? 'Capturing...' : 'Capture Frame as Cover'}
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); handleConfirmVideo() }}
+                className="rounded-xl bg-[#7700ff] px-4 py-2 text-xs font-medium text-white shadow-lg transition-colors hover:bg-[#9900ff] whitespace-nowrap">
+                Use This Video
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

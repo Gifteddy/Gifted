@@ -8,6 +8,7 @@ interface BlogItem {
   slug: string
   excerpt: string
   content: string
+  custom_html: string
   cover_image: string
   tags: string[]
   published: boolean
@@ -156,6 +157,7 @@ function BlogEditor({ postId, onClose, onSaved }: { postId: string | null; onClo
   const [slug, setSlug] = useState('')
   const [excerpt, setExcerpt] = useState('')
   const [content, setContent] = useState('')
+  const [customHtml, setCustomHtml] = useState('')
   const [coverImage, setCoverImage] = useState('')
   const [tags, setTags] = useState('')
   const [published, setPublished] = useState(false)
@@ -169,6 +171,7 @@ function BlogEditor({ postId, onClose, onSaved }: { postId: string | null; onClo
         setSlug(data.slug || '')
         setExcerpt(data.excerpt || '')
         setContent(data.content || '')
+        setCustomHtml(data.custom_html || '')
         setCoverImage(data.cover_image || '')
         setTags((data.tags || []).join(', '))
         setPublished(data.published || false)
@@ -183,7 +186,7 @@ function BlogEditor({ postId, onClose, onSaved }: { postId: string | null; onClo
     const tagsArray = tags.split(',').map(t => t.trim()).filter(Boolean)
     const payload = {
       title: title.trim(), slug: slug.trim(), excerpt: excerpt.trim(), content,
-      cover_image: coverImage, tags: tagsArray, published,
+      custom_html: customHtml, cover_image: coverImage, tags: tagsArray, published,
       updated_at: new Date().toISOString(),
     }
     if (postId) {
@@ -240,6 +243,13 @@ function BlogEditor({ postId, onClose, onSaved }: { postId: string | null; onClo
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Content (Markdown supported)</label>
               <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={12} className="w-full admin-input font-mono text-xs" placeholder="Write your post content here..." />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Custom HTML (overrides content when set)</label>
+              <textarea value={customHtml} onChange={(e) => setCustomHtml(e.target.value)} rows={8} className="w-full admin-input font-mono text-xs" placeholder="Paste custom HTML to fully control this page's layout and styling..." />
+              {customHtml && (
+                <p className="mt-1 text-[10px] text-[#7700ff] dark:text-[#ad66ff]">Custom HTML is active — this will replace the default content rendering on the public page.</p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Tags (comma separated)</label>

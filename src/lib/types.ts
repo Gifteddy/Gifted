@@ -185,6 +185,7 @@ export interface BlogPost {
   slug: string
   excerpt: string
   content: string
+  custom_html: string
   cover_image: string
   tags: string[]
   published: boolean

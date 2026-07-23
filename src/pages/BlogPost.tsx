@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -7,6 +7,18 @@ import { Button } from '@/components/ui/Button'
 import { Meta } from '@/lib/meta'
 import { formatDate } from '@/lib/utils'
 import type { BlogPost as BlogPostType } from '@/lib/types'
+
+function CustomHtmlPage({ html }: { html: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const shadow = containerRef.current.shadowRoot || containerRef.current.attachShadow({ mode: 'open' })
+    shadow.innerHTML = `<div style="width:100%">${html}</div>`
+  }, [html])
+
+  return <div ref={containerRef} className="w-full" />
+}
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>()
@@ -46,6 +58,20 @@ export default function BlogPost() {
         <p className="mt-4 text-text-muted-light dark:text-text-muted-dark">The blog post you&apos;re looking for doesn&apos;t exist.</p>
         <Button href="/blog" className="mt-8">Back to Blog</Button>
       </section>
+    )
+  }
+
+  if (post.custom_html) {
+    return (
+      <>
+        <Meta
+          title={post.title}
+          description={post.excerpt}
+          image={post.cover_image}
+          url={`${window.location.origin}/blog/${post.slug}`}
+        />
+        <CustomHtmlPage html={post.custom_html} />
+      </>
     )
   }
 
