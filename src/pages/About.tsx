@@ -5,6 +5,7 @@ import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { PortraitCard } from '@/components/ui/PortraitCard'
 import { cn } from '@/lib/utils'
 import { img } from '@/lib/images'
+import { Meta } from '@/lib/meta'
 
 const label = 'text-[11px] font-semibold tracking-[0.2em] uppercase'
 const heading = 'font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl'
@@ -126,6 +127,8 @@ export default function About() {
 
   return (
     <main ref={mainRef} className="relative min-h-screen bg-surface-light text-text-light dark:bg-surface-dark dark:text-text-dark overflow-hidden">
+
+      <Meta title="About" description="Learn about Gifted — a multidisciplinary creative technologist passionate about visual storytelling, design, and engineering." />
 
       <motion.div
         className="fixed top-0 left-0 right-0 h-[2px] z-50 origin-left bg-gradient-to-r from-brand-500 via-gold-400 to-brand-500"
@@ -302,7 +305,7 @@ export default function About() {
                       transition={{ duration: 0.5 }}
                       className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none"
                     >
-                      <img src={img(i + 2)} alt="" className="absolute inset-0 w-full h-full object-cover object-top" style={{ filter: 'blur(4px) saturate(0.8)' }} />
+                      <img src={img(i + 2)} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover object-top" style={{ filter: 'blur(4px) saturate(0.8)' }} />
                       <div className="absolute inset-0 bg-white/70 dark:bg-black/70" />
                       <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-brand-500/15 blur-[70px]" />
                     </motion.div>
@@ -762,6 +765,8 @@ export default function About() {
               <img
                 src={img(1)}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="absolute inset-0 w-full h-full object-cover object-top"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent lg:bg-gradient-to-l lg:from-black/40 lg:to-transparent" />

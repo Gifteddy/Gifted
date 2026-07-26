@@ -5,6 +5,7 @@ import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Button } from '@/components/ui/Button'
 import type { Project } from '@/lib/types'
+import { Meta } from '@/lib/meta'
 
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -39,6 +40,7 @@ export default function Projects() {
 
   return (
     <section className="relative min-h-screen px-4 pt-32 pb-24">
+      <Meta title="Projects" description="Browse creative projects spanning photography, development, graphic design, and video production." />
       <div className="mx-auto max-w-7xl">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           className="mb-12 text-center">
@@ -67,7 +69,7 @@ export default function Projects() {
               <Link to={`/projects/${p.slug}`}>
                 <LiquidGlass className="group overflow-hidden rounded-2xl transition-all duration-500 hover:scale-[1.02]" intensity="medium">
                   <div className="relative flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
-                    {p.thumbnail ? <img src={p.thumbnail} alt={p.title} className="h-full w-full object-cover" />
+                    {p.thumbnail ? <img src={p.thumbnail} alt={p.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                       : <span className="text-4xl opacity-30">🚀</span>}
                     {(p.categories?.some(c => ((c as any)?.category?.name ?? (c as any)?.name)?.toLowerCase().includes('video') || ((c as any)?.category?.slug ?? (c as any)?.slug) === 'video-production') || p.category === 'video-production') && (
                       <div className="absolute inset-0 flex items-center justify-center">

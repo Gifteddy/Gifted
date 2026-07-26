@@ -124,7 +124,7 @@ export default function ProjectDetail() {
             className="mt-8 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
             {project.thumbnail ? (
               <div className="relative">
-                <img src={project.thumbnail} alt={project.title} className="w-full object-cover" />
+                <img src={project.thumbnail} alt={project.title} loading="lazy" decoding="async" className="w-full object-cover" />
               </div>
             ) : (
               <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">

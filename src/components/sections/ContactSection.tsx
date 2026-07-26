@@ -29,6 +29,25 @@ export function ContactSection() {
     }
     try {
       await (await import('@/lib/queries')).createContactMessage(data)
+
+      const { sendEmailSafe, contactFormOwnerEmail, contactFormCustomerEmail } = await import('@/lib/email')
+      sendEmailSafe({
+        to: import.meta.env.VITE_ADMIN_EMAIL || 'ibiamiheanyi@gmail.com',
+        subject: `New Contact: ${data.subject}`,
+        html: contactFormOwnerEmail({
+          name: data.name,
+          email: data.email,
+          subject: data.subject,
+          message: data.message,
+          preferredContact: data.preferred_contact,
+        }),
+      }).catch(() => {})
+      sendEmailSafe({
+        to: data.email,
+        subject: 'Message Received \u2014 Gifted',
+        html: contactFormCustomerEmail({ name: data.name, subject: data.subject }),
+      }).catch(() => {})
+
       setSent(true); form.reset(); setTimeout(() => setSent(false), 3000)
     } catch { setError('Failed to send message. Please try again.') }
     finally { setLoading(false) }

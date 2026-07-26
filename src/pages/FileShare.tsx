@@ -37,9 +37,34 @@ function fileIcon(item: MediaItem): string {
   return '📎'
 }
 
-async function downloadBlob(url: string, filename: string) {
+async function downloadBlob(url: string, filename: string, onProgress?: (p: number) => void) {
   const res = await fetch(url)
-  const blob = await res.blob()
+  if (!res.ok) throw new Error(`Download failed (${res.status})`)
+  const contentLength = res.headers.get('content-length')
+  const total = contentLength ? parseInt(contentLength, 10) : 0
+  const reader = res.body?.getReader()
+  if (!reader || !total) {
+    const blob = await res.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
+    return
+  }
+  let received = 0
+  const chunks: Uint8Array[] = []
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+    received += value.length
+    onProgress?.(Math.round((received / total) * 100))
+  }
+  const blob = new Blob(chunks)
   const blobUrl = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = blobUrl
@@ -63,6 +88,10 @@ export default function FileShareViewer() {
   const [checkingPw, setCheckingPw] = useState(false)
   const [comments, setComments] = useState<FileShareComment[]>([])
   const [downloadingAll, setDownloadingAll] = useState(false)
+  const [zipProgress, setZipProgress] = useState<{ current: number; total: number } | null>(null)
+  const [downloadingFiles, setDownloadingFiles] = useState<Record<string, number>>({})
+  const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>({})
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   const [commentForms, setCommentForms] = useState<Record<string, { name: string; content: string }>>({})
   const [submittingComment, setSubmittingComment] = useState<string | null>(null)
@@ -118,12 +147,15 @@ export default function FileShareViewer() {
 
   const handleDownloadAll = async () => {
     setDownloadingAll(true)
+    setZipProgress({ current: 0, total: items.length })
     try {
       const zip = new JSZip()
-      for (const item of items) {
-        const res = await fetch(item.url)
+      for (let i = 0; i < items.length; i++) {
+        setZipProgress({ current: i + 1, total: items.length })
+        const res = await fetch(items[i].url)
+        if (!res.ok) throw new Error(`Failed to fetch ${items[i].name}`)
         const blob = await res.blob()
-        zip.file(item.name, blob)
+        zip.file(items[i].name, blob)
       }
       const zipBlob = await zip.generateAsync({ type: 'blob' })
       const zipUrl = URL.createObjectURL(zipBlob)
@@ -134,8 +166,35 @@ export default function FileShareViewer() {
       a.click()
       document.body.removeChild(a)
       setTimeout(() => URL.revokeObjectURL(zipUrl), 10000)
-    } catch { /* silent */ }
-    finally { setDownloadingAll(false) }
+      showToast('All files downloaded!', 'success')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Download failed'
+      showToast(msg, 'error')
+    } finally {
+      setDownloadingAll(false)
+      setZipProgress(null)
+    }
+  }
+
+  const handleDownloadFile = async (item: MediaItem) => {
+    setDownloadingFiles(prev => ({ ...prev, [item.id]: 0 }))
+    setDownloadErrors(prev => { const n = { ...prev }; delete n[item.id]; return n })
+    try {
+      await downloadBlob(item.url, item.name, (p) => {
+        setDownloadingFiles(prev => ({ ...prev, [item.id]: p }))
+      })
+      showToast(`${item.name} downloaded`, 'success')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Download failed'
+      setDownloadErrors(prev => ({ ...prev, [item.id]: msg }))
+    } finally {
+      setDownloadingFiles(prev => { const n = { ...prev }; delete n[item.id]; return n })
+    }
+  }
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
   }
 
   const handleComment = async (itemId: string | null) => {
@@ -160,8 +219,27 @@ export default function FileShareViewer() {
           created_at: new Date().toISOString(),
         }])
         setCommentForms(prev => ({ ...prev, [key]: { name: prev[key]?.name || '', content: '' } }))
+        showToast('Comment posted!', 'success')
+
+        const commentedItem = itemId ? items.find(i => i.id === itemId) : null
+        const { sendEmailSafe, fileCommentOwnerEmail } = await import('@/lib/email')
+        sendEmailSafe({
+          to: import.meta.env.VITE_ADMIN_EMAIL || 'ibiamiheanyi@gmail.com',
+          subject: `New Comment by ${form.name.trim()}`,
+          html: fileCommentOwnerEmail({
+            authorName: form.name.trim(),
+            fileName: commentedItem?.name || 'General',
+            comment: form.content.trim(),
+            shareLabel: share.label || 'Shared Files',
+            shareToken: token || '',
+          }),
+        }).catch(() => {})
+      } else {
+        showToast('Failed to post comment. Try again.', 'error')
       }
-    } catch { /* silent */ }
+    } catch {
+      showToast('Failed to post comment. Try again.', 'error')
+    }
     finally { setSubmittingComment(null) }
   }
 
@@ -172,7 +250,7 @@ export default function FileShareViewer() {
     if (!testimonial.name.trim() || !testimonial.content.trim()) return
     setTestimonialSubmitting(true)
     try {
-      await supabase.from('testimonials').insert([{
+      const { error: err } = await supabase.from('testimonials').insert([{
         name: testimonial.name.trim(),
         role: testimonial.role.trim(),
         company: testimonial.company.trim(),
@@ -180,9 +258,13 @@ export default function FileShareViewer() {
         rating: testimonial.rating,
         featured: false,
       }])
+      if (err) throw err
       setTestimonialSent(true)
       if (token) sessionStorage.setItem(`testimonial_${token}`, '1')
-    } catch { /* silent */ }
+      showToast('Review submitted! Thank you.', 'success')
+    } catch {
+      showToast('Failed to submit review. Try again.', 'error')
+    }
     finally { setTestimonialSubmitting(false) }
   }
 
@@ -277,7 +359,7 @@ export default function FileShareViewer() {
       />
       <div className="flex items-center justify-between border-b border-border-light px-4 py-3 sm:px-6 sm:py-4 dark:border-border-dark">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto,w_28,h_28,c_fit/v1781723693/logo_u7assw.png" alt="Gifted" className="h-7 w-7 rounded-lg object-contain" />
+          <img src="https://res.cloudinary.com/dr4fjf3a1/image/upload/f_auto,q_auto,w_28,h_28,c_fit/v1781723693/logo_u7assw.png" alt="Gifted" loading="lazy" decoding="async" className="h-7 w-7 rounded-lg object-contain" />
           <span className="text-sm font-semibold text-text-light dark:text-text-dark">Gifted</span>
         </Link>
         <div className="flex items-center gap-2">
@@ -286,7 +368,9 @@ export default function FileShareViewer() {
             <button onClick={handleDownloadAll} disabled={downloadingAll}
               className="flex items-center gap-1.5 rounded-xl bg-[#7700ff] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#9900ff] disabled:opacity-50 sm:px-4 sm:py-2">
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
-              {downloadingAll ? 'Zipping...' : 'Download All'}
+              {downloadingAll && zipProgress
+                ? `Zipping ${zipProgress.current}/${zipProgress.total}...`
+                : downloadingAll ? 'Zipping...' : 'Download All'}
             </button>
           )}
         </div>
@@ -313,7 +397,9 @@ export default function FileShareViewer() {
                 comments={itemComments(item.id)}
                 lightboxIndex={lightboxImages.indexOf(item as unknown as MediaItem)}
                 onOpenLightbox={(idx) => { setLightboxIndex(idx); document.body.style.overflow = 'hidden' }}
-                onDownload={() => downloadBlob(item.url, item.name)}
+                onDownload={() => handleDownloadFile(item)}
+                downloadProgress={downloadingFiles[item.id]}
+                downloadError={downloadErrors[item.id]}
                 commentForm={commentForms[item.id] || { name: '', content: '' }}
                 onCommentField={(field, val) => setFormField(item.id, field, val)}
                 onCommentSubmit={() => handleComment(item.id)}
@@ -423,36 +509,50 @@ export default function FileShareViewer() {
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
             </button>
           )}
-          <img src={currentImage.url} alt={currentImage.name}
+          <img src={currentImage.url} alt={currentImage.name} loading="lazy" decoding="async"
             className="max-h-[90vh] max-w-full rounded-lg object-contain" onClick={e => e.stopPropagation()} />
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-1.5 text-xs text-white/80">
             {lightboxIndex + 1} / {lightboxImages.length}
           </div>
         </div>
       )}
+
+      {toast && (
+        <div className={cn(
+          'fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg transition-all',
+          toast.type === 'success'
+            ? 'bg-green-600 text-white'
+            : 'bg-red-600 text-white'
+        )}>
+          {toast.type === 'success' ? '✓ ' : '✕ '}{toast.message}
+        </div>
+      )}
     </div>
   )
 }
 
-function FileCard({ item, comments, lightboxIndex, onOpenLightbox, onDownload, commentForm, onCommentField, onCommentSubmit, submittingComment }: {
+function FileCard({ item, comments, lightboxIndex, onOpenLightbox, onDownload, downloadProgress, downloadError, commentForm, onCommentField, onCommentSubmit, submittingComment }: {
   item: MediaItem
   comments: FileShareComment[]
   lightboxIndex: number
   onOpenLightbox: (idx: number) => void
   onDownload: () => void
+  downloadProgress?: number
+  downloadError?: string
   commentForm: { name: string; content: string }
   onCommentField: (field: 'name' | 'content', value: string) => void
   onCommentSubmit: () => void
   submittingComment: boolean
 }) {
   const [showComments, setShowComments] = useState(false)
+  const isDownloading = downloadProgress !== undefined
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border-light bg-black/[0.02] dark:border-border-dark dark:bg-white/[0.03]">
       <div className="aspect-[4/3] overflow-hidden bg-black/[0.03] dark:bg-white/[0.03]">
         {item.mediaType === 'image' ? (
           <button onClick={() => onOpenLightbox(lightboxIndex)} className="group relative h-full w-full">
-            <img src={item.url} alt={item.name}
+            <img src={item.url} alt={item.name} loading="lazy" decoding="async"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
           </button>
         ) : item.mediaType === 'video' ? (
@@ -471,10 +571,19 @@ function FileCard({ item, comments, lightboxIndex, onOpenLightbox, onDownload, c
         <p className="mt-0.5 text-xs text-text-muted-light dark:text-text-muted-dark">{formatSize(item.size)}</p>
 
         <div className="mt-3 flex items-center gap-2">
-          <button onClick={onDownload}
-            className="flex items-center gap-1.5 rounded-lg bg-[#7700ff]/10 px-3 py-1.5 text-xs font-medium text-[#7700ff] transition-colors hover:bg-[#7700ff]/20 dark:text-[#ad66ff] dark:hover:bg-[#ad66ff]/20">
-            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
-            Download
+          <button onClick={onDownload} disabled={isDownloading}
+            className="flex items-center gap-1.5 rounded-lg bg-[#7700ff]/10 px-3 py-1.5 text-xs font-medium text-[#7700ff] transition-colors hover:bg-[#7700ff]/20 dark:text-[#ad66ff] dark:hover:bg-[#ad66ff]/20 disabled:opacity-50">
+            {isDownloading ? (
+              <>
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#7700ff] border-t-transparent" />
+                {downloadProgress !== undefined && downloadProgress > 0 ? `${downloadProgress}%` : 'Downloading...'}
+              </>
+            ) : (
+              <>
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+                Download
+              </>
+            )}
           </button>
           <button onClick={() => setShowComments(!showComments)}
             className={cn(
@@ -487,6 +596,9 @@ function FileCard({ item, comments, lightboxIndex, onOpenLightbox, onDownload, c
             {comments.length > 0 ? `${comments.length}` : 'Comment'}
           </button>
         </div>
+        {downloadError && (
+          <p className="mt-2 text-xs text-red-500 dark:text-red-400">{downloadError}</p>
+        )}
 
         {showComments && (
           <div className="mt-3 space-y-3 border-t border-border-light pt-3 dark:border-border-dark">

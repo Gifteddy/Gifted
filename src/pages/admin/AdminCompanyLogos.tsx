@@ -82,7 +82,7 @@ export default function AdminCompanyLogos() {
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                   <span className="cursor-grab text-gray-400 dark:text-white/30 text-sm">⠿</span>
                   <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center p-1.5">
-                    <img src={logo.url} alt={logo.name} className="h-full w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    <img src={logo.url} alt={logo.name} loading="lazy" decoding="async" className="h-full w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="text-sm font-medium text-gray-900 dark:text-white/90">{logo.name}</span>
@@ -177,7 +177,7 @@ function LogoEditor({ logoId, onClose, onSaved }: { logoId: string | null; onClo
             {url && (
               <div className="mt-2 flex items-center gap-3">
                 <div className="h-8 w-8 shrink-0 overflow-hidden rounded bg-white/50 dark:bg-white/10 flex items-center justify-center p-1">
-                  <img src={url} alt="" className="h-full w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <img src={url} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                 </div>
                 <span className="truncate text-xs text-gray-500 dark:text-white/40">{url}</span>
               </div>

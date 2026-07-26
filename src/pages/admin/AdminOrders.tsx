@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, cn } from '@/lib/utils'
 import { updateOrderShipping } from '@/lib/commerce-queries'
+import { useToast } from '@/components/ui/Toast'
 import type { Order, OrderItem, Customer } from '@/lib/commerce-types'
 
 interface OrderWithRelations extends Order {
@@ -19,28 +20,36 @@ export default function AdminOrders() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [editTracking, setEditTracking] = useState<string | null>(null)
   const [trackingForm, setTrackingForm] = useState({ tracking_number: '', shipping_carrier: '' })
+  const toast = useToast(s => s.add)
 
   const loadOrders = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .select('*, items:order_items(*), customer:customers(*)')
         .order('created_at', { ascending: false })
+      if (error) throw error
       setOrders((data || []) as OrderWithRelations[])
-    } catch { /* silent */ }
+    } catch (e) {
+      toast('error', 'Failed to load orders.')
+    }
     setLoading(false)
-  }, [])
+  }, [toast])
 
   useEffect(() => { loadOrders() }, [loadOrders])
 
   const handleStatusUpdate = async (id: string, status: string) => {
-    await supabase.from('orders').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
+    const { error } = await supabase.from('orders').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
+    if (error) { toast('error', 'Failed to update status.'); return }
+    toast('success', `Order status updated to ${status.replace(/_/g, ' ')}.`)
     loadOrders()
   }
 
   const handlePaymentStatusUpdate = async (id: string, payment_status: string) => {
-    await supabase.from('orders').update({ payment_status, updated_at: new Date().toISOString() }).eq('id', id)
+    const { error } = await supabase.from('orders').update({ payment_status, updated_at: new Date().toISOString() }).eq('id', id)
+    if (error) { toast('error', 'Failed to update payment status.'); return }
+    toast('success', `Payment status updated to ${payment_status}.`)
     loadOrders()
   }
 
@@ -53,8 +62,11 @@ export default function AdminOrders() {
         status: 'shipped',
       })
       setEditTracking(null)
+      toast('success', 'Tracking info updated.')
       loadOrders()
-    } catch { /* silent */ }
+    } catch {
+      toast('error', 'Failed to update tracking.')
+    }
   }
 
   const filtered = orders.filter(o => {

@@ -9,7 +9,7 @@ import { CategoryCTA } from './CategoryCTA'
 
 export function CategoryPage({ category }: { category: CategoryConfig }) {
   return (
-    <main>
+    <div>
       <Breadcrumbs category={category.name} />
       <CategoryHero category={category} />
       <CategoryServices category={category} />
@@ -17,6 +17,6 @@ export function CategoryPage({ category }: { category: CategoryConfig }) {
       <CategoryProcess category={category} />
       <CategoryTestimonials category={category} />
       <CategoryCTA category={category} />
-    </main>
+    </div>
   )
 }

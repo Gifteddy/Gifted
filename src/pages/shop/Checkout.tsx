@@ -5,9 +5,10 @@ import { useCart } from '@/store/cart'
 import { loadPaystackScript, openPaystack, type PaystackResponse } from '@/lib/paystack'
 import { upsertCustomer, createFullOrder, validateDiscountCode, incrementDiscountUses, getAffiliateByRefFromCookie, checkUrlForAffiliate } from '@/lib/commerce-queries'
 import { formatCurrency } from '@/lib/currency'
-import { sendEmail, purchaseConfirmationEmail } from '@/lib/email'
+import { sendEmail, purchaseConfirmationEmail, newOrderOwnerEmail } from '@/lib/email'
 import { CLOUDINARY_BASE } from '@/lib/images'
 import type { ShippingAddress } from '@/lib/commerce-types'
+import { Meta } from '@/lib/meta'
 
 type Step = 'review' | 'paying' | 'complete' | 'error'
 
@@ -105,12 +106,31 @@ export default function Checkout() {
 
             sendEmail({
               to: email.trim(),
-              subject: 'Order Confirmed — Gifted',
+              subject: 'Order Confirmed \u2014 Gifted',
               html: purchaseConfirmationEmail({
                 name: name.trim(),
-                items: items.map(i => ({ title: i.title, type: i.type })),
+                items: items.map(i => ({ title: i.title, type: i.type, quantity: i.quantity })),
                 total,
                 orderId: result.order.id,
+              }),
+            }).catch(() => {})
+
+            sendEmail({
+              to: import.meta.env.VITE_ADMIN_EMAIL || 'ibiamiheanyi@gmail.com',
+              subject: `New Order \u2014 \u20a6${total.toLocaleString()}`,
+              html: newOrderOwnerEmail({
+                orderId: result.order.id,
+                customerName: name.trim(),
+                customerEmail: email.trim(),
+                items: items.map(i => ({
+                  title: i.title,
+                  type: i.type,
+                  quantity: i.quantity,
+                  unit_price: i.price,
+                })),
+                total,
+                paymentReference: response.reference,
+                shippingAddress: hasPhysical && showShipping ? shipAddr : null,
               }),
             }).catch(() => {})
           } catch {
@@ -151,6 +171,7 @@ export default function Checkout() {
 
   return (
     <main className="min-h-screen bg-surface-light dark:bg-surface-dark text-text-light dark:text-text-dark px-6 pt-28 pb-20">
+      <Meta title="Checkout" description="Complete your purchase at Gifted." />
       <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between mb-10">
           <div>

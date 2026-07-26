@@ -287,7 +287,7 @@ function ProductCardContent({ product, dragHandle, onTogglePublished, onToggleFe
         </span>
         {product.thumbnail ? (
           <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl">
-            <img src={product.thumbnail} alt="" className="h-full w-full object-cover" />
+            <img src={product.thumbnail} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
           </div>
         ) : (
           <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-[#7700ff]/10 text-lg text-[#7700ff] dark:text-[#ad66ff]">⊞</div>
@@ -551,7 +551,7 @@ function ProductEditor({ productId, onClose, onSaved, nextDisplayOrder }: { prod
               {thumbnail && (
                 <div className="mt-2 flex items-center gap-3">
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg">
-                    <img src={thumbnail} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    <img src={thumbnail} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                   </div>
                   <span className="truncate text-xs text-gray-500 dark:text-white/40">{thumbnail}</span>
                 </div>
@@ -562,7 +562,7 @@ function ProductEditor({ productId, onClose, onSaved, nextDisplayOrder }: { prod
               <div className="flex flex-wrap gap-2 mb-2">
                 {gallery.map((img, i) => (
                   <div key={i} className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
-                    <img src={img.replace('/upload/', '/upload/w_100/')} alt="" className="h-full w-full object-cover"
+                    <img src={img.replace('/upload/', '/upload/w_100/')} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                     <button type="button" onClick={() => handleRemoveGallery(i)}
                       className="absolute inset-0 flex items-center justify-center bg-black/50 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">✕</button>

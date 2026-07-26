@@ -426,6 +426,12 @@ CREATE TABLE IF NOT EXISTS store_settings (
   digital_commission_rate DECIMAL(5,4) NOT NULL DEFAULT 0.30,
   physical_commission_rate DECIMAL(5,4) NOT NULL DEFAULT 0.10,
   currency TEXT NOT NULL DEFAULT 'NGN',
+  payment_gateway TEXT NOT NULL DEFAULT 'paystack',
+  paystack_secret_key TEXT,
+  paystack_public_key TEXT,
+  min_payout_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  auto_approve_payouts BOOLEAN NOT NULL DEFAULT false,
+  payout_schedule TEXT NOT NULL DEFAULT 'manual',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -575,3 +581,79 @@ BEGIN
     ALTER TABLE products ADD COLUMN variants JSONB DEFAULT NULL;
   END IF;
 END $$;
+
+-- ===================== RLS FIXES (v2) =====================
+
+-- Partners can read their own commissions
+DROP POLICY IF EXISTS "Partners can read own commissions" ON affiliate_commissions;
+CREATE POLICY "Partners can read own commissions"
+  ON affiliate_commissions FOR SELECT
+  USING (auth.uid() IS NOT NULL AND affiliate_id IN (
+    SELECT id FROM affiliates WHERE auth_user_id = auth.uid()
+  ));
+
+-- Partners can read their own payouts
+DROP POLICY IF EXISTS "Partners can read own payouts" ON affiliate_payouts;
+CREATE POLICY "Partners can read own payouts"
+  ON affiliate_payouts FOR SELECT
+  USING (auth.uid() IS NOT NULL AND affiliate_id IN (
+    SELECT id FROM affiliates WHERE auth_user_id = auth.uid()
+  ));
+
+-- Partners can read their own clicks
+DROP POLICY IF EXISTS "Partners can read own clicks" ON affiliate_clicks;
+CREATE POLICY "Partners can read own clicks"
+  ON affiliate_clicks FOR SELECT
+  USING (auth.uid() IS NOT NULL AND affiliate_id IN (
+    SELECT id FROM affiliates WHERE auth_user_id = auth.uid()
+  ));
+
+-- Notifications: only partner + admin (replaces wide-open "Anyone can read")
+DROP POLICY IF EXISTS "Anyone can read notifications" ON partner_notifications;
+DROP POLICY IF EXISTS "Partners can read own notifications" ON partner_notifications;
+CREATE POLICY "Partners can read own notifications"
+  ON partner_notifications FOR SELECT
+  USING (
+    public.is_admin()
+    OR (auth.uid() IS NOT NULL AND partner_id IN (
+      SELECT id FROM affiliates WHERE auth_user_id = auth.uid()
+    ))
+  );
+
+-- Achievements: only partner + admin (replaces wide-open "Anyone can read")
+DROP POLICY IF EXISTS "Anyone can read achievements" ON partner_achievements;
+DROP POLICY IF EXISTS "Partners can read own achievements" ON partner_achievements;
+CREATE POLICY "Partners can read own achievements"
+  ON partner_achievements FOR SELECT
+  USING (
+    public.is_admin()
+    OR (auth.uid() IS NOT NULL AND partner_id IN (
+      SELECT id FROM affiliates WHERE auth_user_id = auth.uid()
+    ))
+  );
+
+-- ============================================================
+-- AUDIT LOGS — immutable record of critical actions
+-- ============================================================
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  actor_id UUID,
+  actor_email TEXT,
+  action TEXT NOT NULL,
+  target_type TEXT,
+  target_id UUID,
+  details JSONB DEFAULT '{}'
+);
+
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins can read audit logs" ON audit_logs;
+CREATE POLICY "Admins can read audit logs"
+  ON audit_logs FOR SELECT
+  USING (public.is_admin());
+
+DROP POLICY IF EXISTS "Service role can insert audit logs" ON audit_logs;
+CREATE POLICY "Service role can insert audit logs"
+  ON audit_logs FOR INSERT
+  WITH CHECK (true);

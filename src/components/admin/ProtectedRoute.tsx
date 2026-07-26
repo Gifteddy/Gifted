@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAdminStore } from '@/store/admin'
 
 export function ProtectedRoute() {
-  const { user, loading, initialized, initialize } = useAdminStore()
+  const { user, loading, initialized, isAdmin, initialize } = useAdminStore()
   const location = useLocation()
 
   useEffect(() => {
@@ -23,6 +23,10 @@ export function ProtectedRoute() {
 
   if (!user) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />
   }
 
   return <Outlet />

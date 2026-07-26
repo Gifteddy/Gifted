@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate, useLocation, Link } from 'react-router-dom'
 import { useAdminStore } from '@/store/admin'
 
 export default function AdminLogin() {
@@ -50,6 +50,9 @@ export default function AdminLogin() {
             <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••" autoComplete="current-password"
               className="w-full admin-input" />
+            <div className="mt-1 text-right">
+              <Link to="/forgot-password?returnTo=/admin/login" className="text-xs text-[#7700ff] dark:text-[#9233ff] hover:underline">Forgot Password?</Link>
+            </div>
           </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}

@@ -5,7 +5,10 @@ import { AnimatedLayout } from '@/components/layout/AnimatedLayout'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Gifteddy } from '@/components/gifteddy/Gifteddy'
 import { ProtectedRoute } from '@/components/admin/ProtectedRoute'
+import { PartnerProtectedRoute } from '@/components/partner/PartnerProtectedRoute'
 import { AdminOverlay } from '@/components/admin/AdminOverlay'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { ToastContainer } from '@/components/ui/Toast'
 import Offline from '@/pages/Offline'
 
 const Home = lazy(() => import('@/pages/Home'))
@@ -33,6 +36,8 @@ const ShopProductDetail = lazy(() => import('@/pages/shop/ProductDetail'))
 const ShopCheckout = lazy(() => import('@/pages/shop/Checkout'))
 const ShopOrderSuccess = lazy(() => import('@/pages/shop/OrderSuccess'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
 
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'))
 const AdminLogin = lazy(() => import('@/pages/admin/AdminLogin'))
@@ -86,10 +91,11 @@ export default function App() {
   if (!online) return <Offline />
 
   return (
-    <>
+    <ErrorBoundary>
       <AmbientGlow />
       <Gifteddy />
       <AdminOverlay />
+      <ToastContainer />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route element={<AnimatedLayout />}>
@@ -115,7 +121,9 @@ export default function App() {
             <Route path="shop/affiliate" element={<Navigate to="/shop/partners" replace />} />
             <Route path="shop/affiliate/dashboard" element={<Navigate to="/shop/partners/dashboard" replace />} />
             <Route path="shop/partners" element={<ShopPartners />} />
-            <Route path="shop/partners/dashboard" element={<ShopPartnerDashboard />} />
+            <Route element={<PartnerProtectedRoute />}>
+              <Route path="shop/partners/dashboard" element={<ShopPartnerDashboard />} />
+            </Route>
             <Route path="shop/product/:slug" element={<ShopProductDetail />} />
             <Route path="shop/checkout" element={<ShopCheckout />} />
             <Route path="shop/success/:id" element={<ShopOrderSuccess />} />
@@ -123,6 +131,9 @@ export default function App() {
 
           <Route path="upload/:token" element={<FileUpload />} />
           <Route path="share/:token" element={<FileShare />} />
+
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
 
           <Route path="*" element={<NotFound />} />
 
@@ -154,6 +165,6 @@ export default function App() {
           </Route>
         </Routes>
       </Suspense>
-    </>
+    </ErrorBoundary>
   )
 }

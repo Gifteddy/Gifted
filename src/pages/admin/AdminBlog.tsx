@@ -93,7 +93,7 @@ export default function AdminBlog() {
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                   {post.cover_image ? (
                     <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl">
-                      <img src={post.cover_image} alt="" className="h-full w-full object-cover" />
+                      <img src={post.cover_image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     </div>
                   ) : (
                     <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-[#7700ff]/10 text-lg text-[#7700ff] dark:text-[#ad66ff]">◇</div>
@@ -230,7 +230,7 @@ function BlogEditor({ postId, onClose, onSaved }: { postId: string | null; onClo
               {coverImage && (
                 <div className="mt-2 flex items-center gap-3">
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg">
-                    <img src={coverImage} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    <img src={coverImage} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                   </div>
                   <span className="truncate text-xs text-gray-500 dark:text-white/40">{coverImage}</span>
                 </div>

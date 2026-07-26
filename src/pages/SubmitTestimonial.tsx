@@ -123,7 +123,7 @@ export default function SubmitTestimonial() {
               <div className="flex items-center gap-3">
                 {avatar ? (
                   <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
-                    <img src={avatar} alt="" className="h-full w-full object-cover" />
+                    <img src={avatar} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     <button type="button" onClick={() => setAvatar('')} className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">✕</button>
                   </div>
                 ) : (

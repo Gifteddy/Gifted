@@ -19,6 +19,18 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Payment not verified' }), { status: 400 })
     }
 
+    // Idempotency: check if order already exists for this reference
+    const existingOrderRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/orders?payment_reference=eq.${reference}&select=id`,
+      { headers }
+    )
+    const existingOrders = await existingOrderRes.json()
+    if (existingOrders && existingOrders.length > 0) {
+      return new Response(JSON.stringify({ success: true, order: existingOrders[0], idempotent: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     // Create order via Supabase management API
     const headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
 

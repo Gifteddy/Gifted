@@ -15,6 +15,20 @@ function CustomHtmlPage({ html }: { html: string }) {
     if (!containerRef.current) return
     const shadow = containerRef.current.shadowRoot || containerRef.current.attachShadow({ mode: 'open' })
     shadow.innerHTML = `<div style="width:100%">${html}</div>`
+
+    const handleClick = (e: Event) => {
+      const target = (e.target as HTMLElement).closest('a[href^="#"]')
+      if (!target) return
+      const id = target.getAttribute('href')?.slice(1)
+      if (!id) return
+      const el = shadow.getElementById(id)
+      if (el) {
+        e.preventDefault()
+        el.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+    shadow.addEventListener('click', handleClick)
+    return () => shadow.removeEventListener('click', handleClick)
   }, [html])
 
   return <div ref={containerRef} className="w-full" />
@@ -107,7 +121,7 @@ export default function BlogPost() {
         {post.cover_image && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="mt-8 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
-            <img src={post.cover_image} alt={post.title} className="w-full object-cover" />
+            <img src={post.cover_image} alt={post.title} loading="lazy" decoding="async" className="w-full object-cover" />
           </motion.div>
         )}
 

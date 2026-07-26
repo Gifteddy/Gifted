@@ -1,26 +1,17 @@
-import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
 import { CLOUDINARY_BASE } from '@/lib/images'
 import { cn } from '@/lib/utils'
 import type { Product } from '@/lib/commerce-types'
 
 interface ProductCardProps {
-  product: Product
+  product: Product & { category?: { name: string } | null }
   index?: number
   featured?: boolean
 }
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
-  const [categoryName, setCategoryName] = useState('')
-
-  useEffect(() => {
-    if (!product.category_id) return
-    supabase.from('product_categories').select('name').eq('id', product.category_id).single().then(({ data }) => {
-      if (data) setCategoryName(data.name)
-    })
-  }, [product.category_id])
+  const categoryName = product.category?.name || ''
 
   const thumbnailUrl = product.thumbnail?.startsWith('http')
     ? product.thumbnail.replace('/upload/', '/upload/f_auto,q_auto/')

@@ -371,12 +371,12 @@ export default function AdminMedia() {
               >
                 {isImage(item) ? (
                   <img src={thumbnailUrl(item)} alt={item.public_id}
-                    className="aspect-square w-full object-cover transition-transform group-hover:scale-105" loading="lazy"
+                    className="aspect-square w-full object-cover transition-transform group-hover:scale-105" loading="lazy" decoding="async"
                     onError={(e) => { (e.target as HTMLImageElement).src = item.secure_url }} />
                 ) : isVideo(item) ? (
                   <div className="relative aspect-square w-full">
                     <img src={thumbnailUrl(item)} alt={item.public_id}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy"
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" decoding="async"
                       onError={(e) => {
                         const el = e.target as HTMLImageElement
                         el.style.display = 'none'
@@ -452,7 +452,7 @@ export default function AdminMedia() {
               <><video ref={videoRef} src={previewUrl} crossOrigin="anonymous" controls autoPlay className="max-h-[85vh] max-w-full rounded-2xl" onClick={(e) => e.stopPropagation()} />
                 <canvas ref={canvasRef} className="hidden" /></>
             ) : (
-              <img src={previewUrl} alt="Preview" className="max-h-[85vh] rounded-2xl object-contain" onClick={(e) => e.stopPropagation()} />
+              <img src={previewUrl} alt="Preview" loading="lazy" decoding="async" className="max-h-[85vh] rounded-2xl object-contain" onClick={(e) => e.stopPropagation()} />
             )}
             <button onClick={() => { setPreviewUrl(null); setPreviewItem(null) }}
               className="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm shadow-lg dark:bg-[#121218]">✕</button>

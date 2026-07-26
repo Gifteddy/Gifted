@@ -82,7 +82,7 @@ export default function AdminTestimonials() {
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                   {t.avatar ? (
                     <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full">
-                      <img src={t.avatar} alt="" className="h-full w-full object-cover" />
+                      <img src={t.avatar} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     </div>
                   ) : (
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#7700ff]/10 text-sm font-medium text-[#7700ff] dark:text-[#ad66ff]">
@@ -216,7 +216,7 @@ function TestimonialEditor({ testimonialId, onClose, onSaved }: { testimonialId:
               {avatar && (
                 <div className="mt-2 flex items-center gap-3">
                   <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full">
-                    <img src={avatar} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    <img src={avatar} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                   </div>
                   <span className="truncate text-xs text-gray-500 dark:text-white/40">{avatar}</span>
                 </div>

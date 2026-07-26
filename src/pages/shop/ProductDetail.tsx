@@ -10,6 +10,7 @@ import { CLOUDINARY_BASE } from '@/lib/images'
 import { getCategoryConfig } from '@/lib/product-attributes'
 import type { Product, ProductVariant } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
+import { Meta } from '@/lib/meta'
 
 const heading = 'font-display text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl'
 const sectionHeading = 'font-display text-2xl font-bold leading-[1.15] sm:text-3xl lg:text-4xl'
@@ -108,6 +109,25 @@ export default function ProductDetail() {
 
   return (
     <main className="min-h-screen bg-surface-light text-text-light dark:bg-surface-dark dark:text-text-dark overflow-hidden">
+
+      <Meta
+        title={product.title}
+        description={product.short_description || product.description?.slice(0, 160)}
+        image={product.thumbnail}
+        type="product"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: product.title,
+          description: product.short_description,
+          image: product.thumbnail,
+          offers: {
+            '@type': 'Offer',
+            price: product.sale_price || product.price,
+            priceCurrency: 'NGN',
+          },
+        }}
+      />
 
       {/* ── Breadcrumb ── */}
       <section className="px-6 pt-28 pb-2">

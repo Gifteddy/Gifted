@@ -1,16 +1,42 @@
 import { supabase } from './supabase'
+import { sendEmailSafe, partnerCommissionEarnedEmail, partnerSaleNotificationEmail } from './email'
 import type {
   Product, ProductCategory, Order, OrderItem, Customer,
-  Download, Affiliate, AffiliateClick, AffiliateCommission,
-  AffiliatePayout, DiscountCode, StoreSettings,
+  Download, DiscountCode, StoreSettings,
   InventoryItem, DownloadFile, AnalyticsDay, ShippingAddress,
-  PartnerNotification, PartnerAchievement, MarketingAsset,
 } from './commerce-types'
+
+// Re-export affiliate queries from the affiliate module
+export {
+  getAffiliates,
+  getAffiliateByReferralCode,
+  getAffiliateDashboard,
+  createAffiliateApplication,
+  updateAffiliateStatus,
+  getAffiliateCommissions,
+  getAffiliatePayouts,
+  createAffiliatePayout,
+  getPartnerNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  getPartnerAchievements,
+  getUnlockedAchievementKeys,
+  getMarketingAssets,
+  getPartnerProducts,
+  updatePartnerBankDetails,
+  getPartnerEarningsSummary,
+  getCommissionsByMonth,
+  getTopPerformingProducts,
+  logAffiliateClick,
+  getAffiliateByRefFromCookie,
+  setAffiliateCookie,
+  checkUrlForAffiliate,
+} from '@/modules/affiliate/queries'
 
 export async function getProducts() {
   const { data, error } = await supabase
     .from('products')
-    .select('*')
+    .select('id, title, slug, type, price, sale_price, thumbnail, featured, short_description, category_id, category:product_categories(name)')
     .eq('published', true)
     .order('display_order', { ascending: true })
   if (error) throw error
@@ -31,7 +57,7 @@ export async function getProductBySlug(slug: string) {
 export async function getFeaturedProducts() {
   const { data, error } = await supabase
     .from('products')
-    .select('*')
+    .select('id, title, slug, type, price, sale_price, thumbnail, featured, short_description, category_id, category:product_categories(name)')
     .eq('published', true)
     .eq('featured', true)
     .order('display_order', { ascending: true })
@@ -218,117 +244,6 @@ export async function logDownload(orderItemId: string, ipAddress: string, userAg
     .single()
   if (error) throw error
   return data as Download
-}
-
-export async function getAffiliates() {
-  const { data, error } = await supabase
-    .from('affiliates')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data as Affiliate[]
-}
-
-export async function getAffiliateByReferralCode(code: string) {
-  const { data, error } = await supabase
-    .from('affiliates')
-    .select('*')
-    .eq('referral_code', code)
-    .eq('status', 'approved')
-    .single()
-  if (error && error.code !== 'PGRST116') throw error
-  return data as Affiliate | null
-}
-
-export async function getAffiliateDashboard(affiliateId: string) {
-  const { data: affiliate, error } = await supabase
-    .from('affiliates')
-    .select('*')
-    .eq('id', affiliateId)
-    .single()
-  if (error) throw error
-
-  const { data: commissions, error: commError } = await supabase
-    .from('affiliate_commissions')
-    .select('*')
-    .eq('affiliate_id', affiliateId)
-    .order('created_at', { ascending: false })
-  if (commError) throw commError
-
-  const { data: clicks, error: clickError } = await supabase
-    .from('affiliate_clicks')
-    .select('*')
-    .eq('affiliate_id', affiliateId)
-    .order('created_at', { ascending: false })
-  if (clickError) throw clickError
-
-  return {
-    affiliate: affiliate as Affiliate,
-    commissions: commissions as AffiliateCommission[],
-    clicks: clicks as AffiliateClick[],
-  }
-}
-
-export async function createAffiliateApplication(application: {
-  name: string
-  email: string
-  phone?: string
-  social_links: string
-  reason: string
-  audience_description: string
-}) {
-  const code = Math.random().toString(36).substring(2, 8).toUpperCase()
-
-  const { error } = await supabase
-    .from('affiliates')
-    .insert([{
-      ...application,
-      referral_code: code,
-      status: 'pending',
-    }])
-
-  if (error) throw error
-}
-
-export async function updateAffiliateStatus(id: string, status: string) {
-  const { data, error } = await supabase
-    .from('affiliates')
-    .update({ status })
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) throw error
-  return data as Affiliate
-}
-
-export async function getAffiliateCommissions(affiliateId: string) {
-  const { data, error } = await supabase
-    .from('affiliate_commissions')
-    .select('*')
-    .eq('affiliate_id', affiliateId)
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data as AffiliateCommission[]
-}
-
-export async function getAffiliatePayouts(affiliateId: string) {
-  const { data, error } = await supabase
-    .from('affiliate_payouts')
-    .select('*')
-    .eq('affiliate_id', affiliateId)
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data as AffiliatePayout[]
-}
-
-export async function createAffiliatePayout(payout: Omit<AffiliatePayout, 'id' | 'status' | 'processed_at' | 'created_at'>) {
-  const { data, error } = await supabase
-    .from('affiliate_payouts')
-    .insert([{ ...payout, status: 'pending' }])
-    .select()
-    .single()
-  if (error) throw error
-  return data as AffiliatePayout
 }
 
 export async function getDiscountCodes() {
@@ -656,10 +571,16 @@ export async function createFullOrder(order: {
 
   if (order.affiliate_id) {
     const settings = await getStoreSettings()
-    const rate = order.items.some(i => i.product_type === 'physical')
-      ? settings.physical_commission_rate
-      : settings.digital_commission_rate
+    const totalCommission = orderItems.reduce((sum, oi) => {
+      const rate = oi.product_type === 'physical'
+        ? settings.physical_commission_rate
+        : settings.digital_commission_rate
+      return sum + (oi.total_price * rate)
+    }, 0)
     for (const oi of orderItems) {
+      const rate = oi.product_type === 'physical'
+        ? settings.physical_commission_rate
+        : settings.digital_commission_rate
       await supabase
         .from('affiliate_commissions')
         .insert([{
@@ -675,7 +596,7 @@ export async function createFullOrder(order: {
     }
     const { data: aff } = await supabase
       .from('affiliates')
-      .select('total_sales, total_earnings, pending_earnings')
+      .select('total_sales, pending_earnings')
       .eq('id', order.affiliate_id)
       .single()
     if (aff) {
@@ -683,10 +604,61 @@ export async function createFullOrder(order: {
         .from('affiliates')
         .update({
           total_sales: (aff.total_sales as number || 0) + 1,
-          total_earnings: (aff.total_earnings as number || 0) + order.total,
-          pending_earnings: (aff.pending_earnings as number || 0) + order.total,
+          pending_earnings: (aff.pending_earnings as number || 0) + totalCommission,
         })
         .eq('id', order.affiliate_id)
+    }
+
+    // Create partner notifications and send emails
+    const { data: affiliate } = await supabase
+      .from('affiliates')
+      .select('name, email')
+      .eq('id', order.affiliate_id)
+      .single()
+
+    if (affiliate) {
+      // Sale notification
+      await supabase.from('partner_notifications').insert({
+        affiliate_id: order.affiliate_id,
+        title: 'New Sale',
+        message: `Someone purchased through your referral link for ₦${order.total_amount.toLocaleString()}.`,
+        type: 'sale',
+      })
+
+      // Commission earned notification
+      await supabase.from('partner_notifications').insert({
+        affiliate_id: order.affiliate_id,
+        title: 'Commission Earned',
+        message: `You earned ₦${totalCommission.toLocaleString()} in commission from a sale.`,
+        type: 'commission',
+      })
+
+      // Send commission earned email
+      const firstItem = orderItems[0]
+      sendEmailSafe({
+        to: affiliate.email,
+        subject: `You earned ₦${totalCommission.toLocaleString()} commission!`,
+        html: partnerCommissionEarnedEmail({
+          name: affiliate.name,
+          amount: totalCommission,
+          productTitle: firstItem?.product_id || 'a product',
+          productType: firstItem?.product_type || 'digital',
+          rate: firstItem?.product_type === 'physical'
+            ? settings.physical_commission_rate
+            : settings.digital_commission_rate,
+        }),
+      }).catch(() => {})
+
+      // Send sale notification email
+      sendEmailSafe({
+        to: affiliate.email,
+        subject: 'New sale through your referral link!',
+        html: partnerSaleNotificationEmail({
+          name: affiliate.name,
+          saleAmount: order.total_amount,
+          productTitle: firstItem?.product_id || 'a product',
+        }),
+      }).catch(() => {})
     }
   }
 
@@ -726,190 +698,4 @@ export async function incrementDiscountUses(code: string) {
       .eq('code', code)
     if (error) throw error
   }
-}
-
-// ---- PARTNER DASHBOARD ----
-
-export async function getPartnerNotifications(partnerId: string) {
-  const { data, error } = await supabase
-    .from('partner_notifications')
-    .select('*')
-    .eq('partner_id', partnerId)
-    .order('created_at', { ascending: false })
-    .limit(20)
-  if (error) throw error
-  return data as PartnerNotification[]
-}
-
-export async function markNotificationRead(id: string) {
-  const { error } = await supabase
-    .from('partner_notifications')
-    .update({ read: true })
-    .eq('id', id)
-  if (error) throw error
-}
-
-export async function markAllNotificationsRead(partnerId: string) {
-  const { error } = await supabase
-    .from('partner_notifications')
-    .update({ read: true })
-    .eq('partner_id', partnerId)
-    .eq('read', false)
-  if (error) throw error
-}
-
-export async function getPartnerAchievements(partnerId: string) {
-  const { data, error } = await supabase
-    .from('partner_achievements')
-    .select('*')
-    .eq('partner_id', partnerId)
-    .order('achieved_at', { ascending: false })
-  if (error) throw error
-  return data as PartnerAchievement[]
-}
-
-export async function getUnlockedAchievementKeys(partnerId: string): Promise<string[]> {
-  const achievements = await getPartnerAchievements(partnerId)
-  return achievements.map(a => a.achievement_key)
-}
-
-export async function getMarketingAssets(productId?: string) {
-  let query = supabase
-    .from('marketing_assets')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (productId) {
-    query = query.eq('product_id', productId)
-  }
-  const { data, error } = await query
-  if (error) throw error
-  return data as MarketingAsset[]
-}
-
-export async function getPartnerProducts(partnerId?: string) {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('published', true)
-    .order('display_order', { ascending: true })
-  if (error) throw error
-  const products = data as Product[]
-  return products.map(p => ({
-    ...p,
-    commission_rate: p.type === 'physical' ? 0.1 : 0.3,
-    partner_link: `${import.meta.env.VITE_SITE_URL || window.location.origin}/shop/product/${p.slug}?ref=${partnerId || ''}`,
-  }))
-}
-
-export async function updatePartnerBankDetails(partnerId: string, details: {
-  account_name: string
-  account_number: string
-  bank_name: string
-}) {
-  const { data, error } = await supabase
-    .from('affiliates')
-    .update({
-      account_name: details.account_name,
-      account_number: details.account_number,
-      bank_name: details.bank_name,
-    })
-    .eq('id', partnerId)
-    .select()
-    .single()
-  if (error) throw error
-  return data as Affiliate
-}
-
-export async function getPartnerEarningsSummary(partnerId: string) {
-  const { data, error } = await supabase
-    .from('affiliates')
-    .select('total_earnings, paid_earnings, pending_earnings, total_sales, total_clicks')
-    .eq('id', partnerId)
-    .single()
-  if (error) throw error
-  return data as { total_earnings: number; paid_earnings: number; pending_earnings: number; total_sales: number; total_clicks: number }
-}
-
-export async function getCommissionsByMonth(partnerId: string) {
-  const { data, error } = await supabase
-    .from('affiliate_commissions')
-    .select('amount, created_at, status')
-    .eq('affiliate_id', partnerId)
-  if (error) throw error
-  const commissions = data as { amount: number; created_at: string; status: string }[]
-  const months = Array.from({ length: 12 }).map((_, i) => i)
-  return months.map(month => {
-    const monthComms = commissions.filter(c => new Date(c.created_at).getMonth() === month)
-    return {
-      month: new Date(2024, month).toLocaleString('default', { month: 'short' }),
-      earnings: monthComms.reduce((s, c) => s + c.amount, 0),
-      sales: monthComms.length,
-    }
-  })
-}
-
-export async function getTopPerformingProducts(partnerId: string) {
-  const { data, error } = await supabase
-    .from('affiliate_commissions')
-    .select('product_id, product_type, amount')
-    .eq('affiliate_id', partnerId)
-  if (error) throw error
-  const commissions = data as { product_id: string; product_type: string; amount: number }[]
-  const grouped: Record<string, { sales: number; earnings: number }> = {}
-  for (const c of commissions) {
-    const key = c.product_id || c.product_type
-    if (!grouped[key]) grouped[key] = { sales: 0, earnings: 0 }
-    grouped[key].sales++
-    grouped[key].earnings += c.amount
-  }
-  return Object.entries(grouped)
-    .map(([productId, stats]) => ({ productId, ...stats }))
-    .sort((a, b) => b.earnings - a.earnings)
-    .slice(0, 5)
-}
-
-// ---- AFFILIATE TRACKING ----
-
-export async function logAffiliateClick(affiliateId: string, ipAddress: string, userAgent: string) {
-  const { data, error } = await supabase
-    .from('affiliate_clicks')
-    .insert([{ affiliate_id: affiliateId, ip_address: ipAddress, user_agent: userAgent, converted: false }])
-    .select()
-    .single()
-  if (error) throw error
-  const { data: aff } = await supabase
-    .from('affiliates')
-    .select('total_clicks')
-    .eq('id', affiliateId)
-    .single()
-  if (aff) {
-    await supabase
-      .from('affiliates')
-      .update({ total_clicks: (aff.total_clicks as number || 0) + 1 })
-      .eq('id', affiliateId)
-  }
-  return data as AffiliateClick
-}
-
-export async function getAffiliateByRefFromCookie(): Promise<Affiliate | null> {
-  try {
-    const match = document.cookie.match(/(?:^|;\s*)gifted_ref=([^;]*)/)
-    if (!match) return null
-    return getAffiliateByReferralCode(match[1])
-  } catch { return null }
-}
-
-export function setAffiliateCookie(ref: string) {
-  document.cookie = `gifted_ref=${ref}; path=/; max-age=${60 * 60 * 24 * 30}`
-}
-
-export async function checkUrlForAffiliate() {
-  try {
-    const params = new URLSearchParams(window.location.search)
-    const ref = params.get('ref')
-    if (!ref) return null
-    const affiliate = await getAffiliateByReferralCode(ref as string)
-    if (affiliate) setAffiliateCookie(ref as string)
-    return affiliate
-  } catch { return null }
 }

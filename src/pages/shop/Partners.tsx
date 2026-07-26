@@ -5,6 +5,7 @@ import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { CountUp } from '@/components/ui/CountUp'
 import { cn } from '@/lib/utils'
 import { createAffiliateApplication } from '@/lib/commerce-queries'
+import { Meta } from '@/lib/meta'
 
 const label = 'text-[11px] font-semibold tracking-[0.2em] uppercase'
 const heading = 'font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl'
@@ -65,6 +66,41 @@ const achievements = [
   { key: 'milestone_earnings', title: 'Milestone', desc: 'Reached earnings milestone', icon: '\u2B50' },
 ]
 
+const testimonials = [
+  {
+    name: 'Chidinma O.',
+    role: 'Content Creator',
+    platform: 'YouTube',
+    quote: 'I started sharing photography presets with my audience and within 3 months I was earning consistent passive income. The dashboard makes it so easy to track everything.',
+    earnings: '₦120,000+',
+  },
+  {
+    name: 'Tunde A.',
+    role: 'Tech Blogger',
+    platform: 'Blog + Twitter',
+    quote: 'The commission rates are the best I have seen. I write one blog post and it keeps earning for months. The marketing assets they provide save me so much time.',
+    earnings: '₦250,000+',
+  },
+  {
+    name: 'Amina B.',
+    role: 'Design Educator',
+    platform: 'Instagram + TikTok',
+    quote: 'What I love most is how transparent everything is. I can see every click, every sale, every commission in real time. No guessing, no waiting for reports.',
+    earnings: '₦85,000+',
+  },
+]
+
+const faqs = [
+  { q: 'How much can I earn?', a: 'You earn 30% commission on every digital product sale and 10% on physical merch. There is no cap on earnings — the more you refer, the more you earn.' },
+  { q: 'When do I get paid?', a: 'Payouts are processed monthly. There is no minimum threshold, so you get paid for every commission earned. Payments are made via bank transfer, PayPal, or mobile money.' },
+  { q: 'How long does the approval process take?', a: 'We review all applications within 3–5 business days. We look at your audience, content quality, and alignment with our brand values.' },
+  { q: 'Can I promote products on any platform?', a: 'Yes. You can share your referral link on social media, blogs, YouTube, email newsletters, podcasts — any platform where you have an audience.' },
+  { q: 'Do I need a large following to join?', a: 'No. We value quality and engagement over follower count. Even micro-creators with a small but engaged audience are welcome to apply.' },
+  { q: 'What marketing materials are provided?', a: 'Partners get access to product images, banners, mockups, suggested copy, and captions. We also provide performance insights to help you optimize your promotions.' },
+  { q: 'Can I promote multiple products?', a: 'Yes. Once approved, you can promote any product in the Gifted catalog. Your referral link tracks all sales across products.' },
+  { q: 'How do I track my performance?', a: 'Your partner dashboard shows real-time data: clicks, conversions, commissions earned, payout history, and performance analytics. Everything is transparent and updated live.' },
+]
+
 const formSteps = [
   { id: 'personal', label: 'Personal Details' },
   { id: 'audience', label: 'Audience Info' },
@@ -84,15 +120,70 @@ export default function Partners() {
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [stepAttempted, setStepAttempted] = useState<Record<number, boolean>>({})
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    if (!touched[e.target.name]) setTouched(prev => ({ ...prev, [e.target.name]: true }))
   }
 
-  const nextStep = () => { if (step < formSteps.length - 1) setStep(s => s + 1) }
+  const markStepTouched = (stepIndex: number) => {
+    const fields: Record<number, string[]> = {
+      0: ['name', 'email'],
+      1: ['audience_description'],
+      2: [],
+      3: ['reason'],
+      4: [],
+    }
+    setTouched(prev => {
+      const next = { ...prev }
+      for (const f of fields[stepIndex] || []) next[f] = true
+      return next
+    })
+    setStepAttempted(prev => ({ ...prev, [stepIndex]: true }))
+  }
+
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+
+  const stepErrors: Record<number, string[]> = {
+    0: [
+      ...(!formData.name.trim() && touched.name ? ['Full name is required'] : []),
+      ...(!formData.email.trim() && touched.email ? ['Email is required'] : []),
+      ...(touched.email && formData.email.trim() && !emailValid ? ['Enter a valid email address'] : []),
+    ],
+    1: [
+      ...(!formData.audience_description.trim() && touched.audience_description ? ['Audience description is required'] : []),
+    ],
+    3: [
+      ...(!formData.reason.trim() && touched.reason ? ['Please tell us why you want to join'] : []),
+    ],
+  }
+
+  const canAdvance = (stepIndex: number): boolean => {
+    switch (stepIndex) {
+      case 0: return !!formData.name.trim() && !!formData.email.trim() && emailValid
+      case 1: return !!formData.audience_description.trim()
+      case 2: return true
+      case 3: return !!formData.reason.trim()
+      default: return true
+    }
+  }
+
+  const nextStep = () => {
+    markStepTouched(step)
+    if (!canAdvance(step)) return
+    if (step < formSteps.length - 1) setStep(s => s + 1)
+  }
   const prevStep = () => { if (step > 0) setStep(s => s - 1) }
 
   const handleSubmit = async () => {
+    markStepTouched(3)
+    if (!formData.name.trim() || !formData.email.trim() || !emailValid || !formData.reason.trim() || !formData.audience_description.trim()) {
+      setError('Please fill in all required fields before submitting.')
+      return
+    }
     setSubmitting(true); setError('')
     try {
       await createAffiliateApplication({
@@ -136,27 +227,40 @@ export default function Partners() {
     )
   }
 
+  const fieldClass = (name: string, hasError?: boolean) => cn(
+    'w-full rounded-xl border bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 transition-all',
+    hasError
+      ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/15'
+      : 'border-border-light dark:border-border-dark focus:border-brand-500/50 focus:ring-brand-500/30'
+  )
+
+  const errors = stepErrors[step] || []
+  const showErrors = stepAttempted[step]
+
   const renderStep = () => {
     switch (step) {
       case 0:
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold mb-1.5 tracking-wide">Full Name</label>
+              <label className="block text-xs font-semibold mb-1.5 tracking-wide">Full Name <span className="text-red-400">*</span></label>
               <input name="name" type="text" required value={formData.name} onChange={handleChange}
-                className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
+                className={fieldClass('name', showErrors && !formData.name.trim())}
                 placeholder="Your full name" />
+              {showErrors && !formData.name.trim() && <p className="mt-1 text-[11px] text-red-400">Full name is required</p>}
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1.5 tracking-wide">Email Address</label>
+              <label className="block text-xs font-semibold mb-1.5 tracking-wide">Email Address <span className="text-red-400">*</span></label>
               <input name="email" type="email" required value={formData.email} onChange={handleChange}
-                className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
+                className={fieldClass('email', showErrors && (!formData.email.trim() || (touched.email && !emailValid)))}
                 placeholder="you@example.com" />
+              {showErrors && !formData.email.trim() && <p className="mt-1 text-[11px] text-red-400">Email is required</p>}
+              {showErrors && formData.email.trim() && !emailValid && <p className="mt-1 text-[11px] text-red-400">Enter a valid email address</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold mb-1.5 tracking-wide">Phone Number <span className="text-text-muted-light/50 dark:text-text-muted-dark/50">(optional)</span></label>
               <input name="phone" type="tel" value={formData.phone} onChange={handleChange}
-                className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
+                className={fieldClass('phone')}
                 placeholder="+234 800 000 0000" />
             </div>
           </div>
@@ -167,7 +271,7 @@ export default function Partners() {
             <div>
               <label className="block text-xs font-semibold mb-1.5 tracking-wide">Audience Size</label>
               <select name="audience_size" value={formData.audience_size} onChange={handleChange}
-                className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/30 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all">
+                className={fieldClass('audience_size')}>
                 <option value="">Select size...</option>
                 <option value="1k">Under 1,000</option>
                 <option value="10k">1,000 - 10,000</option>
@@ -180,14 +284,18 @@ export default function Partners() {
             <div>
               <label className="block text-xs font-semibold mb-1.5 tracking-wide">Your Niche</label>
               <input name="niche" type="text" value={formData.niche} onChange={handleChange}
-                className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
+                className={fieldClass('niche')}
                 placeholder="e.g. Photography, Design, Tech, Lifestyle" />
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1.5 tracking-wide">Describe Your Audience</label>
+              <label className="block text-xs font-semibold mb-1.5 tracking-wide">Describe Your Audience <span className="text-red-400">*</span></label>
               <textarea name="audience_description" required rows={3} value={formData.audience_description} onChange={handleChange}
-                className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all resize-none"
+                className={cn(fieldClass('audience_description', showErrors && !formData.audience_description.trim()), 'resize-none')}
                 placeholder="Who follows you? What is your content about? Why would they be interested in our products?" />
+              <div className="mt-1 flex items-center justify-between">
+                {showErrors && !formData.audience_description.trim() && <p className="text-[11px] text-red-400">This field is required</p>}
+                <p className="text-[10px] text-text-muted-light/40 dark:text-text-muted-dark/40 ml-auto">{formData.audience_description.length}/500</p>
+              </div>
             </div>
           </div>
         )
@@ -197,13 +305,14 @@ export default function Partners() {
             <div>
               <label className="block text-xs font-semibold mb-1.5 tracking-wide">Social Links</label>
               <input name="social_links" type="text" value={formData.social_links} onChange={handleChange}
-                className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
+                className={fieldClass('social_links')}
                 placeholder="Instagram, YouTube, TikTok, X, etc." />
+              <p className="mt-1 text-[10px] text-text-muted-light/40 dark:text-text-muted-dark/40">Separate multiple links with commas</p>
             </div>
             <div>
               <label className="block text-xs font-semibold mb-1.5 tracking-wide">Website / Blog <span className="text-text-muted-light/50 dark:text-text-muted-dark/50">(optional)</span></label>
               <input name="website" type="url" value={formData.website} onChange={handleChange}
-                className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
+                className={fieldClass('website')}
                 placeholder="https://yourwebsite.com" />
             </div>
           </div>
@@ -212,10 +321,14 @@ export default function Partners() {
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold mb-1.5 tracking-wide">Why do you want to join the Gifted Partner Network?</label>
+              <label className="block text-xs font-semibold mb-1.5 tracking-wide">Why do you want to join the Gifted Partner Network? <span className="text-red-400">*</span></label>
               <textarea name="reason" required rows={4} value={formData.reason} onChange={handleChange}
-                className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all resize-none"
+                className={cn(fieldClass('reason', showErrors && !formData.reason.trim()), 'resize-none')}
                 placeholder="Tell us why you are interested in promoting our products and how your audience would benefit..." />
+              <div className="mt-1 flex items-center justify-between">
+                {showErrors && !formData.reason.trim() && <p className="text-[11px] text-red-400">Please tell us why you want to join</p>}
+                <p className="text-[10px] text-text-muted-light/40 dark:text-text-muted-dark/40 ml-auto">{formData.reason.length}/1000</p>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold mb-1.5 tracking-wide">How do you plan to promote our products?</label>
@@ -223,7 +336,7 @@ export default function Partners() {
                 const el = e.target
                 setFormData(prev => ({ ...prev, audience_description: el.value }))
               }}
-                className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all resize-none"
+                className={cn(fieldClass('audience_description'), 'resize-none')}
                 placeholder="Social media posts, YouTube reviews, blog articles, email newsletters, etc." />
             </div>
           </div>
@@ -280,6 +393,8 @@ export default function Partners() {
   return (
     <main className="min-h-screen bg-surface-light text-text-light dark:bg-surface-dark dark:text-text-dark overflow-hidden">
 
+      <Meta title="Partners" description="Join the Gifted Partner Network. Earn commissions by recommending products you love." />
+
       {/* ── Hero ── */}
       <section className="relative flex min-h-[85vh] items-center justify-center overflow-hidden px-6 pt-24">
         <div className="pointer-events-none absolute inset-0">
@@ -331,7 +446,7 @@ export default function Partners() {
                 <p className="font-display text-xl sm:text-2xl font-bold text-gradient">
                   {s.value != null ? <CountUp end={s.value} suffix={s.suffix} duration={1200} /> : s.text}
                 </p>
-                <p className="text-[10px] text-text-muted-light dark:text-text-muted-dark mt-0.5">{s.label}</p>
+                <p className="text-xs text-text-muted-light dark:text-text-muted-dark mt-0.5">{s.label}</p>
               </div>
             ))}
           </motion.div>
@@ -407,7 +522,7 @@ export default function Partners() {
                   {s.num}
                 </div>
                 <h3 className="font-display text-sm font-bold mb-1">{s.title}</h3>
-                <p className="text-[10px] leading-relaxed text-text-muted-light dark:text-text-muted-dark">{s.desc}</p>
+                <p className="text-xs leading-relaxed text-text-muted-light dark:text-text-muted-dark">{s.desc}</p>
                 {i < steps.length - 1 && (
                   <div className="hidden sm:block mt-2 text-text-muted-light/30 dark:text-text-muted-dark/30">
                     <svg className="mx-auto h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
@@ -438,6 +553,76 @@ export default function Partners() {
                 <span className="text-2xl block mb-2">{a.icon}</span>
                 <h3 className="font-display text-xs font-bold">{a.title}</h3>
                 <p className="text-[10px] text-text-muted-light dark:text-text-muted-dark mt-0.5">{a.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Testimonials ── */}
+      <section className="relative px-6 py-20 sm:py-28 bg-surface-secondary-light dark:bg-surface-secondary-dark">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border-light dark:via-border-dark to-transparent" />
+        <div className="mx-auto max-w-5xl">
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, margin: '-100px' }} className="mb-14 text-center">
+            <span className={cn(label, 'text-gold-500 dark:text-gold-400')}>Partner Stories</span>
+            <h2 className={cn(heading, 'mt-4')}>Hear From Our <span className="text-gradient">Partners</span></h2>
+            <p className="mt-3 text-sm text-text-muted-light dark:text-text-muted-dark max-w-lg mx-auto">
+              Real creators, real results. See how our partners are earning with Gifted.
+            </p>
+          </motion.div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {testimonials.map((t, i) => (
+              <motion.div key={t.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.08 }}>
+                <LiquidGlass intensity="subtle" className="rounded-2xl p-6 h-full flex flex-col">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/10 text-brand-500 font-display text-sm font-bold">
+                      {t.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white/90">{t.name}</p>
+                      <p className="text-[10px] text-text-muted-light dark:text-text-muted-dark">{t.role} · {t.platform}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed text-text-muted-light dark:text-text-muted-dark flex-1">&ldquo;{t.quote}&rdquo;</p>
+                  <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06]">
+                    <p className="text-[10px] text-text-muted-light dark:text-text-muted-dark">Earned</p>
+                    <p className="text-sm font-bold text-brand-500 dark:text-brand-400">{t.earnings}</p>
+                  </div>
+                </LiquidGlass>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="relative px-6 py-20 sm:py-28">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border-light dark:via-border-dark to-transparent" />
+        <div className="mx-auto max-w-3xl">
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, margin: '-100px' }} className="mb-12 text-center">
+            <span className={cn(label, 'text-brand-500 dark:text-brand-400')}>FAQ</span>
+            <h2 className={cn(heading, 'mt-4')}>Frequently <span className="text-gradient">Asked Questions</span></h2>
+          </motion.div>
+          <div className="space-y-2">
+            {faqs.map((faq, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ duration: 0.3, delay: i * 0.04 }}
+                className="rounded-2xl border border-black/[0.04] dark:border-white/[0.06] bg-white/30 dark:bg-white/[0.01] overflow-hidden">
+                <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="flex w-full items-center justify-between px-5 py-4 text-left">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white/90 pr-4">{faq.q}</span>
+                  <svg className={cn('h-4 w-4 shrink-0 text-text-muted-light dark:text-text-muted-dark transition-transform duration-200', openFaq === i && 'rotate-180')}
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 9l6 6 6-6" /></svg>
+                </button>
+                {openFaq === i && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                    transition={{ duration: 0.25 }}>
+                    <div className="px-5 pb-4 text-sm leading-relaxed text-text-muted-light dark:text-text-muted-dark">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
               </motion.div>
             ))}
           </div>
@@ -494,7 +679,7 @@ export default function Partners() {
 
                 {step < formSteps.length - 1 ? (
                   <button onClick={nextStep}
-                    disabled={step === 0 && !formData.name || step === 0 && !formData.email}
+                    disabled={!canAdvance(step)}
                     className="inline-flex items-center gap-1.5 rounded-full bg-brand-500 px-6 py-2.5 text-xs font-semibold text-white transition-all duration-300 hover:shadow-lg hover:shadow-brand-500/25 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97]">
                     Continue
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 5l7 7-7 7" /></svg>

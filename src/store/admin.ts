@@ -6,6 +6,7 @@ interface AdminState {
   user: User | null
   loading: boolean
   initialized: boolean
+  isAdmin: boolean
 
   initialize: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
@@ -16,17 +17,38 @@ export const useAdminStore = create<AdminState>((set) => ({
   user: null,
   loading: true,
   initialized: false,
+  isAdmin: false,
 
   initialize: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      set({ user: session?.user ?? null, loading: false, initialized: true })
+      const user = session?.user ?? null
+      let isAdmin = false
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        isAdmin = profile?.role === 'admin'
+      }
+      set({ user, loading: false, initialized: true, isAdmin })
 
-      supabase.auth.onAuthStateChange((_event, session) => {
-        set({ user: session?.user ?? null, loading: false })
+      supabase.auth.onAuthStateChange(async (_event, session) => {
+        const u = session?.user ?? null
+        let admin = false
+        if (u) {
+          const { data: p } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', u.id)
+            .single()
+          admin = p?.role === 'admin'
+        }
+        set({ user: u, loading: false, isAdmin: admin })
       })
     } catch {
-      set({ loading: false, initialized: true })
+      set({ loading: false, initialized: true, isAdmin: false })
     }
   },
 
@@ -42,6 +64,6 @@ export const useAdminStore = create<AdminState>((set) => ({
 
   signOut: async () => {
     await supabase.auth.signOut()
-    set({ user: null })
+    set({ user: null, isAdmin: false })
   },
 }))

@@ -5,6 +5,7 @@ import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { Skeleton } from '@/components/ui/Skeleton'
 import type { BlogPost } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
+import { Meta } from '@/lib/meta'
 
 export default function Blog() {
   const [posts, setPosts] = useState<BlogPost[]>([])
@@ -23,6 +24,7 @@ export default function Blog() {
 
   return (
     <section className="relative min-h-screen px-4 pt-32 pb-24">
+      <Meta title="Blog" description="Thoughts, insights, and stories on creative technology, design, and digital experiences." />
       <div className="mx-auto max-w-7xl">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           className="mb-12 text-center">
@@ -41,7 +43,7 @@ export default function Blog() {
               <Link to={`/blog/${post.slug}`}>
                 <LiquidGlass className="group overflow-hidden rounded-2xl transition-all duration-500 hover:scale-[1.02]" intensity="medium">
                   <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
-                    {post.cover_image ? <img src={post.cover_image} alt={post.title} className="h-full w-full object-cover" />
+                    {post.cover_image ? <img src={post.cover_image} alt={post.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                       : <span className="text-4xl opacity-30">📝</span>}
                   </div>
                   <div className="p-5">

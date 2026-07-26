@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { getProducts, getFeaturedProducts, getProductsByType, checkUrlForAffiliate } from '@/lib/commerce-queries'
 import type { Product } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
+import { Meta } from '@/lib/meta'
 
 const label = 'text-[11px] font-semibold tracking-[0.2em] uppercase'
 
@@ -88,6 +89,8 @@ export default function Shop() {
 
   return (
     <main className="min-h-screen bg-surface-light text-text-light dark:bg-surface-dark dark:text-text-dark overflow-hidden">
+
+      <Meta title="Shop" description="Discover digital products, merch, and bundles from Gifted. Premium creative assets and tools." />
 
       {/* ── Minimal Header ── */}
       <section className="px-6 pt-28 pb-6">

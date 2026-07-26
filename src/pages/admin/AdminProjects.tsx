@@ -420,7 +420,7 @@ function ProjectCardContent({
         )}
         {project.cover_image ? (
           <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl">
-            <img src={project.cover_image} alt="" className="h-full w-full object-cover" />
+            <img src={project.cover_image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
           </div>
         ) : (
           <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-[#7700ff]/10 text-lg text-[#7700ff] dark:text-[#ad66ff]">◇</div>
@@ -690,7 +690,7 @@ function ProjectEditor({ projectId, onClose, onSaved, nextDisplayOrder, initialG
               {coverImage && (
                 <div className="mt-2 flex items-center gap-3">
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg">
-                    <img src={coverImage} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    <img src={coverImage} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                   </div>
                   <span className="truncate text-xs text-gray-500 dark:text-white/40">{coverImage}</span>
                 </div>
@@ -701,7 +701,7 @@ function ProjectEditor({ projectId, onClose, onSaved, nextDisplayOrder, initialG
               <div className="flex flex-wrap gap-2 mb-2">
                 {gallery.map((img, i) => (
                   <div key={i} className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
-                    <img src={img.replace('/upload/', '/upload/w_100/')} alt="" className="h-full w-full object-cover"
+                    <img src={img.replace('/upload/', '/upload/w_100/')} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                     <button type="button" onClick={() => handleRemoveGallery(i)}
                       className="absolute inset-0 flex items-center justify-center bg-black/50 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">✕</button>
@@ -1057,14 +1057,14 @@ function MediaPicker({ onPick, onClose, onMultiPick }: {
                       <button type="button" onClick={() => handlePickItem(item)}
                         className="relative aspect-square overflow-hidden rounded-xl bg-black/10 transition-all hover:ring-2 hover:ring-[#7700ff] dark:bg-white/5">
                         {isVid ? (
-                          <><img src={item.secure_url.replace('/upload/', '/upload/w_200,q_auto/')} alt="" className="h-full w-full object-cover" />
+                          <><img src={item.secure_url.replace('/upload/', '/upload/w_200,q_auto/')} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                             <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 transition-opacity group-hover:opacity-100">
                               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                             </span>
                             <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[10px] text-white">{item.format}</span>
                           </>
                         ) : (
-                          <img src={item.secure_url.replace('/upload/', '/upload/w_200,q_auto/')} alt="" className="h-full w-full object-cover" />
+                          <img src={item.secure_url.replace('/upload/', '/upload/w_200,q_auto/')} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                         )}
                       </button>
                       {selectMode && (

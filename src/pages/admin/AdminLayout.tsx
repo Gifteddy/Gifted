@@ -5,6 +5,7 @@ import { useAdminStore } from '@/store/admin'
 import { useTheme } from '@/store/theme'
 import NotificationBell from '@/components/admin/NotificationBell'
 import React, { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 type NavItem = {
   to: string
@@ -82,6 +83,10 @@ export default function AdminLayout() {
     }
     return active
   })
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [pathname])
 
   useEffect(() => {
     setExpandedGroups(prev => {
@@ -299,7 +304,17 @@ export default function AdminLayout() {
 
         <main className="relative flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
           <div className="relative">
-            <Outlet />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
       </div>

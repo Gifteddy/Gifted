@@ -1,9 +1,9 @@
 export type ProductType = 'digital' | 'physical' | 'bundle'
 export type OrderStatus = 'pending' | 'paid' | 'in_production' | 'ready_to_ship' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
-export type AffiliateStatus = 'pending' | 'approved' | 'rejected' | 'suspended'
-export type PayoutStatus = 'pending' | 'approved' | 'paid' | 'rejected'
 export type ShippingStatus = 'pending' | 'processing' | 'shipped' | 'delivered'
+
+export type { AffiliateStatus, PayoutStatus } from '@/modules/affiliate/types'
 
 export interface ProductVariant {
   id: string
@@ -131,63 +131,7 @@ export interface Download {
   created_at: string
 }
 
-export interface Affiliate {
-  id: string
-  name: string
-  email: string
-  phone: string | null
-  social_links: string
-  reason: string
-  audience_description: string
-  status: AffiliateStatus
-  referral_code: string
-  account_name: string | null
-  account_number: string | null
-  bank_name: string | null
-  total_clicks: number
-  total_sales: number
-  total_earnings: number
-  paid_earnings: number
-  pending_earnings: number
-  created_at: string
-}
-
-export interface AffiliateClick {
-  id: string
-  affiliate_id: string
-  order_id: string | null
-  ip_address: string
-  user_agent: string
-  converted: boolean
-  created_at: string
-}
-
-export interface AffiliateCommission {
-  id: string
-  affiliate_id: string
-  order_id: string
-  order_item_id: string
-  product_id: string
-  product_type: ProductType
-  rate: number
-  amount: number
-  status: 'pending' | 'approved' | 'paid' | 'cancelled'
-  created_at: string
-}
-
-export interface AffiliatePayout {
-  id: string
-  affiliate_id: string
-  amount: number
-  status: PayoutStatus
-  payment_method: string
-  account_name: string | null
-  account_number: string | null
-  bank_name: string | null
-  notes: string
-  processed_at: string | null
-  created_at: string
-}
+export type { Affiliate, AffiliateClick, AffiliateCommission, AffiliatePayout } from '@/modules/affiliate/types'
 
 export interface DiscountCode {
   id: string
@@ -220,18 +164,17 @@ export interface StoreSettings {
   digital_commission_rate: number
   physical_commission_rate: number
   currency: string
+  payment_gateway: string
+  paystack_secret_key: string | null
+  paystack_public_key: string | null
+  min_payout_amount: number
+  auto_approve_payouts: boolean
+  payout_schedule: string
   created_at: string
   updated_at: string
 }
 
-export interface AffiliateApplication {
-  name: string
-  email: string
-  phone?: string
-  social_links: string
-  reason: string
-  audience_description: string
-}
+export type { AffiliateApplication } from '@/modules/affiliate/types'
 
 export interface ShippingAddress {
   line1: string
@@ -242,39 +185,7 @@ export interface ShippingAddress {
   zip: string
 }
 
-export interface PartnerNotification {
-  id: string
-  partner_id: string
-  type: 'sale' | 'commission' | 'payout_approved' | 'payout_sent' | 'new_product' | 'campaign' | 'achievement' | 'status_change'
-  title: string
-  message: string
-  read: boolean
-  link: string | null
-  created_at: string
-}
-
-export interface PartnerAchievement {
-  id: string
-  partner_id: string
-  achievement_key: 'first_sale' | 'ten_sales' | 'hundred_clicks' | 'top_performer' | 'bundle_seller' | 'milestone_earnings'
-  title: string
-  description: string
-  icon: string
-  achieved_at: string
-  metadata: Record<string, unknown> | null
-}
-
-export interface MarketingAsset {
-  id: string
-  title: string
-  type: 'banner' | 'image' | 'mockup' | 'copy' | 'caption' | 'campaign'
-  file_url: string | null
-  content: string | null
-  description: string
-  product_id: string | null
-  downloadable: boolean
-  created_at: string
-}
+export type { PartnerNotification, PartnerAchievement, MarketingAsset } from '@/modules/affiliate/types'
 
 export interface AnalyticsDay {
   day: string

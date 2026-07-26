@@ -8,6 +8,7 @@ import { validateDownloadToken, getSignedDownloadUrl, incrementDownloadCount } f
 import { logDownload } from '@/lib/commerce-queries'
 import { formatCurrency } from '@/lib/currency'
 import type { Order, OrderItem } from '@/lib/commerce-types'
+import { Meta } from '@/lib/meta'
 
 export default function OrderSuccess() {
   const { id } = useParams<{ id: string }>()
@@ -75,6 +76,7 @@ export default function OrderSuccess() {
 
   return (
     <main className="min-h-screen bg-surface-light dark:bg-surface-dark text-text-light dark:text-text-dark px-6 pt-28 pb-20">
+      <Meta title="Order Confirmed" description="Your order has been confirmed. Thank you for shopping with Gifted." />
       <div className="mx-auto max-w-2xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="mb-8 text-center">

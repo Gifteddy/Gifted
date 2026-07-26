@@ -173,7 +173,7 @@ function ShareCard({ share, url, isExpired, onDelete, onEdit }: { share: FileSha
                   className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
                   {item.type.startsWith('image/') ? (
                     <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-black/[0.05] dark:bg-white/[0.05]">
-                      <img src={item.url} alt="" className="h-full w-full object-cover" />
+                      <img src={item.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     </div>
                   ) : (
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-black/[0.05] text-sm dark:bg-white/[0.05] dark:text-white/60">
@@ -636,7 +636,7 @@ function EditShareModal({ shareId, onClose, onSaved }: { shareId: string; onClos
                       : 'border-black/[0.04] bg-black/[0.02] dark:border-white/[0.04] dark:bg-white/[0.02]'
                   )}>
                     {item.type.startsWith('image/') ? (
-                      <img src={item.url} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
+                      <img src={item.url} alt="" loading="lazy" decoding="async" className="h-8 w-8 shrink-0 rounded object-cover" />
                     ) : (
                       <span className="text-base leading-none shrink-0">
                         {item.type.startsWith('video/') ? '🎬' : '📄'}
@@ -678,7 +678,7 @@ function EditShareModal({ shareId, onClose, onSaved }: { shareId: string; onClos
                 {newFiles.map(f => (
                   <div key={f.id} className="flex items-center gap-3 rounded-lg border border-black/[0.04] bg-black/[0.02] px-3 py-2 dark:border-white/[0.04] dark:bg-white/[0.02]">
                     {f.preview && f.file.type.startsWith('image/') ? (
-                      <img src={f.preview} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
+                      <img src={f.preview} alt="" loading="lazy" decoding="async" className="h-8 w-8 shrink-0 rounded object-cover" />
                     ) : (
                       <span className="text-base leading-none shrink-0">
                         {f.file.type.startsWith('video/') ? '🎬' : f.file.type.startsWith('image/') ? '🖼️' : '📄'}

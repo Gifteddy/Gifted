@@ -9,6 +9,8 @@ interface PartnerState {
   initialize: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<{ error: string | null }>
+  updatePassword: (password: string) => Promise<{ error: string | null }>
 }
 
 export const usePartnerStore = create<PartnerState>((set) => ({
@@ -41,5 +43,27 @@ export const usePartnerStore = create<PartnerState>((set) => ({
   signOut: async () => {
     await supabase.auth.signOut()
     set({ user: null })
+  },
+
+  resetPassword: async (email) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (error) return { error: error.message }
+      return { error: null }
+    } catch {
+      return { error: 'An unexpected error occurred' }
+    }
+  },
+
+  updatePassword: async (password) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) return { error: error.message }
+      return { error: null }
+    } catch {
+      return { error: 'An unexpected error occurred' }
+    }
   },
 }))
