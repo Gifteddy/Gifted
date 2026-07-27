@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js')
 const { handleCors, checkRateLimit, validateUuid } = require('./_security')
+const { sendMail } = require('./lib/mailer')
 
 const PAYSTACK_API = 'https://api.paystack.co'
 
@@ -23,7 +24,6 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Missing SUPABASE_SERVICE_ROLE_KEY on server' })
     }
 
-    // Verify requester is admin
     const authHeader = req.headers.authorization || ''
     if (!authHeader.startsWith('Bearer ') || !anonKey) {
       return res.status(401).json({ error: 'Unauthorized: missing auth token' })
@@ -37,7 +37,6 @@ module.exports = async (req, res) => {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     if (!profile || profile.role !== 'admin') return res.status(403).json({ error: 'Forbidden: admin access required' })
 
-    // Get payout record
     const { data: payout, error: payoutErr } = await supabase
       .from('affiliate_payouts')
       .select('*, affiliates!affiliate_id(name, email, account_name, account_number, bank_name)')
@@ -49,14 +48,12 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: `Payout status is "${payout.status}", expected "pending" or "approved"` })
     }
 
-    // Get Paystack secret key from store_settings
     const { data: settings } = await supabase.from('store_settings').select('paystack_secret_key, payment_gateway').single()
     const secretKey = settings?.paystack_secret_key
     if (!secretKey) {
       return res.status(400).json({ error: 'Paystack secret key not configured in Store Settings' })
     }
 
-    // Get affiliate bank details (prefer payout-specific, fallback to affiliate record)
     const affiliate = payout.affiliates
     const accountName = payout.account_name || affiliate?.account_name
     const accountNumber = payout.account_number || affiliate?.account_number
@@ -66,13 +63,9 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Partner has no bank account details on file' })
     }
 
-    // Step 1: Create or get Paystack Transfer Recipient
-    // Paystack requires a recipient_code to send transfers
     let recipientCode = payout.recipient_code || null
 
     if (!recipientCode) {
-      // First, we need the bank code. Paystack uses specific bank codes.
-      // For now, we'll use the bank name to look up common Nigerian banks
       const bankCode = getBankCode(bankName)
       if (!bankCode) {
         return res.status(400).json({ error: `Could not find Paystack bank code for "${bankName}". Please update the partner's bank details.` })
@@ -99,11 +92,9 @@ module.exports = async (req, res) => {
       }
       recipientCode = recipientData.data.recipient_code
 
-      // Save recipient_code on the payout record for future use
       await supabase.from('affiliate_payouts').update({ recipient_code: recipientCode }).eq('id', payout_id)
     }
 
-    // Step 2: Initiate Transfer
     const transferRes = await fetch(`${PAYSTACK_API}/transfer`, {
       method: 'POST',
       headers: {
@@ -112,7 +103,7 @@ module.exports = async (req, res) => {
       },
       body: JSON.stringify({
         source: 'balance',
-        amount: Math.round(payout.amount * 100), // Paystack uses kobo (smallest unit)
+        amount: Math.round(payout.amount * 100),
         recipient: recipientCode,
         reason: `Partner payout - ${affiliate?.name || payout.affiliate_id}`,
         reference: `payout_${payout_id.slice(0, 8)}_${Date.now()}`,
@@ -124,7 +115,6 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: `Paystack transfer error: ${transferData.message}` })
     }
 
-    // Step 3: Update payout record
     await supabase.from('affiliate_payouts').update({
       status: 'paid',
       processed_at: new Date().toISOString(),
@@ -132,7 +122,6 @@ module.exports = async (req, res) => {
       recipient_code: recipientCode,
     }).eq('id', payout_id)
 
-    // Step 4: Create notification for the partner
     await supabase.from('partner_notifications').insert({
       affiliate_id: payout.affiliate_id,
       title: 'Payout Processed',
@@ -140,7 +129,6 @@ module.exports = async (req, res) => {
       type: 'payout_sent',
     })
 
-    // Audit log
     await supabase.from('audit_logs').insert({
       actor_id: user.id,
       actor_email: user.email,
@@ -150,32 +138,19 @@ module.exports = async (req, res) => {
       details: { amount: payout.amount, reference: transferData.data.reference, affiliate_id: payout.affiliate_id },
     })
 
-    // Step 5: Send payout processed email
-    const RESEND_API = 'https://api.resend.com'
-    const resendKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY
-    const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.VITE_RESEND_FROM_EMAIL || 'noreply@gifted.ng'
-    if (resendKey && affiliate?.email) {
-      try {
-        await fetch(`${RESEND_API}/emails`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${resendKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: fromEmail,
-            to: affiliate.email,
-            subject: `Payout of ₦${payout.amount.toLocaleString()} processed!`,
-            html: buildPayoutEmailHtml({
-              name: affiliate.name,
-              amount: payout.amount,
-              reference: transferData.data.reference,
-              method: payout.payment_method || 'bank_transfer',
-            }),
-          }),
-        })
-      } catch (emailErr) {
-        console.error('[Process Payout] Email failed:', emailErr)
+    if (affiliate?.email) {
+      const emailOk = await sendMail({
+        to: affiliate.email,
+        subject: `Payout of ₦${payout.amount.toLocaleString()} processed!`,
+        html: buildPayoutEmailHtml({
+          name: affiliate.name,
+          amount: payout.amount,
+          reference: transferData.data.reference,
+          method: payout.payment_method || 'bank_transfer',
+        }),
+      })
+      if (!emailOk) {
+        console.error('[Process Payout] Email failed to send')
       }
     }
 
@@ -190,7 +165,6 @@ module.exports = async (req, res) => {
   }
 }
 
-// Common Nigerian bank codes for Paystack
 function getBankCode(bankName) {
   const banks = {
     'access bank': '044',

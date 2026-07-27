@@ -4,7 +4,7 @@
 
 ### POST `/api/send-email`
 
-Server-side email relay. Client calls this instead of Resend directly to keep the API key server-side.
+Server-side email relay. Client calls this instead of sending SMTP directly to keep credentials server-side.
 
 **Request:**
 ```json
@@ -22,7 +22,7 @@ Server-side email relay. Client calls this instead of Resend directly to keep th
 | `to` | Yes | Recipient email(s) — string or array |
 | `subject` | Yes | Email subject |
 | `html` | Yes | HTML body |
-| `from` | No | Sender address (defaults to `RESEND_FROM_EMAIL`) |
+| `from` | No | Sender address (defaults to `SMTP_FROM` / `SMTP_USER`) |
 | `replyTo` | No | Reply-to address |
 
 **Response (200):** `{ "success": true }`

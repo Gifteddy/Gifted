@@ -18,8 +18,8 @@
      ┌─────▼──────┐           ┌──────▼───────┐
      │  External   │           │  PostgreSQL   │
      │  APIs       │           │  + RLS        │
-     │  (Paystack, │           │  + Auth       │
-     │   Resend)   │           │  + Storage    │
+      │  (Paystack, │           │  + Auth       │
+      │   SMTP)     │           │  + Storage    │
      └────────────┘           └──────────────┘
 ```
 
@@ -80,7 +80,7 @@ audit_logs ──────── Immutable record of critical actions
 
 | Endpoint | Method | Auth | Purpose |
 |----------|--------|------|---------|
-| `/api/send-email` | POST | None | Server-side email relay (Resend) |
+| `/api/send-email` | POST | None | Server-side email relay (Nodemailer/SMTP) |
 | `/api/partner-auth` | POST | Admin JWT | Approve/reject partner applications |
 | `/api/process-payout` | POST | Admin JWT | Process Paystack transfers |
 | `/api/cloudinary` | GET | None | Cloudinary API proxy |
@@ -122,8 +122,8 @@ affiliate/
 ### Key Design Decisions
 
 1. **Module isolation**: Affiliate system is self-contained in `src/modules/affiliate/` — types, queries, components, constants all colocated
-2. **Server-side secrets**: All API keys (Resend, Paystack, Supabase service role) stay server-side. Client only uses anon key + VITE_ prefixed public config
-3. **Email relay**: Client calls `/api/send-email` → server sends via Resend. API key never exposed to browser
+2. **Server-side secrets**: All API keys (SMTP, Paystack, Supabase service role) stay server-side. Client only uses anon key + VITE_ prefixed public config
+3. **Email relay**: Client calls `/api/send-email` → server sends via Nodemailer (SMTP). Credentials never exposed to browser
 4. **RLS-first**: Database-level security via Row Level Security. Partners can only access own data. Admin verified at API layer
 5. **Audit trail**: All financial operations (payouts, partner approvals) logged to immutable `audit_logs` table
 6. **Idempotent payments**: Paystack verify checks for existing orders before creating duplicates

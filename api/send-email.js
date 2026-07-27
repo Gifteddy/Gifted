@@ -1,4 +1,4 @@
-const RESEND_API = 'https://api.resend.com'
+const { sendMail } = require('./lib/mailer')
 
 function getCorsOrigin(req) {
   const allowed = (process.env.ALLOWED_ORIGINS || process.env.VERCEL_URL || '').split(',').map(s => s.trim()).filter(Boolean)
@@ -21,31 +21,14 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: to, subject, html' })
     }
 
-    const apiKey = process.env.RESEND_API_KEY
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@gifted.ng'
-    if (!apiKey) {
-      return res.status(500).json({ error: 'RESEND_API_KEY not configured on server' })
+    const host = process.env.SMTP_HOST
+    if (!host) {
+      return res.status(500).json({ error: 'SMTP not configured on server (missing SMTP_HOST)' })
     }
 
-    const res2 = await fetch(`${RESEND_API}/emails`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: from || fromEmail,
-        to: Array.isArray(to) ? to : [to],
-        subject,
-        html,
-        ...(replyTo ? { reply_to: replyTo } : {}),
-      }),
-    })
-
-    if (!res2.ok) {
-      const body = await res2.text().catch(() => '')
-      console.error(`[Send Email] Resend error ${res2.status}:`, body)
-      return res.status(res2.status).json({ error: `Resend error: ${body}` })
+    const ok = await sendMail({ to, subject, html, from, replyTo })
+    if (!ok) {
+      return res.status(500).json({ error: 'Failed to send email' })
     }
 
     return res.status(200).json({ success: true })

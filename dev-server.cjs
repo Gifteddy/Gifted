@@ -1,30 +1,31 @@
 const http = require('http')
 const { createClient } = require('@supabase/supabase-js')
+const nodemailer = require('nodemailer')
 
 const PORT = process.env.DEV_API_PORT || 3001
-const RESEND_API_URL = 'https://api.resend.com'
 
-async function sendResendEmail({ to, subject, html }) {
-  const apiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY
-  if (!apiKey) {
-    console.warn('[Email] Resend not configured (RESEND_API_KEY missing). Skipping.')
-    return false
+let cachedTransport = null
+
+function getTransport() {
+  if (cachedTransport) return cachedTransport
+  const host = process.env.SMTP_HOST
+  const port = parseInt(process.env.SMTP_PORT || '587', 10)
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
+  if (!host || !user || !pass) {
+    console.warn('[Email] SMTP not configured (SMTP_HOST/SMTP_USER/SMTP_PASS missing). Skipping.')
+    return null
   }
+  cachedTransport = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } })
+  return cachedTransport
+}
+
+async function sendMail({ to, subject, html }) {
+  const transport = getTransport()
+  if (!transport) return false
+  const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@gifted.ng'
   try {
-    const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.VITE_RESEND_FROM_EMAIL || 'noreply@gifted.ng'
-    const res = await fetch(`${RESEND_API_URL}/emails`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ from: fromEmail, to: [to], subject, html }),
-    })
-    if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      console.error(`[Email] Resend error ${res.status}:`, body)
-      return false
-    }
+    await transport.sendMail({ from: fromEmail, to, subject, html })
     return true
   } catch (err) {
     console.error('[Email] Failed to send:', err)
@@ -141,7 +142,6 @@ async function handleRequest(req, res) {
         return res.end(JSON.stringify({ error: 'Missing SUPABASE_SERVICE_ROLE_KEY' }))
       }
 
-      // Verify requester is an admin
       const authHeader = (req.headers.authorization || '').toString()
       if (!authHeader.startsWith('Bearer ') || !anonKey) {
         res.statusCode = 401
@@ -198,7 +198,7 @@ async function handleRequest(req, res) {
         if (isExistingUser) {
           const { data: linkData } = await supabase.auth.admin.generateLink({ type: 'recovery', email })
           const resetUrl = linkData?.properties?.action_link || `${siteUrl}/shop/partners/dashboard`
-          emailSent = await sendResendEmail({
+          emailSent = await sendMail({
             to: email,
             subject: 'Your Gifted Partners account is ready!',
             html: `<!DOCTYPE html><html><body style="font-family:-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:24px">
@@ -210,7 +210,7 @@ async function handleRequest(req, res) {
             </body></html>`,
           })
         } else {
-          emailSent = await sendResendEmail({
+          emailSent = await sendMail({
             to: email,
             subject: 'Welcome to Gifted Partners \u2014 your application was approved!',
             html: buildApprovalHtml({ name, email, referralCode: referral_code, tempPassword, siteUrl }),
@@ -222,7 +222,7 @@ async function handleRequest(req, res) {
 
       if (action === 'reject') {
         await supabase.from('affiliates').update({ status: 'rejected' }).eq('id', affiliate_id)
-        const emailSent = await sendResendEmail({
+        const emailSent = await sendMail({
           to: email,
           subject: 'Update on your Gifted Partner application',
           html: buildRejectionHtml({ name, email }),

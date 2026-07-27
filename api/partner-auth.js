@@ -1,46 +1,6 @@
 const { createClient } = require('@supabase/supabase-js')
 const { handleCors, checkRateLimit, validateUuid, validateEmail, validateAction, generateSecurePassword } = require('./_security')
-
-const RESEND_API = 'https://api.resend.com'
-
-function getResendConfig() {
-  const apiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY
-  const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.VITE_RESEND_FROM_EMAIL || 'noreply@gifted.ng'
-  return apiKey ? { apiKey, fromEmail } : null
-}
-
-async function sendResendEmail({ to, subject, html, replyTo }) {
-  const config = getResendConfig()
-  if (!config) {
-    console.warn('[Email] Resend not configured (RESEND_API_KEY missing). Skipping email.')
-    return false
-  }
-  try {
-    const res = await fetch(`${RESEND_API}/emails`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: config.fromEmail,
-        to: Array.isArray(to) ? to : [to],
-        subject,
-        html,
-        ...(replyTo ? { reply_to: replyTo } : {}),
-      }),
-    })
-    if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      console.error(`[Email] Resend error ${res.status}:`, body)
-      return false
-    }
-    return true
-  } catch (err) {
-    console.error('[Email] Failed to send:', err)
-    return false
-  }
-}
+const { sendMail } = require('./lib/mailer')
 
 function escapeHtml(str) {
   if (!str) return ''
@@ -198,7 +158,6 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Missing SUPABASE_SERVICE_ROLE_KEY on server' })
     }
 
-    // Verify requester is an admin
     const authHeader = req.headers.authorization || ''
     if (!authHeader.startsWith('Bearer ') || !anonKey) {
       return res.status(401).json({ error: 'Unauthorized: missing auth token' })
@@ -254,7 +213,6 @@ module.exports = async (req, res) => {
         .eq('id', affiliate_id)
       if (updateError) throw updateError
 
-      // Audit log
       await supabase.from('audit_logs').insert({
         actor_id: user.id,
         actor_email: user.email,
@@ -269,13 +227,13 @@ module.exports = async (req, res) => {
       if (isExistingUser) {
         const { data: linkData } = await supabase.auth.admin.generateLink({ type: 'recovery', email })
         const resetUrl = linkData?.properties?.action_link || `${siteUrl}/shop/partners/dashboard`
-        emailSent = await sendResendEmail({
+        emailSent = await sendMail({
           to: email,
           subject: 'Your Gifted Partners account is ready!',
           html: buildWelcomeBackHtml({ name, email, referralCode: referral_code, resetUrl, siteUrl }),
         })
       } else {
-        emailSent = await sendResendEmail({
+        emailSent = await sendMail({
           to: email,
           subject: 'Welcome to Gifted Partners \u2014 your application was approved!',
           html: buildApprovalHtml({ name, email, referralCode: referral_code, tempPassword, siteUrl }),
@@ -293,7 +251,6 @@ module.exports = async (req, res) => {
     if (action === 'reject') {
       await supabase.from('affiliates').update({ status: 'rejected' }).eq('id', affiliate_id)
 
-      // Audit log
       await supabase.from('audit_logs').insert({
         actor_id: user.id,
         actor_email: user.email,
@@ -303,7 +260,7 @@ module.exports = async (req, res) => {
         details: { email },
       })
 
-      const emailSent = await sendResendEmail({
+      const emailSent = await sendMail({
         to: email,
         subject: 'Update on your Gifted Partner application',
         html: buildRejectionHtml({ name, email, siteUrl }),

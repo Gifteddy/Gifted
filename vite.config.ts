@@ -3,31 +3,33 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { createClient } from '@supabase/supabase-js'
+import nodemailer from 'nodemailer'
 import type { IncomingMessage, ServerResponse } from 'http'
 
-const RESEND_API_URL = 'https://api.resend.com'
+type SmtpTransport = ReturnType<typeof nodemailer.createTransport>
 
-async function sendResendEmail(env: Record<string, string>, { to, subject, html }: { to: string; subject: string; html: string }) {
-  const apiKey = env.RESEND_API_KEY || env.VITE_RESEND_API_KEY
-  if (!apiKey) {
-    console.warn('[Email] Resend not configured (RESEND_API_KEY missing). Skipping.')
-    return false
+let cachedTransport: SmtpTransport | null = null
+
+function getTransport(env: Record<string, string>): SmtpTransport | null {
+  if (cachedTransport) return cachedTransport
+  const host = env.SMTP_HOST
+  const port = parseInt(env.SMTP_PORT || '587', 10)
+  const user = env.SMTP_USER
+  const pass = env.SMTP_PASS
+  if (!host || !user || !pass) {
+    console.warn('[Email] SMTP not configured (SMTP_HOST/SMTP_USER/SMTP_PASS missing). Skipping.')
+    return null
   }
+  cachedTransport = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } })
+  return cachedTransport
+}
+
+async function sendMail(env: Record<string, string>, { to, subject, html }: { to: string; subject: string; html: string }) {
+  const transport = getTransport(env)
+  if (!transport) return false
+  const fromEmail = env.SMTP_FROM || env.SMTP_USER || 'noreply@gifted.ng'
   try {
-    const fromEmail = env.RESEND_FROM_EMAIL || env.VITE_RESEND_FROM_EMAIL || 'noreply@gifted.ng'
-    const res = await fetch(`${RESEND_API_URL}/emails`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ from: fromEmail, to: [to], subject, html }),
-    })
-    if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      console.error(`[Email] Resend error ${res.status}:`, body)
-      return false
-    }
+    await transport.sendMail({ from: fromEmail, to, subject, html })
     return true
   } catch (err) {
     console.error('[Email] Failed to send:', err)
@@ -158,7 +160,6 @@ async function handlePartnerAuth(req: IncomingMessage, res: ServerResponse, env:
       return res.end(JSON.stringify({ error: 'Missing required fields: action, affiliate_id, email' }))
     }
 
-    // Verify requester is an admin
     const authHeader = req.headers.authorization || ''
     if (!authHeader.startsWith('Bearer ') || !anonKey) {
       res.statusCode = 401
@@ -215,13 +216,13 @@ async function handlePartnerAuth(req: IncomingMessage, res: ServerResponse, env:
       if (isExistingUser) {
         const { data: linkData } = await supabase.auth.admin.generateLink({ type: 'recovery', email })
         const resetUrl = linkData?.properties?.action_link || `${siteUrl}/shop/partners/dashboard`
-        emailSent = await sendResendEmail(env, {
+        emailSent = await sendMail(env, {
           to: email,
           subject: 'Your Gifted Partners account is ready!',
           html: buildWelcomeBackHtmlDev(name, email, referral_code, resetUrl, siteUrl),
         })
       } else {
-        emailSent = await sendResendEmail(env, {
+        emailSent = await sendMail(env, {
           to: email,
           subject: 'Welcome to Gifted Partners \u2014 your application was approved!',
           html: buildApprovalHtmlDev(name, email, referral_code, tempPassword, siteUrl),
@@ -235,7 +236,7 @@ async function handlePartnerAuth(req: IncomingMessage, res: ServerResponse, env:
     if (action === 'reject') {
       await supabase.from('affiliates').update({ status: 'rejected' }).eq('id', affiliate_id)
 
-      const emailSent = await sendResendEmail(env, {
+      const emailSent = await sendMail(env, {
         to: email,
         subject: 'Update on your Gifted Partner application',
         html: buildRejectionHtmlDev(name, email),

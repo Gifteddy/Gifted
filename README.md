@@ -14,7 +14,7 @@ Full-stack portfolio, e-commerce, and affiliate partner system built with React,
 | Auth | Supabase Auth |
 | Storage | Supabase Storage + Cloudinary |
 | Payments | Paystack |
-| Email | Resend (via server-side relay) |
+| Email | Nodemailer (via SMTP) |
 | Hosting | Vercel |
 
 ## Getting Started
@@ -63,8 +63,11 @@ npm run dev:api
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (bypasses RLS) |
-| `RESEND_API_KEY` | No | Resend email API key |
-| `RESEND_FROM_EMAIL` | No | Sender email address |
+| `SMTP_HOST` | Yes | SMTP server hostname (e.g. `smtp.gmail.com`) |
+| `SMTP_PORT` | No | SMTP port (default `587`) |
+| `SMTP_USER` | Yes | SMTP username / email |
+| `SMTP_PASS` | Yes | SMTP password or app password |
+| `SMTP_FROM` | No | Sender email address (defaults to `SMTP_USER`) |
 | `ALLOWED_ORIGINS` | No | Comma-separated allowed CORS origins |
 | `PAYSTACK_SECRET_KEY` | No | Paystack secret key (for edge functions) |
 
@@ -73,7 +76,7 @@ npm run dev:api
 ```
 ├── api/                          # Vercel serverless functions
 │   ├── _security.js              # CORS, rate limiting, validation helpers
-│   ├── send-email.js             # Server-side email relay (Resend)
+│   ├── send-email.js             # Server-side email relay (Nodemailer/SMTP)
 │   ├── partner-auth.js           # Admin approve/reject partners
 │   └── process-payout.js         # Paystack transfer processing
 ├── supabase/functions/           # Supabase Edge Functions (Deno)
