@@ -51,7 +51,7 @@ export function partnerApplicationReceivedEmail(params: { name: string }): strin
         <tr><td style="padding:16px 20px">
           <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.5px">What happens next?</p>
           <p style="margin:0;font-size:14px;color:#555;line-height:1.6">
-            Our team will review your application within 2-3 business days. You'll receive an email once a decision has been made.
+            Our team will review your application within 2-3 business days. You'll receive an email once a decision has been made. Please also check your spam/junk folder if you don't see it in your inbox.
           </p>
         </td></tr>
       </table>
@@ -264,7 +264,7 @@ export function partnerPayoutRequestedEmail(params: { name: string; amount: numb
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8f8f5;border-radius:10px">
         <tr><td style="padding:16px 20px">
           <p style="margin:0;font-size:14px;color:#555;line-height:1.6">
-            Our team will review your request and process it within 1-3 business days. You'll receive an email once the payout has been approved and sent.
+            Our team will review your request and process it within 1-3 business days. You'll receive an email once the payout has been approved and sent. Please also check your spam/junk folder if you don't see it in your inbox.
           </p>
         </td></tr>
       </table>

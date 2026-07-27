@@ -148,7 +148,7 @@ export default function Checkout() {
             <svg className="h-10 w-10 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
           </div>
           <h1 className="font-display text-3xl font-bold sm:text-4xl mb-2">Payment Successful!</h1>
-          <p className="text-gray-500 dark:text-white/50 mb-8">Your order has been placed. Check your email for confirmation.</p>
+          <p className="text-gray-500 dark:text-white/50 mb-8">Your order has been placed. Check your email (and spam folder) for confirmation.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to={`/shop/success/${orderId}`} className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-7 py-3.5 text-sm font-semibold text-white transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/30">
               View Order

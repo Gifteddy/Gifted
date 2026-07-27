@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAdminStore } from '@/store/admin'
 import useRealtimeNotifications from '@/hooks/useRealtimeNotifications'
+import useAdminPush from '@/hooks/useAdminPush'
 import NotificationBell from '@/components/admin/NotificationBell'
 
 export function AdminOverlay() {
@@ -13,6 +14,7 @@ export function AdminOverlay() {
   }, [initialized, initialize])
 
   useRealtimeNotifications()
+  useAdminPush()
 
   if (!user || pathname.startsWith('/admin')) return null
 

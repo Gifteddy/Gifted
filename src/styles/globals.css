@@ -57,6 +57,10 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-brand-400;
   }
+  .dark option {
+    background-color: #0a0a0f;
+    color: rgba(255, 255, 255, 0.9);
+  }
 }
 
 @utility text-gradient {

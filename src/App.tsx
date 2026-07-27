@@ -153,18 +153,17 @@ export default function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
 
           <Route element={<PartnerProtectedRoute />}>
-            <Route path="/shop/partners" element={<PartnerLayout />}>
-              <Route path="dashboard" element={<ShopPartnerDashboard />} />
-              <Route path="referrals" element={<ShopPartnerReferrals />} />
-              <Route path="products" element={<ShopPartnerProducts />} />
-              <Route path="analytics" element={<ShopPartnerAnalytics />} />
-              <Route path="notifications" element={<ShopPartnerNotifications />} />
-              <Route path="profile" element={<ShopPartnerProfile />} />
-              <Route path="payouts" element={<ShopPartnerPayouts />} />
-              <Route path="achievements" element={<ShopPartnerAchievements />} />
-              <Route path="resources" element={<ShopPartnerResources />} />
-              <Route path="settings" element={<ShopPartnerProfile />} />
-              <Route index element={<Navigate to="dashboard" replace />} />
+            <Route element={<PartnerLayout />}>
+              <Route path="/shop/partners/dashboard" element={<ShopPartnerDashboard />} />
+              <Route path="/shop/partners/referrals" element={<ShopPartnerReferrals />} />
+              <Route path="/shop/partners/products" element={<ShopPartnerProducts />} />
+              <Route path="/shop/partners/analytics" element={<ShopPartnerAnalytics />} />
+              <Route path="/shop/partners/notifications" element={<ShopPartnerNotifications />} />
+              <Route path="/shop/partners/profile" element={<ShopPartnerProfile />} />
+              <Route path="/shop/partners/payouts" element={<ShopPartnerPayouts />} />
+              <Route path="/shop/partners/achievements" element={<ShopPartnerAchievements />} />
+              <Route path="/shop/partners/resources" element={<ShopPartnerResources />} />
+              <Route path="/shop/partners/settings" element={<ShopPartnerProfile />} />
             </Route>
           </Route>
 

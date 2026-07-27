@@ -5,6 +5,7 @@ import { formatCurrency } from '@/lib/currency'
 import { useToast } from '@/components/ui/Toast'
 import type { PartnerPayout } from '@/modules/partner/types'
 import { createPartnerNotification } from '@/modules/partner/queries'
+import { sendPushNotification } from '@/lib/push'
 
 type PayoutWithPartner = PartnerPayout & { partner_name?: string; partner_email?: string }
 type StatusFilter = 'all' | 'pending' | 'processing' | 'approved' | 'paid' | 'rejected'
@@ -71,6 +72,15 @@ export default function AdminPayouts() {
         type: 'payout',
       })
 
+      sendPushNotification({
+        userId: payout.partner_id,
+        role: 'partner',
+        title: 'Payout Approved',
+        body: `Your payout of ${formatCurrency(payout.amount)} has been approved.`,
+        url: '/shop/partners/payouts',
+        tag: 'payout-approved',
+      }).catch(() => {})
+
       toast('success', `Payout for ${payout.partner_name || 'partner'} approved.`)
       loadPayouts()
     } catch {
@@ -113,6 +123,15 @@ export default function AdminPayouts() {
         type: 'payout',
       })
 
+      sendPushNotification({
+        userId: payout.partner_id,
+        role: 'partner',
+        title: 'Payout Sent!',
+        body: `Your payout of ${formatCurrency(payout.amount)} has been sent. Ref: ${payReference.trim()}`,
+        url: '/shop/partners/payouts',
+        tag: 'payout-sent',
+      }).catch(() => {})
+
       toast('success', 'Payout marked as paid.')
       setModalAction(null)
       setPayReference('')
@@ -152,6 +171,15 @@ export default function AdminPayouts() {
         message: `Your payout request of ${formatCurrency(payout.amount)} has been rejected.${rejectNotes.trim() ? ` Reason: ${rejectNotes.trim()}` : ''}`,
         type: 'payout',
       })
+
+      sendPushNotification({
+        userId: payout.partner_id,
+        role: 'partner',
+        title: 'Payout Rejected',
+        body: `Your payout request of ${formatCurrency(payout.amount)} was rejected.${rejectNotes.trim() ? ` Reason: ${rejectNotes.trim()}` : ''}`,
+        url: '/shop/partners/payouts',
+        tag: 'payout-rejected',
+      }).catch(() => {})
 
       toast('success', 'Payout rejected.')
       setModalAction(null)

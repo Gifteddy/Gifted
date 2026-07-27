@@ -4,8 +4,6 @@ import { formatDate, cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/currency'
 import { useToast } from '@/components/ui/Toast'
 import {
-  approvePartner,
-  rejectPartner,
   suspendPartner,
   banPartner,
   getAllPartners,
@@ -14,6 +12,7 @@ import {
 } from '@/modules/partner/queries'
 import type { Partner } from '@/modules/partner/types'
 import { PARTNER_LEVELS } from '@/modules/partner/constants'
+import { sendPushNotification } from '@/lib/push'
 
 type Tab = 'applications' | 'all' | 'overview'
 
@@ -66,16 +65,31 @@ export default function AdminPartners() {
   const handleApprove = async (partner: Partner) => {
     setProcessingId(partner.id)
     try {
-      await approvePartner(partner.id)
-      await fetch('/api/partner-auth', {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/partner-auth', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'approve', email: partner.email, name: partner.name }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token || ''}`,
+        },
+        body: JSON.stringify({ action: 'approve', partner_id: partner.id }),
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(err.error || 'API error')
+      }
+      sendPushNotification({
+        userId: partner.auth_user_id || undefined,
+        role: 'partner',
+        title: 'Application Approved!',
+        body: `Congratulations ${partner.name}! Your partner application has been approved.`,
+        url: '/shop/partners/dashboard',
+        tag: 'partner-approved',
+      }).catch(() => {})
       toast('success', `${partner.name} has been approved.`)
       loadData()
-    } catch {
-      toast('error', 'Failed to approve partner.')
+    } catch (e) {
+      toast('error', e instanceof Error ? e.message : 'Failed to approve partner.')
     }
     setProcessingId(null)
   }
@@ -83,16 +97,23 @@ export default function AdminPartners() {
   const handleReject = async (partner: Partner) => {
     setProcessingId(partner.id)
     try {
-      await rejectPartner(partner.id)
-      await fetch('/api/partner-auth', {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/partner-auth', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reject', email: partner.email, name: partner.name }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token || ''}`,
+        },
+        body: JSON.stringify({ action: 'reject', partner_id: partner.id }),
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(err.error || 'API error')
+      }
       toast('success', `${partner.name}'s application has been rejected.`)
       loadData()
-    } catch {
-      toast('error', 'Failed to reject partner.')
+    } catch (e) {
+      toast('error', e instanceof Error ? e.message : 'Failed to reject partner.')
     }
     setProcessingId(null)
   }

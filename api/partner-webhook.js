@@ -108,6 +108,40 @@ async function sendPartnerEmail(to, subject, html) {
   }
 }
 
+async function sendPushToUser(userId, title, body, url, tag) {
+  try {
+    const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY
+    if (!VAPID_PRIVATE_KEY) return
+    const webPush = require('web-push')
+    webPush.setVapidDetails(
+      `mailto:${process.env.VAPID_EMAIL || 'ibiamiheanyi@gmail.com'}`,
+      process.env.VITE_VAPID_PUBLIC_KEY || '',
+      VAPID_PRIVATE_KEY,
+    )
+    const { data: subs } = await adminClient
+      .from('push_subscriptions')
+      .select('endpoint, p256dh, auth_key')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+    if (!subs || subs.length === 0) return
+    const payload = JSON.stringify({ title, body, tag, data: { url } })
+    for (const sub of subs) {
+      try {
+        await webPush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
+          payload,
+        )
+      } catch (err) {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await adminClient.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[Partner Webhook] Push send error:', err.message)
+  }
+}
+
 // Achievement definitions checked on each conversion
 const ACHIEVEMENT_DEFS = [
   { key: 'first_sale', title: 'First Sale', desc: 'Made your first referral sale', icon: 'star', check: (p) => p.total_conversions >= 1 },
@@ -406,6 +440,17 @@ module.exports = async (req, res) => {
         partner.email,
         `New Commission: ₦${totalCommission.toLocaleString()} \u2014 Gifted Partners`,
         commissionEmail(partner.name, saleAmount, totalCommission, productLabel)
+      )
+    }
+
+    // Send push notification
+    if (partner.auth_user_id) {
+      sendPushToUser(
+        partner.auth_user_id,
+        'New Commission Earned!',
+        `You earned ₦${totalCommission.toLocaleString()} from a ${productLabel} sale.`,
+        '/shop/partners/dashboard',
+        'commission-earned',
       )
     }
 

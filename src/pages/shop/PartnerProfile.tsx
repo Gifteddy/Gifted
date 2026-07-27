@@ -6,6 +6,7 @@ import { updatePartnerProfile } from '@/modules/partner/queries'
 import { COUNTRIES } from '@/modules/partner/constants'
 import { uploadToCloudinary } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
+import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from '@/lib/push'
 import type { Partner } from '@/modules/partner/types'
 
 const inputClass =
@@ -53,26 +54,26 @@ export default function PartnerProfile() {
   const [confirmPassword, setConfirmPassword] = useState('')
 
   useEffect(() => {
-    if (partner) {
-      setName(partner.name || '')
-      setPhone(partner.phone || '')
-      setCountry(partner.country || '')
-      setBio(partner.bio || '')
-      setAvatarUrl(partner.avatar_url || '')
-      setWebsite(partner.website || '')
-      setInstagram(partner.instagram || '')
-      setTiktok(partner.tiktok || '')
-      setYoutube(partner.youtube || '')
-      setTwitter(partner.twitter || '')
-      setLinkedin(partner.linkedin || '')
-      setPortfolioUrl(partner.portfolio_url || '')
-      setPaymentMethod(partner.payment_method || 'bank_transfer')
-      setBankName(partner.bank_name || '')
-      setBankAccountNumber(partner.bank_account_number || '')
-      setBankAccountName(partner.bank_account_name || '')
-      setEmailNotif(partner.notification_preferences?.email ?? true)
-      setBrowserNotif(partner.notification_preferences?.browser ?? true)
-    }
+    if (!partner) return
+    setName(partner.name || '')
+    setPhone(partner.phone || '')
+    setCountry(partner.country || '')
+    setBio(partner.bio || '')
+    setAvatarUrl(partner.avatar_url || '')
+    setWebsite(partner.website || '')
+    setInstagram(partner.instagram || '')
+    setTiktok(partner.tiktok || '')
+    setYoutube(partner.youtube || '')
+    setTwitter(partner.twitter || '')
+    setLinkedin(partner.linkedin || '')
+    setPortfolioUrl(partner.portfolio_url || '')
+    setPaymentMethod(partner.payment_method || 'bank_transfer')
+    setBankName(partner.bank_name || '')
+    setBankAccountNumber(partner.bank_account_number || '')
+    setBankAccountName(partner.bank_account_name || '')
+    setEmailNotif(partner.notification_preferences?.email ?? true)
+    setBrowserNotif(partner.notification_preferences?.browser ?? true)
+    isPushSubscribed().then(setBrowserNotif)
   }, [partner])
 
   const showMsg = (type: 'success' | 'error', text: string) => {
@@ -282,8 +283,6 @@ export default function PartnerProfile() {
                 <label className={labelClass}>Payment Method</label>
                 <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className={selectClass}>
                   <option value="bank_transfer">Bank Transfer</option>
-                  <option value="paypal">PayPal</option>
-                  <option value="crypto">Cryptocurrency</option>
                 </select>
               </div>
               <div>
@@ -339,7 +338,15 @@ export default function PartnerProfile() {
                   <p className="text-xs text-gray-500 dark:text-white/40">Get push notifications in your browser</p>
                 </div>
                 <button
-                  onClick={() => setBrowserNotif(!browserNotif)}
+                  onClick={async () => {
+                    if (browserNotif) {
+                      await unsubscribeFromPush()
+                      setBrowserNotif(false)
+                    } else {
+                      const ok = await subscribeToPush('partner')
+                      setBrowserNotif(ok)
+                    }
+                  }}
                   className={cn(
                     'relative h-6 w-11 rounded-full transition-colors',
                     browserNotif ? 'bg-brand-500' : 'bg-gray-300 dark:bg-white/10'

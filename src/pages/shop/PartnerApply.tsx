@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Meta } from '@/lib/meta'
 import { createPartnerApplication, generateReferralCode } from '@/modules/partner/queries'
+import { sendEmail } from '@/lib/email'
+import { partnerApplicationReceivedEmail, adminNewApplicationEmail } from '@/lib/partner-emails'
+import { sendPushNotification } from '@/lib/push'
 import { APPLICATION_STEPS, AUDIENCE_SIZES, CONTENT_TYPES, PLATFORMS, COUNTRIES } from '@/modules/partner/constants'
 import type { PartnerApplication } from '@/modules/partner/types'
 
@@ -81,6 +84,24 @@ export default function PartnerApply() {
     try {
       const referralCode = generateReferralCode()
       await createPartnerApplication({ ...form, referral_code: referralCode })
+      const siteUrl = import.meta.env.VITE_SITE_URL || 'https://gifted-beige.vercel.app'
+      sendEmail({
+        to: form.email,
+        subject: 'Application Received \u2014 Gifted Partners',
+        html: partnerApplicationReceivedEmail({ name: form.name }),
+      }).catch(() => {})
+      sendEmail({
+        to: 'ibiamiheanyi@gmail.com',
+        subject: 'New Partner Application \u2014 Gifted Partners',
+        html: adminNewApplicationEmail({ partnerName: form.name, partnerEmail: form.email, applicationUrl: `${siteUrl}/admin/partners` }),
+      }).catch(() => {})
+      sendPushNotification({
+        role: 'admin',
+        title: 'New Partner Application',
+        body: `${form.name} (${form.email}) wants to become a partner.`,
+        url: '/admin/partners',
+        tag: 'new-partner-application',
+      }).catch(() => {})
       setSubmitted(true)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.')
@@ -138,7 +159,7 @@ export default function PartnerApply() {
             transition={{ delay: 0.55 }}
             className="text-gray-500 dark:text-white/50 mb-10 text-sm leading-relaxed max-w-sm mx-auto"
           >
-            We'll review your application shortly. Check your email for updates on your partnership status.
+            We'll review your application shortly. Check your email (and spam folder) for updates on your partnership status.
           </motion.p>
 
           <motion.div
@@ -147,7 +168,7 @@ export default function PartnerApply() {
             transition={{ delay: 0.7 }}
           >
             <Link
-              to="/partners"
+              to="/shop/partners"
               className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-8 py-3.5 text-sm font-semibold text-white transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/30 active:scale-[0.97]"
             >
               Return to Gifted Partners
@@ -293,8 +314,6 @@ export default function PartnerApply() {
                         <label className={labelClass}>Preferred Payment</label>
                         <select value={form.payment_method} onChange={(e) => update('payment_method', e.target.value)} className={selectClass}>
                           <option value="bank_transfer">Bank Transfer</option>
-                          <option value="paypal">PayPal</option>
-                          <option value="mobile_money">Mobile Money</option>
                         </select>
                       </div>
                     </div>
@@ -538,7 +557,7 @@ export default function PartnerApply() {
               </button>
             ) : (
               <Link
-                to="/partners"
+                to="/shop/partners"
                 className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] dark:border-white/[0.1] px-6 py-3 text-sm font-medium text-gray-700 dark:text-white/70 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>

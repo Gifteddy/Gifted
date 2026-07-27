@@ -146,7 +146,7 @@ export default function Partners() {
             className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
             <Link
-              to="/partners/apply"
+              to="/shop/partners/apply"
               className="rounded-full bg-brand-500 px-8 py-3.5 text-sm font-semibold text-white transition-all duration-500 hover:bg-brand-600 hover:shadow-xl hover:shadow-brand-500/30"
             >
               Apply Now
@@ -399,7 +399,7 @@ export default function Partners() {
               Join hundreds of creators already earning with Gifted Partners. Your audience is waiting.
             </p>
             <Link
-              to="/partners/apply"
+              to="/shop/partners/apply"
               className="mt-10 inline-block rounded-full bg-brand-500 px-10 py-4 text-sm font-semibold text-white transition-all duration-500 hover:bg-brand-600 hover:shadow-xl hover:shadow-brand-500/30"
             >
               Apply Now

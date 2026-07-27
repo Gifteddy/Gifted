@@ -696,14 +696,14 @@ export async function checkAndAwardAchievements(
     {
       achievement_key: 'revenue-star',
       title: 'Revenue Star',
-      description: 'Generated $1,000 in revenue',
+      description: 'Generated ₦1,000 in revenue',
       icon: '⭐',
       condition: (partner as Partner).total_revenue_generated >= 1000,
     },
     {
       achievement_key: 'big-earner',
       title: 'Big Earner',
-      description: 'Earned $500 in commissions',
+      description: 'Earned ₦500 in commissions',
       icon: '💎',
       condition: (partner as Partner).total_commission_earned >= 500,
     },
@@ -738,14 +738,14 @@ export async function checkAndAwardAchievements(
     {
       achievement_key: 'revenue-5000',
       title: 'Revenue Rocket',
-      description: 'Generated $5,000 in revenue',
+      description: 'Generated ₦5,000 in revenue',
       icon: '🔥',
       condition: (partner as Partner).total_revenue_generated >= 5000,
     },
     {
       achievement_key: 'revenue-10000',
       title: 'Revenue Mogul',
-      description: 'Generated $10,000 in revenue',
+      description: 'Generated ₦10,000 in revenue',
       icon: '🌟',
       condition: (partner as Partner).total_revenue_generated >= 10000,
     },

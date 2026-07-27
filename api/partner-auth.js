@@ -71,7 +71,7 @@ ${body}
 </table></td></tr></table></body></html>`
 }
 
-function approvalEmail(name, referralCode) {
+function approvalEmail(name, referralCode, setupUrl) {
   return emailWrap(`
     <tr><td style="background:#fff;border-radius:16px;padding:40px 32px">
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px">
@@ -88,13 +88,16 @@ function approvalEmail(name, referralCode) {
         </td></tr>
       </table>
       <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.7;text-align:center">
-        Sign in to your partner dashboard to start sharing your referral links and earning commissions.
+        Set your password to access your partner dashboard and start earning commissions.
       </p>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px">
         <tr><td style="border-radius:10px;background:#7c3aed;padding:14px 36px">
-          <a href="${SITE_URL}/partner/dashboard" style="display:inline-block;font-size:15px;font-weight:600;color:#fff;text-decoration:none">Go to Dashboard</a>
+          <a href="${setupUrl}" style="display:inline-block;font-size:15px;font-weight:600;color:#fff;text-decoration:none">Set Your Password</a>
         </td></tr>
       </table>
+      <p style="margin:0 0 0;font-size:12px;color:#999;line-height:1.6;text-align:center">
+        This link expires in 24 hours. If it expires, use the <a href="${SITE_URL}/shop/partners/login" style="color:#7c3aed;text-decoration:none">Forgot Password</a> option on the login page.
+      </p>
     </td></tr>
   `)
 }
@@ -114,7 +117,7 @@ function rejectionEmail(name) {
       </p>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto">
         <tr><td style="border-radius:10px;background:#7c3aed;padding:14px 36px">
-          <a href="${SITE_URL}/partner/apply" style="display:inline-block;font-size:15px;font-weight:600;color:#fff;text-decoration:none">Reapply</a>
+          <a href="${SITE_URL}/shop/partners/apply" style="display:inline-block;font-size:15px;font-weight:600;color:#fff;text-decoration:none">Reapply</a>
         </td></tr>
       </table>
     </td></tr>
@@ -238,11 +241,25 @@ module.exports = async (req, res) => {
         return json(res, 500, { error: 'Failed to update partner status' })
       }
 
+      // Generate magic link for password setup
+      let setupUrl = `${SITE_URL}/shop/partners/login`
+      try {
+        const { data: linkData } = await adminClient.auth.admin.generateLink({
+          type: 'magiclink',
+          email,
+        })
+        if (linkData?.properties?.action_link) {
+          setupUrl = linkData.properties.action_link
+        }
+      } catch (linkErr) {
+        console.warn('[Partner Auth] Could not generate magic link:', linkErr?.message)
+      }
+
       // Send approval email
       const emailSent = await sendMail({
         to: email,
         subject: 'Your Partner Application is Approved! \u2014 Gifted',
-        html: approvalEmail(name, referral_code),
+        html: approvalEmail(name, referral_code, setupUrl),
       }).catch(() => false)
 
       // Audit log

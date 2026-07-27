@@ -3,6 +3,12 @@
 -- Safe to run multiple times
 -- Depends on: supabase-schema.sql (is_admin, profiles), commerce-schema.sql (products, orders, order_items, customers, store_settings, generate_referral_code)
 
+-- ===================== CLEANUP OLD AFFILIATE TABLES =====================
+-- These old tables reference affiliates(id) and conflict with the new partner system.
+-- Safe to drop: the old affiliate system is fully replaced by this partner system.
+DROP TABLE IF EXISTS partner_notifications CASCADE;
+DROP TABLE IF EXISTS partner_achievements CASCADE;
+
 -- ===================== PARTNERS =====================
 CREATE TABLE IF NOT EXISTS partners (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -273,6 +279,14 @@ CREATE POLICY "Admins can manage achievements"
   USING (public.is_admin());
 
 -- ===================== MARKETING ASSETS =====================
+-- Add is_active column if missing (commerce-schema.sql may have created this table without it)
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'marketing_assets')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'marketing_assets' AND column_name = 'is_active') THEN
+    ALTER TABLE marketing_assets ADD COLUMN is_active BOOLEAN DEFAULT true;
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS marketing_assets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
@@ -377,6 +391,36 @@ CREATE POLICY "Partners can read own audit log"
       SELECT id FROM partners WHERE auth_user_id = auth.uid()
     )
   );
+
+-- ===================== PUSH SUBSCRIPTIONS =====================
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'partner' CHECK (role IN ('partner', 'admin')),
+  endpoint TEXT NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth_key TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, endpoint)
+);
+
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can manage own push subscriptions" ON push_subscriptions;
+CREATE POLICY "Users can manage own push subscriptions"
+  ON push_subscriptions FOR ALL
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Service role can read push subscriptions" ON push_subscriptions;
+CREATE POLICY "Service role can read push subscriptions"
+  ON push_subscriptions FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Service role can delete push subscriptions" ON push_subscriptions;
+CREATE POLICY "Service role can delete push subscriptions"
+  ON push_subscriptions FOR DELETE
+  USING (true);
 
 -- ===================== TRIGGER: auto-update updated_at on partners =====================
 CREATE OR REPLACE FUNCTION update_partners_updated_at()
