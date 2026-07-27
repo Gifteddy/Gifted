@@ -9,7 +9,7 @@ import type { Affiliate, AffiliatePayout, AffiliateCommission } from '@/lib/comm
 type TabKey = 'applications' | 'active' | 'commissions' | 'payouts' | 'performance'
 
 export default function AdminAffiliates() {
-  const { user } = useAdminStore()
+  const { user: _user } = useAdminStore()
   const [tab, setTab] = useState<TabKey>('applications')
   const [affiliates, setAffiliates] = useState<Affiliate[]>([])
   const [payouts, setPayouts] = useState<AffiliatePayout[]>([])
@@ -48,9 +48,9 @@ export default function AdminAffiliates() {
         supabase.from('affiliate_payouts').select('id, affiliate_id, amount, status, payment_method, notes, created_at, processed_at, paystack_reference').order('created_at', { ascending: false }),
         supabase.from('affiliate_commissions').select('id, affiliate_id, amount, status, product_type, rate, created_at, product_title').order('created_at', { ascending: false }),
       ])
-      setAffiliates((affRes.data || []) as Affiliate[])
-      setPayouts((payRes.data || []) as AffiliatePayout[])
-      setCommissions((commRes.data || []) as AffiliateCommission[])
+      setAffiliates((affRes.data || []) as unknown as Affiliate[])
+      setPayouts((payRes.data || []) as unknown as AffiliatePayout[])
+      setCommissions((commRes.data || []) as unknown as AffiliateCommission[])
     } catch {
       showToast('error', 'Failed to load partner data.')
     } finally { setLoading(false) }

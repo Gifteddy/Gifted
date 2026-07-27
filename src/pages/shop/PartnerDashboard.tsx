@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
@@ -56,10 +56,10 @@ export default function PartnerDashboard() {
       getCommissionsByMonth(aff.id).catch(() => []),
       getTopPerformingProducts(aff.id).catch(() => []),
     ])
-    setCommissions(commData.data as AffiliateCommission[] || [])
+    setCommissions(commData.data as unknown as AffiliateCommission[] || [])
     setClicks(clickData.data as AffiliateClick[] || [])
     setPayouts(payoutData.data as AffiliatePayout[] || [])
-    setProducts(prodData.data as Product[] || [])
+    setProducts(prodData.data as unknown as Product[] || [])
     setNotifications(notifData)
     setAchievements(achieveData)
     setAssets(assetData)
@@ -524,7 +524,6 @@ export default function PartnerDashboard() {
                 {(() => {
                   const totalClicks = clicks.length
                   const totalSales = commissions.length
-                  const maxVal = Math.max(totalClicks, 1)
                   const funnelSteps = [
                     { label: 'Link Clicks', value: totalClicks, color: 'from-brand-500/80 to-brand-500/60', width: 100 },
                     { label: 'Conversions', value: totalSales, color: 'from-emerald-500/80 to-emerald-500/60', width: totalClicks > 0 ? Math.max((totalSales / totalClicks) * 100, 8) : 8 },

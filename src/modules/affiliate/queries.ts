@@ -311,13 +311,13 @@ export async function checkUrlForAffiliate() {
 
 export async function getAdminPartnerAnalytics() {
   const [affRes, commRes, payRes, clickRes] = await Promise.all([
-    supabase.from('affiliates').select('id, status, total_earnings, total_sales, total_clicks, pending_earnings, created_at'),
+    supabase.from('affiliates').select('id, name, email, status, total_earnings, total_sales, total_clicks, pending_earnings, created_at'),
     supabase.from('affiliate_commissions').select('amount, status, created_at'),
     supabase.from('affiliate_payouts').select('amount, status, created_at'),
     supabase.from('affiliate_clicks').select('id, created_at'),
   ])
 
-  const affiliates = (affRes.data || []) as { id: string; status: string; total_earnings: number; total_sales: number; total_clicks: number; pending_earnings: number; created_at: string }[]
+  const affiliates = (affRes.data || []) as { id: string; name: string; email: string; status: string; total_earnings: number; total_sales: number; total_clicks: number; pending_earnings: number; created_at: string }[]
   const commissions = (commRes.data || []) as { amount: number; status: string; created_at: string }[]
   const payouts = (payRes.data || []) as { amount: number; status: string; created_at: string }[]
   const clicks = (clickRes.data || []) as { id: string; created_at: string }[]

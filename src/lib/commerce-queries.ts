@@ -40,7 +40,7 @@ export async function getProducts() {
     .eq('published', true)
     .order('display_order', { ascending: true })
   if (error) throw error
-  return data as Product[]
+  return data as unknown as Product[]
 }
 
 export async function getProductBySlug(slug: string) {
@@ -63,7 +63,7 @@ export async function getFeaturedProducts() {
     .order('display_order', { ascending: true })
     .limit(8)
   if (error) throw error
-  return data as Product[]
+  return data as unknown as Product[]
 }
 
 export async function getProductsByType(type: string) {
@@ -621,7 +621,7 @@ export async function createFullOrder(order: {
       await supabase.from('partner_notifications').insert({
         affiliate_id: order.affiliate_id,
         title: 'New Sale',
-        message: `Someone purchased through your referral link for ₦${order.total_amount.toLocaleString()}.`,
+        message: `Someone purchased through your referral link for ₦${order.total.toLocaleString()}.`,
         type: 'sale',
       })
 
@@ -655,7 +655,7 @@ export async function createFullOrder(order: {
         subject: 'New sale through your referral link!',
         html: partnerSaleNotificationEmail({
           name: affiliate.name,
-          saleAmount: order.total_amount,
+          saleAmount: order.total,
           productTitle: firstItem?.product_id || 'a product',
         }),
       }).catch(() => {})

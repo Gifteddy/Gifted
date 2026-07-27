@@ -64,7 +64,7 @@ async function downloadBlob(url: string, filename: string, onProgress?: (p: numb
     received += value.length
     onProgress?.(Math.round((received / total) * 100))
   }
-  const blob = new Blob(chunks)
+  const blob = new Blob(chunks as BlobPart[])
   const blobUrl = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = blobUrl

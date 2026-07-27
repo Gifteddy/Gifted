@@ -190,7 +190,7 @@ export function PartnerDetailModal({ affiliate, onClose }: PartnerDetailModalPro
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {clicks.map(cl => (
                     <div key={cl.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-black/[0.02] dark:hover:bg-white/[0.02] text-xs">
-                      <span className="text-gray-700 dark:text-white/70">{cl.page || cl.product_id || 'Unknown page'}</span>
+                      <span className="text-gray-700 dark:text-white/70">Click #{cl.id.slice(0, 8)}</span>
                       <span className="text-gray-400 dark:text-white/30">{new Date(cl.created_at).toLocaleString()}</span>
                     </div>
                   ))}

@@ -1,6 +1,5 @@
 const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://gifted-beige.vercel.app'
 const FROM_EMAIL = import.meta.env.VITE_RESEND_FROM_EMAIL || 'noreply@gifted.ng'
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'ibiamiheanyi@gmail.com'
 
 export interface SendEmailParams {
   to: string | string[]

@@ -55,7 +55,7 @@ export default function FileUpload() {
   const [uploadStatus, setUploadStatus] = useState('')
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; percent: number } | null>(null)
   const [uploadSpeed, setUploadSpeed] = useState<number | null>(null)
-  const [cancelled, setCancelled] = useState(false)
+  const [, setCancelled] = useState(false)
   const [failedFile, setFailedFile] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const dragCounter = useRef(0)

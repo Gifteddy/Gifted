@@ -227,14 +227,14 @@ export default function Partners() {
     )
   }
 
-  const fieldClass = (name: string, hasError?: boolean) => cn(
+  const fieldClass = (_fieldName: string, hasError?: boolean) => cn(
     'w-full rounded-xl border bg-white/50 dark:bg-black/30 px-4 py-3 text-sm placeholder:text-text-muted-light/50 dark:placeholder:text-text-muted-dark/50 focus:outline-none focus:ring-2 transition-all',
     hasError
       ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/15'
       : 'border-border-light dark:border-border-dark focus:border-brand-500/50 focus:ring-brand-500/30'
   )
 
-  const errors = stepErrors[step] || []
+  const _errors = stepErrors[step] || []
   const showErrors = stepAttempted[step]
 
   const renderStep = () => {
