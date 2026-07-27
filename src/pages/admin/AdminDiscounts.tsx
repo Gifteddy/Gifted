@@ -161,7 +161,6 @@ function DiscountEditor({ discountId, onClose, onSaved }: { discountId: string |
   const [maxUses, setMaxUses] = useState('')
   const [minOrderAmount, setMinOrderAmount] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
-  const [affiliateId, setAffiliateId] = useState('')
   const [isActive, setIsActive] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -175,7 +174,6 @@ function DiscountEditor({ discountId, onClose, onSaved }: { discountId: string |
         setMaxUses(data.max_uses !== null ? String(data.max_uses) : '')
         setMinOrderAmount(data.min_order_amount !== null ? String(data.min_order_amount) : '')
         setExpiresAt(data.expires_at ? data.expires_at.slice(0, 16) : '')
-        setAffiliateId(data.affiliate_id || '')
         setIsActive(data.is_active ?? true)
       })
     }
@@ -201,7 +199,6 @@ function DiscountEditor({ discountId, onClose, onSaved }: { discountId: string |
       max_uses: maxUses ? parseInt(maxUses) : null,
       min_order_amount: minOrderAmount ? parseFloat(minOrderAmount) : null,
       expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-      affiliate_id: affiliateId || null,
       is_active: isActive,
     }
     try {
@@ -262,10 +259,6 @@ function DiscountEditor({ discountId, onClose, onSaved }: { discountId: string |
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Expires At</label>
               <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="w-full admin-input" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-white/70">Affiliate ID (leave empty for general code)</label>
-              <input type="text" value={affiliateId} onChange={(e) => setAffiliateId(e.target.value)} className="w-full admin-input" placeholder="affiliate id" />
             </div>
             <div className="flex items-center">
               <label className="flex items-center gap-2 cursor-pointer">

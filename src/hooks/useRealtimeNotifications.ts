@@ -125,17 +125,7 @@ export default function useRealtimeNotifications() {
       })),
     )
 
-    const affiliateChannel = subscribe(
-      'notif-affiliates',
-      'affiliates',
-      handleInsert('affiliate', (r) => ({
-        title: `New affiliate: ${(r.name as string) || 'Someone'}`,
-        description: r.status === 'pending' ? 'Application needs review' : `Status: ${r.status as string}`,
-        link: '/admin/affiliates',
-      })),
-    )
-
-    channelsRef.current = [contactChannel, testimonialChannel, fileUploadChannel, commentChannel, orderChannel, affiliateChannel]
+    channelsRef.current = [contactChannel, testimonialChannel, fileUploadChannel, commentChannel, orderChannel]
 
     return () => {
       for (const ch of channelsRef.current) {

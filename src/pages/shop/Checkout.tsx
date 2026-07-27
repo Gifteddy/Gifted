@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useCart } from '@/store/cart'
 import { loadPaystackScript, openPaystack, type PaystackResponse } from '@/lib/paystack'
-import { upsertCustomer, createFullOrder, validateDiscountCode, incrementDiscountUses, getAffiliateByRefFromCookie, checkUrlForAffiliate } from '@/lib/commerce-queries'
+import { upsertCustomer, createFullOrder, validateDiscountCode, incrementDiscountUses } from '@/lib/commerce-queries'
+import { getPartnerFromCookie } from '@/modules/partner/queries'
 import { formatCurrency } from '@/lib/currency'
 import { sendEmail, purchaseConfirmationEmail, newOrderOwnerEmail } from '@/lib/email'
 import { CLOUDINARY_BASE } from '@/lib/images'
@@ -24,16 +25,10 @@ export default function Checkout() {
   const [discountError, setDiscountError] = useState('')
   const [error, setError] = useState('')
   const [orderId, setOrderId] = useState<string | null>(null)
-  const [affiliateId, setAffiliateId] = useState<string | null>(null)
   const [shipAddr, setShipAddr] = useState<ShippingAddress>({ line1: '', city: '', state: '', country: 'Nigeria', zip: '' })
   const [showShipping, setShowShipping] = useState(false)
 
   const hasPhysical = items.some(i => i.type === 'physical' || i.type === 'bundle')
-
-  useEffect(() => {
-    checkUrlForAffiliate()
-    getAffiliateByRefFromCookie().then(a => { if (a) setAffiliateId(a.id) })
-  }, [])
 
   useEffect(() => {
     if (items.length === 0 && step !== 'complete') navigate('/shop')
@@ -76,7 +71,7 @@ export default function Checkout() {
         email: email.trim(),
         amount: Math.round(total * 100),
         ref,
-        metadata: { customer_id: customer.id, discount: discount ? { code: discount.id, type: discount.type, value: discount.value } : null },
+        metadata: { customer_id: customer.id, discount: discount ? { code: discount.id, type: discount.type, value: discount.value } : null, referral_code: getPartnerFromCookie() || null },
         onSuccess: async (response: PaystackResponse) => {
           try {
             const shipAddrToSave = hasPhysical && showShipping ? shipAddr : null
@@ -86,7 +81,6 @@ export default function Checkout() {
               discount: subtotalNgn - total,
               total,
               currency: 'NGN',
-              affiliate_id: affiliateId,
               discount_code: discount?.id || null,
               shipping_address: shipAddrToSave,
               payment_reference: response.reference,
@@ -305,12 +299,6 @@ export default function Checkout() {
                   <div className="flex justify-between text-sm">
                     <span className="text-green-500">Discount</span>
                     <span className="font-medium text-green-500">-{formatCurrency(subtotalNgn - total)}</span>
-                  </div>
-                )}
-                {affiliateId && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-white/50">Partner Referral</span>
-                    <span className="text-xs text-brand-500">Applied</span>
                   </div>
                 )}
                 <div className="flex justify-between text-base font-semibold pt-3 border-t border-black/[0.06] dark:border-white/[0.08]">

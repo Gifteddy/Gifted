@@ -139,6 +139,8 @@ describe('validateAction', () => {
   it('returns null for valid actions', () => {
     expect(validateAction('approve')).toBeNull()
     expect(validateAction('reject')).toBeNull()
+    expect(validateAction('suspend')).toBeNull()
+    expect(validateAction('ban')).toBeNull()
   })
 
   it('returns error for invalid action', () => {

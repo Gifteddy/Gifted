@@ -167,7 +167,7 @@ export interface CompanyLogo {
   created_at: string
 }
 
-export type NotificationType = 'message' | 'testimonial' | 'file_upload' | 'share_viewed' | 'order' | 'affiliate' | 'inventory' | 'customer'
+export type NotificationType = 'message' | 'testimonial' | 'file_upload' | 'share_viewed' | 'order' | 'inventory' | 'customer'
 
 export interface AppNotification {
   id: string

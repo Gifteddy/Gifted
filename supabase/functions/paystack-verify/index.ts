@@ -7,7 +7,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '
 
 serve(async (req) => {
   try {
-    const { reference, customer_id, items, subtotal, discount, total, currency, affiliate_id, discount_code } = await req.json()
+    const { reference, customer_id, items, subtotal, discount, total, currency, discount_code } = await req.json()
 
     // Verify with Paystack
     const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
@@ -46,7 +46,6 @@ serve(async (req) => {
         discount,
         total,
         currency: currency || 'USD',
-        affiliate_id,
         discount_code,
       }),
     })

@@ -212,7 +212,6 @@ export default function AdminOrders() {
                     </table>
                   )}
                   {order.payment_reference && <p className="mt-2 text-[10px] text-text-muted-light/60">Ref: {order.payment_reference}</p>}
-                  {order.affiliate_id && <p className="text-[10px] text-text-muted-light/60">Affiliate: {order.affiliate_id}</p>}
                   {order.discount_code && <p className="text-[10px] text-text-muted-light/60">Discount: {order.discount_code}</p>}
                   {order.shipping_address && (
                     <div className="mt-2 text-[10px] text-text-muted-light/60">

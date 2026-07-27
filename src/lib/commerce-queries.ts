@@ -1,37 +1,10 @@
 import { supabase } from './supabase'
-import { sendEmailSafe, partnerCommissionEarnedEmail, partnerSaleNotificationEmail } from './email'
 import type {
   Product, ProductCategory, Order, OrderItem, Customer,
   Download, DiscountCode, StoreSettings,
   InventoryItem, DownloadFile, AnalyticsDay, ShippingAddress,
 } from './commerce-types'
 
-// Re-export affiliate queries from the affiliate module
-export {
-  getAffiliates,
-  getAffiliateByReferralCode,
-  getAffiliateDashboard,
-  createAffiliateApplication,
-  updateAffiliateStatus,
-  getAffiliateCommissions,
-  getAffiliatePayouts,
-  createAffiliatePayout,
-  getPartnerNotifications,
-  markNotificationRead,
-  markAllNotificationsRead,
-  getPartnerAchievements,
-  getUnlockedAchievementKeys,
-  getMarketingAssets,
-  getPartnerProducts,
-  updatePartnerBankDetails,
-  getPartnerEarningsSummary,
-  getCommissionsByMonth,
-  getTopPerformingProducts,
-  logAffiliateClick,
-  getAffiliateByRefFromCookie,
-  setAffiliateCookie,
-  checkUrlForAffiliate,
-} from '@/modules/affiliate/queries'
 
 export async function getProducts() {
   const { data, error } = await supabase
@@ -505,7 +478,6 @@ export async function createFullOrder(order: {
   discount: number
   total: number
   currency: string
-  affiliate_id: string | null
   discount_code: string | null
   shipping_address?: ShippingAddress | null
   items: { product_id: string; product_title: string; product_type: string; quantity: number; unit_price: number; total_price: number }[]
@@ -523,7 +495,6 @@ export async function createFullOrder(order: {
       discount: order.discount,
       total: order.total,
       currency: order.currency,
-      affiliate_id: order.affiliate_id,
       discount_code: order.discount_code,
       shipping_address: shipAddr ? JSON.parse(JSON.stringify(shipAddr)) : null,
       shipping_city: shipAddr?.city || null,
@@ -567,99 +538,6 @@ export async function createFullOrder(order: {
       .single()
     if (itemError) throw itemError
     orderItems.push(itemData as OrderItem)
-  }
-
-  if (order.affiliate_id) {
-    const settings = await getStoreSettings()
-    const totalCommission = orderItems.reduce((sum, oi) => {
-      const rate = oi.product_type === 'physical'
-        ? settings.physical_commission_rate
-        : settings.digital_commission_rate
-      return sum + (oi.total_price * rate)
-    }, 0)
-    for (const oi of orderItems) {
-      const rate = oi.product_type === 'physical'
-        ? settings.physical_commission_rate
-        : settings.digital_commission_rate
-      await supabase
-        .from('affiliate_commissions')
-        .insert([{
-          affiliate_id: order.affiliate_id,
-          order_id: newOrder.id,
-          order_item_id: oi.id,
-          product_id: oi.product_id,
-          product_type: oi.product_type,
-          rate,
-          amount: oi.total_price * rate,
-          status: 'pending',
-        }])
-    }
-    const { data: aff } = await supabase
-      .from('affiliates')
-      .select('total_sales, pending_earnings')
-      .eq('id', order.affiliate_id)
-      .single()
-    if (aff) {
-      await supabase
-        .from('affiliates')
-        .update({
-          total_sales: (aff.total_sales as number || 0) + 1,
-          pending_earnings: (aff.pending_earnings as number || 0) + totalCommission,
-        })
-        .eq('id', order.affiliate_id)
-    }
-
-    // Create partner notifications and send emails
-    const { data: affiliate } = await supabase
-      .from('affiliates')
-      .select('name, email')
-      .eq('id', order.affiliate_id)
-      .single()
-
-    if (affiliate) {
-      // Sale notification
-      await supabase.from('partner_notifications').insert({
-        affiliate_id: order.affiliate_id,
-        title: 'New Sale',
-        message: `Someone purchased through your referral link for ₦${order.total.toLocaleString()}.`,
-        type: 'sale',
-      })
-
-      // Commission earned notification
-      await supabase.from('partner_notifications').insert({
-        affiliate_id: order.affiliate_id,
-        title: 'Commission Earned',
-        message: `You earned ₦${totalCommission.toLocaleString()} in commission from a sale.`,
-        type: 'commission',
-      })
-
-      // Send commission earned email
-      const firstItem = orderItems[0]
-      sendEmailSafe({
-        to: affiliate.email,
-        subject: `You earned ₦${totalCommission.toLocaleString()} commission!`,
-        html: partnerCommissionEarnedEmail({
-          name: affiliate.name,
-          amount: totalCommission,
-          productTitle: firstItem?.product_id || 'a product',
-          productType: firstItem?.product_type || 'digital',
-          rate: firstItem?.product_type === 'physical'
-            ? settings.physical_commission_rate
-            : settings.digital_commission_rate,
-        }),
-      }).catch(() => {})
-
-      // Send sale notification email
-      sendEmailSafe({
-        to: affiliate.email,
-        subject: 'New sale through your referral link!',
-        html: partnerSaleNotificationEmail({
-          name: affiliate.name,
-          saleAmount: order.total,
-          productTitle: firstItem?.product_id || 'a product',
-        }),
-      }).catch(() => {})
-    }
   }
 
   return { order: newOrder, items: orderItems }

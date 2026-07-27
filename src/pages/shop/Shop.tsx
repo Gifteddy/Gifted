@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils'
-import { getProducts, getFeaturedProducts, getProductsByType, checkUrlForAffiliate } from '@/lib/commerce-queries'
+import { getProducts, getFeaturedProducts, getProductsByType } from '@/lib/commerce-queries'
 import type { Product } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
 import { Meta } from '@/lib/meta'
@@ -36,7 +36,6 @@ export default function Shop() {
   const bannerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    checkUrlForAffiliate()
     Promise.all([
       getFeaturedProducts(),
       getProducts(),
@@ -311,23 +310,32 @@ export default function Shop() {
         </div>
       )}
 
-      {/* ── Partners CTA ── */}
-      <section className="px-6 py-16 bg-surface-secondary-light dark:bg-surface-secondary-dark border-t border-black/[0.04] dark:border-white/[0.06]">
-        <div className="mx-auto max-w-lg text-center">
-          <span className={cn(label, 'text-brand-500 dark:text-brand-400')}>Gifted Partners</span>
-          <h2 className="font-display text-xl font-bold sm:text-2xl mt-2 text-gray-900 dark:text-white/90">
-            Become a Gifted Partner
-          </h2>
-          <p className="mt-2 text-sm text-gray-500 dark:text-white/50">
-            Earn commissions by sharing products you genuinely love.
-          </p>
-          <Link
-            to="/shop/partners"
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white transition-all duration-500 hover:shadow-lg hover:shadow-brand-500/30 active:scale-[0.97]"
-          >
-            Learn More
-            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
-          </Link>
+      {/* ── Partner Programme CTA ── */}
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="rounded-3xl border border-brand-500/10 bg-gradient-to-br from-brand-500/[0.04] via-transparent to-brand-500/[0.02] p-10 sm:p-14">
+            <span className={cn(label, 'text-brand-600 dark:text-brand-400')}>Earn with Gifted</span>
+            <h2 className="font-display text-2xl font-bold sm:text-3xl mt-2 text-gray-900 dark:text-white/90">
+              Join the Partner Programme
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-gray-600 dark:text-white/50">
+              Earn up to 20% commission on every sale. Get your referral link, share it with your audience, and start earning today.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                to="/shop/partners/apply"
+                className="rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-600 hover:shadow-brand-500/30"
+              >
+                Become a Partner
+              </Link>
+              <Link
+                to="/shop/partners"
+                className="rounded-full border border-brand-500/20 bg-brand-500/[0.06] px-8 py-3 text-sm font-semibold text-brand-600 dark:text-brand-400 transition hover:bg-brand-500/10"
+              >
+                Learn More
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 

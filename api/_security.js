@@ -58,7 +58,7 @@ export function validateEmail(email) {
 }
 
 export function validateAction(action) {
-  const allowed = ['approve', 'reject']
+  const allowed = ['approve', 'reject', 'suspend', 'ban']
   if (!action || !allowed.includes(action)) return `Invalid action. Must be: ${allowed.join(', ')}`
   return null
 }

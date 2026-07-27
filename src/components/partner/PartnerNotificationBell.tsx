@@ -1,33 +1,91 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useNotifications } from '@/store/notifications'
+import { usePartnerStore } from '@/store/partner'
+import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
-import type { NotificationType } from '@/lib/types'
+import type { PartnerNotification } from '@/modules/partner/types'
 
-const TYPE_ICONS: Record<NotificationType, string> = {
-  message: '□',
-  testimonial: '★',
-  file_upload: '↗',
-  share_viewed: '⊕',
-  order: '⊞',
-  inventory: '⊟',
-  customer: '◉',
+const TYPE_ICONS: Record<string, string> = {
+  achievement: '★',
+  conversion: '$',
+  payout: '↗',
+  system: '◉',
+  promotion: '⊕',
 }
 
-const ORIGINAL_TITLE = document.title
-
-export default function NotificationBell() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications()
+export default function PartnerNotificationBell() {
+  const { partner } = usePartnerStore()
+  const [notifications, setNotifications] = useState<PartnerNotification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
-    document.title = unreadCount > 0
-      ? `(${unreadCount > 99 ? '99+' : unreadCount}) ${ORIGINAL_TITLE}`
-      : ORIGINAL_TITLE
-    return () => { document.title = ORIGINAL_TITLE }
-  }, [unreadCount])
+    if (!partner) return
+
+    async function fetchNotifications() {
+      const { data } = await supabase
+        .from('partner_notifications')
+        .select('*')
+        .eq('partner_id', partner!.id)
+        .order('created_at', { ascending: false })
+        .limit(30)
+
+      if (data) {
+        setNotifications(data as PartnerNotification[])
+        setUnreadCount(data.filter(n => !n.read).length)
+      }
+    }
+
+    fetchNotifications()
+
+    const channel = supabase
+      .channel(`partner-notifications-${partner!.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'partner_notifications',
+        filter: `partner_id=eq.${partner!.id}`,
+      }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const n = payload.new as PartnerNotification
+          setNotifications(prev => [n, ...prev].slice(0, 30))
+          setUnreadCount(prev => prev + 1)
+        } else if (payload.eventType === 'UPDATE') {
+          const updated = payload.new as PartnerNotification
+          setNotifications(prev => prev.map(n => n.id === updated.id ? updated : n))
+          setUnreadCount(() => {
+            const next = notifications.map(n => n.id === updated.id ? updated : n)
+            return next.filter(n => !n.read).length
+          })
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [partner])
+
+  useEffect(() => {
+    if (!partner || !open) return
+
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id)
+    if (unreadIds.length === 0) return
+
+    async function markAllRead() {
+      await supabase
+        .from('partner_notifications')
+        .update({ read: true })
+        .in('id', unreadIds)
+    }
+
+    markAllRead().then(() => {
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+      setUnreadCount(0)
+    })
+  }, [open, partner, notifications])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -37,10 +95,11 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
 
-  const handleItemClick = (n: typeof notifications[number]) => {
-    if (!n.read) markAsRead(n.id)
+  const handleItemClick = (n: PartnerNotification) => {
     setOpen(false)
-    navigate(n.link)
+    if (n.link) {
+      navigate(n.link)
+    }
   }
 
   const displayList = notifications.slice(0, 20)
@@ -67,20 +126,9 @@ export default function NotificationBell() {
         <div className="absolute right-0 top-full z-50 mt-2 w-80 origin-top-right overflow-hidden rounded-xl border border-black/[0.06] bg-white/95 shadow-lg backdrop-blur-2xl dark:border-white/[0.06] dark:bg-[#12121A]/95">
           <div className="flex items-center justify-between border-b border-black/[0.04] px-4 py-3 dark:border-white/[0.04]">
             <span className="text-xs font-semibold text-gray-800 dark:text-white/90">Notifications</span>
-            <div className="flex gap-2">
-              {unreadCount > 0 && (
-                <button onClick={markAllAsRead}
-                  className="text-[11px] font-medium text-gray-400 transition-colors hover:text-gray-600 dark:text-white/40 dark:hover:text-white/70">
-                  Mark all read
-                </button>
-              )}
-              {notifications.length > 0 && (
-                <button onClick={clearAll}
-                  className="text-[11px] font-medium text-gray-400 transition-colors hover:text-red-500 dark:text-white/40 dark:hover:text-red-400">
-                  Clear
-                </button>
-              )}
-            </div>
+            {unreadCount > 0 && (
+              <span className="text-[10px] font-medium text-brand-500 dark:text-brand-400">{unreadCount} unread</span>
+            )}
           </div>
 
           <div className="max-h-80 overflow-y-auto">
@@ -111,8 +159,8 @@ export default function NotificationBell() {
                     )}>
                       {n.title}
                     </p>
-                    {n.description && (
-                      <p className="mt-0.5 truncate text-xs text-gray-400 dark:text-white/40">{n.description}</p>
+                    {n.message && (
+                      <p className="mt-0.5 truncate text-xs text-gray-400 dark:text-white/40">{n.message}</p>
                     )}
                     <p className="mt-1 text-[10px] text-gray-300 dark:text-white/20">
                       {new Date(n.created_at).toLocaleString()}

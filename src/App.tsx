@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { Gifteddy } from '@/components/gifteddy/Gifteddy'
 import { ProtectedRoute } from '@/components/admin/ProtectedRoute'
 import { PartnerProtectedRoute } from '@/components/partner/PartnerProtectedRoute'
+import PartnerLayout from '@/components/partner/PartnerLayout'
 import { AdminOverlay } from '@/components/admin/AdminOverlay'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { ToastContainer } from '@/components/ui/Toast'
@@ -31,7 +32,17 @@ const ShopDigitalProducts = lazy(() => import('@/pages/shop/DigitalProducts'))
 const ShopMerch = lazy(() => import('@/pages/shop/Merch'))
 const ShopBundles = lazy(() => import('@/pages/shop/Bundles'))
 const ShopPartners = lazy(() => import('@/pages/shop/Partners'))
+const ShopPartnerApply = lazy(() => import('@/pages/shop/PartnerApply'))
+const ShopPartnerLogin = lazy(() => import('@/pages/shop/PartnerLogin'))
 const ShopPartnerDashboard = lazy(() => import('@/pages/shop/PartnerDashboard'))
+const ShopPartnerReferrals = lazy(() => import('@/pages/shop/PartnerReferrals'))
+const ShopPartnerProducts = lazy(() => import('@/pages/shop/PartnerProducts'))
+const ShopPartnerAnalytics = lazy(() => import('@/pages/shop/PartnerAnalytics'))
+const ShopPartnerNotifications = lazy(() => import('@/pages/shop/PartnerNotifications'))
+const ShopPartnerProfile = lazy(() => import('@/pages/shop/PartnerProfile'))
+const ShopPartnerPayouts = lazy(() => import('@/pages/shop/PartnerPayouts'))
+const ShopPartnerAchievements = lazy(() => import('@/pages/shop/PartnerAchievements'))
+const ShopPartnerResources = lazy(() => import('@/pages/shop/PartnerResources'))
 const ShopProductDetail = lazy(() => import('@/pages/shop/ProductDetail'))
 const ShopCheckout = lazy(() => import('@/pages/shop/Checkout'))
 const ShopOrderSuccess = lazy(() => import('@/pages/shop/OrderSuccess'))
@@ -53,13 +64,16 @@ const AdminFileShares = lazy(() => import('@/pages/admin/AdminFileShares'))
 const AdminCompanyLogos = lazy(() => import('@/pages/admin/AdminCompanyLogos'))
 const AdminProducts = lazy(() => import('@/pages/admin/AdminProducts'))
 const AdminOrders = lazy(() => import('@/pages/admin/AdminOrders'))
-const AdminAffiliates = lazy(() => import('@/pages/admin/AdminAffiliates'))
 const AdminDiscounts = lazy(() => import('@/pages/admin/AdminDiscounts'))
 const AdminStoreSettings = lazy(() => import('@/pages/admin/AdminStoreSettings'))
 const AdminAnalytics = lazy(() => import('@/pages/admin/AdminAnalytics'))
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
 const AdminInventory = lazy(() => import('@/pages/admin/AdminInventory'))
 const AdminCustomers = lazy(() => import('@/pages/admin/AdminCustomers'))
+const AdminPartners = lazy(() => import('@/pages/admin/AdminPartners'))
+const AdminCommissions = lazy(() => import('@/pages/admin/AdminCommissions'))
+const AdminPayouts = lazy(() => import('@/pages/admin/AdminPayouts'))
+const AdminPartnerSettings = lazy(() => import('@/pages/admin/AdminPartnerSettings'))
 
 
 function PageLoader() {
@@ -118,12 +132,11 @@ export default function App() {
             <Route path="shop/digital-products" element={<ShopDigitalProducts />} />
             <Route path="shop/merch" element={<ShopMerch />} />
             <Route path="shop/bundles" element={<ShopBundles />} />
-            <Route path="shop/affiliate" element={<Navigate to="/shop/partners" replace />} />
-            <Route path="shop/affiliate/dashboard" element={<Navigate to="/shop/partners/dashboard" replace />} />
+
             <Route path="shop/partners" element={<ShopPartners />} />
-            <Route element={<PartnerProtectedRoute />}>
-              <Route path="shop/partners/dashboard" element={<ShopPartnerDashboard />} />
-            </Route>
+            <Route path="shop/partners/apply" element={<ShopPartnerApply />} />
+            <Route path="shop/partners/login" element={<ShopPartnerLogin />} />
+
             <Route path="shop/product/:slug" element={<ShopProductDetail />} />
             <Route path="shop/checkout" element={<ShopCheckout />} />
             <Route path="shop/success/:id" element={<ShopOrderSuccess />} />
@@ -138,6 +151,22 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
 
           <Route path="/admin/login" element={<AdminLogin />} />
+
+          <Route element={<PartnerProtectedRoute />}>
+            <Route path="/shop/partners" element={<PartnerLayout />}>
+              <Route path="dashboard" element={<ShopPartnerDashboard />} />
+              <Route path="referrals" element={<ShopPartnerReferrals />} />
+              <Route path="products" element={<ShopPartnerProducts />} />
+              <Route path="analytics" element={<ShopPartnerAnalytics />} />
+              <Route path="notifications" element={<ShopPartnerNotifications />} />
+              <Route path="profile" element={<ShopPartnerProfile />} />
+              <Route path="payouts" element={<ShopPartnerPayouts />} />
+              <Route path="achievements" element={<ShopPartnerAchievements />} />
+              <Route path="resources" element={<ShopPartnerResources />} />
+              <Route path="settings" element={<ShopPartnerProfile />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
+            </Route>
+          </Route>
 
           <Route element={<ProtectedRoute />}>
             <Route path="/admin" element={<AdminLayout />}>
@@ -155,10 +184,13 @@ export default function App() {
               <Route path="products" element={<AdminProducts />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="inventory" element={<AdminInventory />} />
-              <Route path="affiliates" element={<AdminAffiliates />} />
               <Route path="customers" element={<AdminCustomers />} />
               <Route path="discounts" element={<AdminDiscounts />} />
               <Route path="store-settings" element={<AdminStoreSettings />} />
+              <Route path="partners" element={<AdminPartners />} />
+              <Route path="commissions" element={<AdminCommissions />} />
+              <Route path="payouts" element={<AdminPayouts />} />
+              <Route path="partner-settings" element={<AdminPartnerSettings />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>

@@ -3,7 +3,6 @@ export type OrderStatus = 'pending' | 'paid' | 'in_production' | 'ready_to_ship'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
 export type ShippingStatus = 'pending' | 'processing' | 'shipped' | 'delivered'
 
-export type { AffiliateStatus, PayoutStatus } from '@/modules/affiliate/types'
 
 export interface ProductVariant {
   id: string
@@ -80,7 +79,6 @@ export interface Order {
   discount: number
   total: number
   currency: string
-  affiliate_id: string | null
   discount_code: string | null
   shipping_address: Record<string, unknown> | null
   shipping_city: string | null
@@ -131,7 +129,6 @@ export interface Download {
   created_at: string
 }
 
-export type { Affiliate, AffiliateClick, AffiliateCommission, AffiliatePayout } from '@/modules/affiliate/types'
 
 export interface DiscountCode {
   id: string
@@ -142,7 +139,6 @@ export interface DiscountCode {
   use_count: number
   min_order_amount: number | null
   expires_at: string | null
-  affiliate_id: string | null
   is_active: boolean
   created_at: string
 }
@@ -174,7 +170,6 @@ export interface StoreSettings {
   updated_at: string
 }
 
-export type { AffiliateApplication } from '@/modules/affiliate/types'
 
 export interface ShippingAddress {
   line1: string
@@ -185,7 +180,6 @@ export interface ShippingAddress {
   zip: string
 }
 
-export type { PartnerNotification, PartnerAchievement, MarketingAsset } from '@/modules/affiliate/types'
 
 export interface AnalyticsDay {
   day: string
