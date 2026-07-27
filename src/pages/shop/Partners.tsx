@@ -147,20 +147,6 @@ export default function Partners() {
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
 
-  const stepErrors: Record<number, string[]> = {
-    0: [
-      ...(!formData.name.trim() && touched.name ? ['Full name is required'] : []),
-      ...(!formData.email.trim() && touched.email ? ['Email is required'] : []),
-      ...(touched.email && formData.email.trim() && !emailValid ? ['Enter a valid email address'] : []),
-    ],
-    1: [
-      ...(!formData.audience_description.trim() && touched.audience_description ? ['Audience description is required'] : []),
-    ],
-    3: [
-      ...(!formData.reason.trim() && touched.reason ? ['Please tell us why you want to join'] : []),
-    ],
-  }
-
   const canAdvance = (stepIndex: number): boolean => {
     switch (stepIndex) {
       case 0: return !!formData.name.trim() && !!formData.email.trim() && emailValid
