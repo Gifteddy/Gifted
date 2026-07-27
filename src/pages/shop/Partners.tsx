@@ -234,8 +234,7 @@ export default function Partners() {
       : 'border-border-light dark:border-border-dark focus:border-brand-500/50 focus:ring-brand-500/30'
   )
 
-  const _errors = stepErrors[step] || []
-  const showErrors = stepAttempted[step]
+
 
   const renderStep = () => {
     switch (step) {
