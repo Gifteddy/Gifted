@@ -72,7 +72,7 @@ export default function AdminPartners() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token || ''}`,
         },
-        body: JSON.stringify({ action: 'approve', partner_id: partner.id }),
+        body: JSON.stringify({ action: 'approve', partner_id: partner.id, name: partner.name, email: partner.email, referral_code: partner.referral_code }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Unknown error' }))
@@ -104,7 +104,7 @@ export default function AdminPartners() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token || ''}`,
         },
-        body: JSON.stringify({ action: 'reject', partner_id: partner.id }),
+        body: JSON.stringify({ action: 'reject', partner_id: partner.id, name: partner.name, email: partner.email, referral_code: partner.referral_code }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Unknown error' }))
@@ -257,6 +257,8 @@ function ApplicationsTab({
   onReject: (p: Partner) => void
   socialLinksSummary: (p: Partner) => string
 }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
   if (applications.length === 0) {
     return (
       <div className="flex items-center justify-center rounded-2xl p-12 text-center admin-glass">
@@ -293,6 +295,19 @@ function ApplicationsTab({
                 </p>
               )}
               <p className="mt-2 text-[10px] text-gray-400 dark:text-white/30">Applied {formatDate(p.created_at)}</p>
+
+              {expandedId === p.id && (
+                <div className="mt-3 space-y-2 rounded-xl border border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] p-3">
+                  {p.bio && <p className="text-xs text-gray-600 dark:text-white/50"><span className="font-medium text-gray-900 dark:text-white/80">Bio:</span> {p.bio}</p>}
+                  {p.website && <p className="text-xs text-gray-600 dark:text-white/50"><span className="font-medium text-gray-900 dark:text-white/80">Website:</span> {p.website}</p>}
+                  {p.instagram && <p className="text-xs text-gray-600 dark:text-white/50"><span className="font-medium text-gray-900 dark:text-white/80">Instagram:</span> {p.instagram}</p>}
+                  {p.tiktok && <p className="text-xs text-gray-600 dark:text-white/50"><span className="font-medium text-gray-900 dark:text-white/80">TikTok:</span> {p.tiktok}</p>}
+                  {p.youtube && <p className="text-xs text-gray-600 dark:text-white/50"><span className="font-medium text-gray-900 dark:text-white/80">YouTube:</span> {p.youtube}</p>}
+                  {p.twitter && <p className="text-xs text-gray-600 dark:text-white/50"><span className="font-medium text-gray-900 dark:text-white/80">Twitter:</span> {p.twitter}</p>}
+                  {p.linkedin && <p className="text-xs text-gray-600 dark:text-white/50"><span className="font-medium text-gray-900 dark:text-white/80">LinkedIn:</span> {p.linkedin}</p>}
+                  {p.portfolio_url && <p className="text-xs text-gray-600 dark:text-white/50"><span className="font-medium text-gray-900 dark:text-white/80">Portfolio:</span> {p.portfolio_url}</p>}
+                </div>
+              )}
             </div>
             <div className="flex shrink-0 gap-2">
               <button
@@ -311,10 +326,10 @@ function ApplicationsTab({
               </button>
               <button
                 disabled={processingId === p.id}
-                onClick={() => onReject(p)}
+                onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
                 className="rounded-xl px-4 py-2 text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
               >
-                More Info
+                {expandedId === p.id ? 'Less' : 'More Info'}
               </button>
             </div>
           </div>

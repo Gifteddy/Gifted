@@ -71,7 +71,7 @@ ${body}
 </table></td></tr></table></body></html>`
 }
 
-function approvalEmail(name, referralCode, setupUrl) {
+function approvalEmail(name, referralCode, setupUrl, email) {
   return emailWrap(`
     <tr><td style="background:#fff;border-radius:16px;padding:40px 32px">
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px">
@@ -87,8 +87,8 @@ function approvalEmail(name, referralCode, setupUrl) {
           <p style="margin:0;font-size:24px;font-weight:700;color:#5b21b6;font-family:monospace;letter-spacing:2px">${escapeHtml(referralCode)}</p>
         </td></tr>
       </table>
-      <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.7;text-align:center">
-        Set your password to access your partner dashboard and start earning commissions.
+      <p style="margin:0 0 8px;font-size:14px;color:#555;line-height:1.7;text-align:center">
+        To access your partner dashboard, click below to set your password. You'll receive a password reset email &mdash; check your spam folder if you don't see it.
       </p>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px">
         <tr><td style="border-radius:10px;background:#7c3aed;padding:14px 36px">
@@ -96,7 +96,7 @@ function approvalEmail(name, referralCode, setupUrl) {
         </td></tr>
       </table>
       <p style="margin:0 0 0;font-size:12px;color:#999;line-height:1.6;text-align:center">
-        This link expires in 24 hours. If it expires, use the <a href="${SITE_URL}/shop/partners/login" style="color:#7c3aed;text-decoration:none">Forgot Password</a> option on the login page.
+        Once set, sign in at the <a href="${SITE_URL}/shop/partners/login" style="color:#7c3aed;text-decoration:none">Partner Login</a> page.
       </p>
     </td></tr>
   `)
@@ -241,25 +241,12 @@ module.exports = async (req, res) => {
         return json(res, 500, { error: 'Failed to update partner status' })
       }
 
-      // Generate magic link for password setup
-      let setupUrl = `${SITE_URL}/shop/partners/login`
-      try {
-        const { data: linkData } = await adminClient.auth.admin.generateLink({
-          type: 'magiclink',
-          email,
-        })
-        if (linkData?.properties?.action_link) {
-          setupUrl = linkData.properties.action_link
-        }
-      } catch (linkErr) {
-        console.warn('[Partner Auth] Could not generate magic link:', linkErr?.message)
-      }
-
       // Send approval email
+      const setupUrl = `${SITE_URL}/forgot-password?returnTo=/shop/partners/login`
       const emailSent = await sendMail({
         to: email,
         subject: 'Your Partner Application is Approved! \u2014 Gifted',
-        html: approvalEmail(name, referral_code, setupUrl),
+        html: approvalEmail(name, referral_code, setupUrl, email),
       }).catch(() => false)
 
       // Audit log

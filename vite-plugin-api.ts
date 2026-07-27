@@ -1,7 +1,7 @@
 import type { Plugin } from 'vite'
 import { createRequire } from 'node:module'
 import path from 'node:path'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const require_ = createRequire(import.meta.url)
@@ -177,18 +177,14 @@ export default function apiPlugin(): Plugin {
 
         await parseBody(req)
 
-        // Forward headers (Authorization)
-        req.headers = req.headers || {}
         try {
-          const mod = await import(pathToFileURL(path.join(__dirname, 'api', 'partner-auth.js')).href)
-          // partner-auth.js expects raw Node req/res — simulate enough
-          const fakeReq = { ...req, body: req.body, headers: req.headers, method: 'POST', socket: {} }
-          const fakeRes = {
-            status(code: number) { res.statusCode = code; return this },
-            json(data: any) { res.end(JSON.stringify(data)); return this },
-            setHeader() { return this },
+          const handler = require_(path.join(__dirname, 'api', 'partner-auth.js'))
+          const expressRes = {
+            setHeader: (k: string, v: string) => { res.setHeader(k, v); return expressRes },
+            status: (code: number) => { res.statusCode = code; return expressRes },
+            json: (data: any) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); return expressRes },
           }
-          await mod.default(fakeReq, fakeRes)
+          await handler(req, expressRes)
         } catch (err: any) {
           console.error('[Dev API] partner-auth error:', err)
           res.statusCode = 500

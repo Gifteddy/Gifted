@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 
 export default function ResetPassword() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const returnTo = searchParams.get('returnTo') || '/admin/login'
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -67,7 +69,7 @@ export default function ResetPassword() {
           </div>
           <h1 className="font-display text-2xl font-bold mb-2">Password Updated</h1>
           <p className="text-sm text-text-muted-light dark:text-text-muted-dark mb-6">Your password has been successfully changed. You can now sign in with your new password.</p>
-          <button onClick={() => navigate('/admin/login')}
+          <button onClick={() => navigate(returnTo)}
             className="rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white transition-all hover:shadow-xl hover:shadow-brand-500/30 active:scale-[0.97]">
             Sign In
           </button>
@@ -132,7 +134,7 @@ export default function ResetPassword() {
         </motion.div>
 
         <p className="text-center mt-6">
-          <Link to="/admin/login" className="text-xs text-brand-500 hover:text-brand-600 transition-colors">Back to sign in</Link>
+          <Link to={returnTo} className="text-xs text-brand-500 hover:text-brand-600 transition-colors">Back to sign in</Link>
         </p>
       </div>
     </div>
