@@ -1,8 +1,7 @@
 import type { Plugin } from 'vite'
 import { createRequire } from 'node:module'
-
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const require_ = createRequire(import.meta.url)
@@ -181,7 +180,7 @@ export default function apiPlugin(): Plugin {
         // Forward headers (Authorization)
         req.headers = req.headers || {}
         try {
-          const mod = await import(path.join(__dirname, 'api', 'partner-auth.js'))
+          const mod = await import(pathToFileURL(path.join(__dirname, 'api', 'partner-auth.js')).href)
           // partner-auth.js expects raw Node req/res — simulate enough
           const fakeReq = { ...req, body: req.body, headers: req.headers, method: 'POST', socket: {} }
           const fakeRes = {
