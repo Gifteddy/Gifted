@@ -34,6 +34,7 @@ const ShopBundles = lazy(() => import('@/pages/shop/Bundles'))
 const ShopPartners = lazy(() => import('@/pages/shop/Partners'))
 const ShopPartnerApply = lazy(() => import('@/pages/shop/PartnerApply'))
 const ShopPartnerLogin = lazy(() => import('@/pages/shop/PartnerLogin'))
+const ShopSetPartnerPassword = lazy(() => import('@/pages/shop/SetPartnerPassword'))
 const ShopPartnerDashboard = lazy(() => import('@/pages/shop/PartnerDashboard'))
 const ShopPartnerReferrals = lazy(() => import('@/pages/shop/PartnerReferrals'))
 const ShopPartnerProducts = lazy(() => import('@/pages/shop/PartnerProducts'))
@@ -136,6 +137,7 @@ export default function App() {
             <Route path="shop/partners" element={<ShopPartners />} />
             <Route path="shop/partners/apply" element={<ShopPartnerApply />} />
             <Route path="shop/partners/login" element={<ShopPartnerLogin />} />
+            <Route path="shop/partners/set-password" element={<ShopSetPartnerPassword />} />
 
             <Route path="shop/product/:slug" element={<ShopProductDetail />} />
             <Route path="shop/checkout" element={<ShopCheckout />} />

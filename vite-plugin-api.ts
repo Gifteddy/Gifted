@@ -17,6 +17,65 @@ function parseBody(req: any): Promise<void> {
   })
 }
 
+function makeExpressRes(res: any) {
+  let ended = false
+  const wrapper: any = {
+    setHeader: (k: string, v: string) => {
+      if (!ended) try { res.setHeader(k, v) } catch {}
+      return wrapper
+    },
+    getHeader: (k: string) => {
+      try { return res.getHeader(k) } catch { return undefined }
+    },
+    removeHeader: (k: string) => {
+      if (!ended) try { res.removeHeader(k) } catch {}
+      return wrapper
+    },
+    status: (code: number) => {
+      if (!ended) try { res.statusCode = code } catch {}
+      return wrapper
+    },
+    writeHead: (code: number, headers?: any) => {
+      if (!ended) try {
+        res.statusCode = code
+        if (headers) Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v as string))
+      } catch {}
+      return wrapper
+    },
+    write: (chunk: any) => {
+      if (!ended) try { res.write(chunk) } catch {}
+      return wrapper
+    },
+    end: (data?: any) => {
+      if (!ended) {
+        ended = true
+        try { res.end(data) } catch {}
+      }
+      return wrapper
+    },
+    json: (data: any) => {
+      if (!ended) {
+        ended = true
+        try {
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify(data))
+        } catch {}
+      }
+      return wrapper
+    },
+  }
+  return wrapper
+}
+
+function sendJson(res: any, status: number, body: any) {
+  if (res.writableEnded) return
+  try {
+    res.statusCode = status
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify(body))
+  } catch {}
+}
+
 export default function apiPlugin(): Plugin {
   return {
     name: 'vite-plugin-api-routes',
@@ -27,17 +86,16 @@ export default function apiPlugin(): Plugin {
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
         if (req.method === 'OPTIONS') { res.statusCode = 200; return res.end() }
-        if (req.method !== 'POST') { res.statusCode = 405; return res.end(JSON.stringify({ error: 'Method not allowed' })) }
+        if (req.method !== 'POST') { sendJson(res, 405, { error: 'Method not allowed' }); return }
 
         await parseBody(req)
 
-        // Load nodemailer via createRequire (CJS compat)
         const nodemailer = require_('nodemailer')
         const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM } = process.env
 
         if (!SMTP_HOST) {
-          res.statusCode = 500
-          return res.end(JSON.stringify({ error: 'SMTP not configured (missing SMTP_HOST)' }))
+          sendJson(res, 500, { error: 'SMTP not configured (missing SMTP_HOST)' })
+          return
         }
 
         try {
@@ -50,8 +108,8 @@ export default function apiPlugin(): Plugin {
 
           const { to, subject, html, from, replyTo } = req.body || {}
           if (!to || !subject || !html) {
-            res.statusCode = 400
-            return res.end(JSON.stringify({ error: 'Missing required fields: to, subject, html' }))
+            sendJson(res, 400, { error: 'Missing required fields: to, subject, html' })
+            return
           }
 
           await transporter.sendMail({
@@ -63,12 +121,10 @@ export default function apiPlugin(): Plugin {
           })
 
           console.log(`[Dev API] Email sent to ${to}`)
-          res.statusCode = 200
-          return res.end(JSON.stringify({ success: true }))
+          sendJson(res, 200, { success: true })
         } catch (err: any) {
           console.error('[Dev API] send-email error:', err)
-          res.statusCode = 500
-          return res.end(JSON.stringify({ error: err.message }))
+          sendJson(res, 500, { error: err.message })
         }
       })
 
@@ -78,7 +134,7 @@ export default function apiPlugin(): Plugin {
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
         if (req.method === 'OPTIONS') { res.statusCode = 200; return res.end() }
-        if (req.method !== 'POST') { res.statusCode = 405; return res.end(JSON.stringify({ error: 'Method not allowed' })) }
+        if (req.method !== 'POST') { sendJson(res, 405, { error: 'Method not allowed' }); return }
 
         await parseBody(req)
 
@@ -91,12 +147,12 @@ export default function apiPlugin(): Plugin {
         const VAPID_EMAIL = process.env.VAPID_EMAIL || 'ibiamiheanyi@gmail.com'
 
         if (!VAPID_PRIVATE_KEY) {
-          res.statusCode = 500
-          return res.end(JSON.stringify({ error: 'Push not configured (missing VAPID_PRIVATE_KEY)' }))
+          sendJson(res, 500, { error: 'Push not configured (missing VAPID_PRIVATE_KEY)' })
+          return
         }
         if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-          res.statusCode = 500
-          return res.end(JSON.stringify({ error: 'Supabase not configured' }))
+          sendJson(res, 500, { error: 'Supabase not configured' })
+          return
         }
 
         webPush.setVapidDetails(
@@ -109,8 +165,8 @@ export default function apiPlugin(): Plugin {
         const { userId, role, title, body: pushBody, url, tag } = req.body || {}
 
         if (!title || !pushBody) {
-          res.statusCode = 400
-          return res.end(JSON.stringify({ error: 'Missing required fields: title, body' }))
+          sendJson(res, 400, { error: 'Missing required fields: title, body' })
+          return
         }
 
         try {
@@ -124,12 +180,12 @@ export default function apiPlugin(): Plugin {
 
           const { data: subs, error } = await query
           if (error) {
-            res.statusCode = 500
-            return res.end(JSON.stringify({ error: 'Failed to fetch subscriptions' }))
+            sendJson(res, 500, { error: 'Failed to fetch subscriptions' })
+            return
           }
           if (!subs || subs.length === 0) {
-            res.statusCode = 200
-            return res.end(JSON.stringify({ sent: 0, message: 'No active subscriptions' }))
+            sendJson(res, 200, { sent: 0, message: 'No active subscriptions' })
+            return
           }
 
           const payload = JSON.stringify({
@@ -158,12 +214,10 @@ export default function apiPlugin(): Plugin {
 
           const sent = results.filter(r => r.status === 'fulfilled' && (r as any).value?.success).length
           console.log(`[Dev API] Push sent: ${sent}/${subs.length}`)
-          res.statusCode = 200
-          return res.end(JSON.stringify({ sent, failed: subs.length - sent }))
+          sendJson(res, 200, { sent, failed: subs.length - sent })
         } catch (err: any) {
           console.error('[Dev API] send-push error:', err)
-          res.statusCode = 500
-          return res.end(JSON.stringify({ error: err.message }))
+          sendJson(res, 500, { error: err.message })
         }
       })
 
@@ -173,22 +227,57 @@ export default function apiPlugin(): Plugin {
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         if (req.method === 'OPTIONS') { res.statusCode = 200; return res.end() }
-        if (req.method !== 'POST') { res.statusCode = 405; return res.end(JSON.stringify({ error: 'Method not allowed' })) }
+        if (req.method !== 'POST') { sendJson(res, 405, { error: 'Method not allowed' }); return }
 
         await parseBody(req)
 
         try {
-          const handler = require_(path.join(__dirname, 'api', 'partner-auth.js'))
-          const expressRes = {
-            setHeader: (k: string, v: string) => { res.setHeader(k, v); return expressRes },
-            status: (code: number) => { res.statusCode = code; return expressRes },
-            json: (data: any) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); return expressRes },
+          const { pathToFileURL } = await import('node:url')
+          const handlerPath = pathToFileURL(path.join(__dirname, 'api', 'partner-auth.js')).href
+          const mod = await import(handlerPath)
+          const handler = mod.default || mod
+
+          if (typeof handler !== 'function') {
+            console.error('[Dev API] partner-auth: loaded module is not a function, got:', typeof handler)
+            sendJson(res, 500, { error: 'Handler not a function' })
+            return
           }
+
+          const expressRes = makeExpressRes(res)
           await handler(req, expressRes)
         } catch (err: any) {
-          console.error('[Dev API] partner-auth error:', err)
-          res.statusCode = 500
-          res.end(JSON.stringify({ error: err.message }))
+          console.error('[Dev API] partner-auth error:', err.message || err)
+          console.error('[Dev API] partner-auth stack:', err.stack)
+          sendJson(res, 500, { error: err.message || 'Internal server error' })
+        }
+      })
+
+      // --- partner-set-password (verify token + set password) ---
+      server.middlewares.use('/api/partner-set-password', async (req: any, res: any) => {
+        res.setHeader('Access-Control-Allow-Origin', '*')
+        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+        if (req.method === 'OPTIONS') { res.statusCode = 200; return res.end() }
+        if (req.method !== 'POST') { sendJson(res, 405, { error: 'Method not allowed' }); return }
+
+        await parseBody(req)
+
+        try {
+          const { pathToFileURL } = await import('node:url')
+          const handlerPath = pathToFileURL(path.join(__dirname, 'api', 'partner-set-password.js')).href
+          const mod = await import(handlerPath)
+          const handler = mod.default || mod
+
+          if (typeof handler !== 'function') {
+            sendJson(res, 500, { error: 'Handler not a function' })
+            return
+          }
+
+          const expressRes = makeExpressRes(res)
+          await handler(req, expressRes)
+        } catch (err: any) {
+          console.error('[Dev API] partner-set-password error:', err.message || err)
+          sendJson(res, 500, { error: err.message || 'Internal server error' })
         }
       })
     },

@@ -46,6 +46,10 @@ function generateSecurePassword() {
   return pw.slice(0, -3) + 'A1!'
 }
 
+function generateToken() {
+  return require('crypto').randomBytes(32).toString('hex')
+}
+
 function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
@@ -71,7 +75,7 @@ ${body}
 </table></td></tr></table></body></html>`
 }
 
-function approvalEmail(name, referralCode, setupUrl, email) {
+function approvalEmail(name, referralCode, setupUrl) {
   return emailWrap(`
     <tr><td style="background:#fff;border-radius:16px;padding:40px 32px">
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px">
@@ -87,8 +91,8 @@ function approvalEmail(name, referralCode, setupUrl, email) {
           <p style="margin:0;font-size:24px;font-weight:700;color:#5b21b6;font-family:monospace;letter-spacing:2px">${escapeHtml(referralCode)}</p>
         </td></tr>
       </table>
-      <p style="margin:0 0 8px;font-size:14px;color:#555;line-height:1.7;text-align:center">
-        To access your partner dashboard, click below to set your password. You'll receive a password reset email &mdash; check your spam folder if you don't see it.
+      <p style="margin:0 0 24px;font-size:14px;color:#555;line-height:1.7;text-align:center">
+        Click below to set your password and access your partner dashboard. This link expires in 24 hours.
       </p>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px">
         <tr><td style="border-radius:10px;background:#7c3aed;padding:14px 36px">
@@ -96,7 +100,8 @@ function approvalEmail(name, referralCode, setupUrl, email) {
         </td></tr>
       </table>
       <p style="margin:0 0 0;font-size:12px;color:#999;line-height:1.6;text-align:center">
-        Once set, sign in at the <a href="${SITE_URL}/shop/partners/login" style="color:#7c3aed;text-decoration:none">Partner Login</a> page.
+        If the button doesn't work, copy and paste this link into your browser:<br>
+        <a href="${setupUrl}" style="color:#7c3aed;text-decoration:none;word-break:break-all">${setupUrl}</a>
       </p>
     </td></tr>
   `)
@@ -230,10 +235,19 @@ module.exports = async (req, res) => {
         }
       }
 
-      // Update partner record
+      // Generate password setup token
+      const setupToken = generateToken()
+      const setupExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+      // Update partner record with token
       const { error: updateErr } = await adminClient
         .from('partners')
-        .update({ auth_user_id: userId, status: 'approved' })
+        .update({
+          auth_user_id: userId,
+          status: 'approved',
+          password_setup_token: setupToken,
+          password_setup_expires: setupExpires,
+        })
         .eq('id', partner_id)
 
       if (updateErr) {
@@ -241,12 +255,12 @@ module.exports = async (req, res) => {
         return json(res, 500, { error: 'Failed to update partner status' })
       }
 
-      // Send approval email
-      const setupUrl = `${SITE_URL}/forgot-password?returnTo=/shop/partners/login`
+      // Send approval email with direct setup link
+      const setupUrl = `${SITE_URL}/shop/partners/set-password?token=${setupToken}&email=${encodeURIComponent(email)}`
       const emailSent = await sendMail({
         to: email,
         subject: 'Your Partner Application is Approved! \u2014 Gifted',
-        html: approvalEmail(name, referral_code, setupUrl, email),
+        html: approvalEmail(name, referral_code, setupUrl),
       }).catch(() => false)
 
       // Audit log

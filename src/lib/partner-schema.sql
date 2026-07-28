@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS partners (
   last_click_at TIMESTAMPTZ,
   last_conversion_at TIMESTAMPTZ,
   notification_preferences JSONB DEFAULT '{"email": true, "browser": true}'::jsonb,
+  password_setup_token TEXT,
+  password_setup_expires TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
