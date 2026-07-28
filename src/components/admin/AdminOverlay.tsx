@@ -13,10 +13,16 @@ export function AdminOverlay() {
     if (!initialized) initialize()
   }, [initialized, initialize])
 
+  // Skip everything if no admin user or on admin pages
+  if (!user || pathname.startsWith('/admin')) return null
+
+  return <AdminOverlayBell />
+}
+
+// Separate component so realtime/push hooks are conditionally mounted
+function AdminOverlayBell() {
   useRealtimeNotifications()
   useAdminPush()
-
-  if (!user || pathname.startsWith('/admin')) return null
 
   return (
     <div className="fixed right-4 top-4 z-50">

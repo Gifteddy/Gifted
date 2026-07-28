@@ -39,11 +39,15 @@ export default function PartnerNotificationBell() {
     }
 
     fetchNotifications()
+  }, [partner])
+
+  useEffect(() => {
+    if (!partner) return
 
     const channel = supabase
       .channel(`partner-notifications-${partner!.id}`)
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'partner_notifications',
         filter: `partner_id=eq.${partner!.id}`,
@@ -52,13 +56,6 @@ export default function PartnerNotificationBell() {
           const n = payload.new as PartnerNotification
           setNotifications(prev => [n, ...prev].slice(0, 30))
           setUnreadCount(prev => prev + 1)
-        } else if (payload.eventType === 'UPDATE') {
-          const updated = payload.new as PartnerNotification
-          setNotifications(prev => prev.map(n => n.id === updated.id ? updated : n))
-          setUnreadCount(() => {
-            const next = notifications.map(n => n.id === updated.id ? updated : n)
-            return next.filter(n => !n.read).length
-          })
         }
       })
       .subscribe()

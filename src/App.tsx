@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { Gifteddy } from '@/components/gifteddy/Gifteddy'
 import { ProtectedRoute } from '@/components/admin/ProtectedRoute'
 import { PartnerProtectedRoute } from '@/components/partner/PartnerProtectedRoute'
-import PartnerLayout from '@/components/partner/PartnerLayout'
 import { AdminOverlay } from '@/components/admin/AdminOverlay'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { ToastContainer } from '@/components/ui/Toast'
@@ -35,6 +34,7 @@ const ShopPartners = lazy(() => import('@/pages/shop/Partners'))
 const ShopPartnerApply = lazy(() => import('@/pages/shop/PartnerApply'))
 const ShopPartnerLogin = lazy(() => import('@/pages/shop/PartnerLogin'))
 const ShopSetPartnerPassword = lazy(() => import('@/pages/shop/SetPartnerPassword'))
+const LazyPartnerLayout = lazy(() => import('@/components/partner/PartnerLayout'))
 const ShopPartnerDashboard = lazy(() => import('@/pages/shop/PartnerDashboard'))
 const ShopPartnerReferrals = lazy(() => import('@/pages/shop/PartnerReferrals'))
 const ShopPartnerProducts = lazy(() => import('@/pages/shop/PartnerProducts'))
@@ -155,7 +155,7 @@ export default function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
 
           <Route element={<PartnerProtectedRoute />}>
-            <Route element={<PartnerLayout />}>
+            <Route element={<Suspense fallback={<PageLoader />}><LazyPartnerLayout /></Suspense>}>
               <Route path="/shop/partners/dashboard" element={<ShopPartnerDashboard />} />
               <Route path="/shop/partners/referrals" element={<ShopPartnerReferrals />} />
               <Route path="/shop/partners/products" element={<ShopPartnerProducts />} />
