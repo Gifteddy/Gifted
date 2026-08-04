@@ -33,7 +33,7 @@ export function CompanyMarquee() {
             Trusted By
           </span>
           <h2 className="font-display text-3xl font-bold sm:text-4xl lg:text-5xl">
-            Organizations I&apos;ve <span className="text-gradient">Worked With</span>
+            Companies I&apos;ve <span className="text-gradient">Worked With</span>
           </h2>
         </motion.div>
 
