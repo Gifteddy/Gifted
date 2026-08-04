@@ -84,7 +84,7 @@ export default function PartnerApply() {
     try {
       const referralCode = generateReferralCode()
       await createPartnerApplication({ ...form, referral_code: referralCode })
-      const siteUrl = import.meta.env.VITE_SITE_URL || 'https://gifted-beige.vercel.app'
+      const siteUrl = import.meta.env.VITE_SITE_URL || 'https://giftedcreates.com'
       sendEmail({
         to: form.email,
         subject: 'Application Received \u2014 Gifted Partners',

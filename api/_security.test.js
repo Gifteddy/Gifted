@@ -12,7 +12,7 @@ import {
 
 function mockReq(overrides = {}) {
   return {
-    headers: { origin: 'https://gifted-beige.vercel.app', ...overrides.headers },
+    headers: { origin: 'https://giftedcreates.com', ...overrides.headers },
     method: 'POST',
     url: '/api/test',
     socket: { remoteAddress: '127.0.0.1' },
@@ -46,15 +46,15 @@ describe('getCorsOrigin', () => {
   })
 
   it('returns matching origin when in ALLOWED_ORIGINS', () => {
-    process.env.ALLOWED_ORIGINS = 'https://gifted-beige.vercel.app,https://gifted.ng'
+    process.env.ALLOWED_ORIGINS = 'https://giftedcreates.com,https://gifted.ng'
     const req = mockReq({ headers: { origin: 'https://gifted.ng' } })
     expect(getCorsOrigin(req)).toBe('https://gifted.ng')
   })
 
   it('returns first allowed origin when origin not in list', () => {
-    process.env.ALLOWED_ORIGINS = 'https://gifted-beige.vercel.app,https://gifted.ng'
+    process.env.ALLOWED_ORIGINS = 'https://giftedcreates.com,https://gifted.ng'
     const req = mockReq({ headers: { origin: 'https://evil.com' } })
-    expect(getCorsOrigin(req)).toBe('https://gifted-beige.vercel.app')
+    expect(getCorsOrigin(req)).toBe('https://giftedcreates.com')
   })
 })
 

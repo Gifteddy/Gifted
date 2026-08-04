@@ -11,7 +11,28 @@ import { Meta } from '@/lib/meta'
 export default function Home() {
   return (
     <>
-      <Meta title="Home" description="Creative technologist combining visual storytelling, design, engineering, and digital experiences. Explore projects, shop, and more." />
+      <Meta
+        title="Home"
+        description="Creative technologist combining visual storytelling, design, engineering, and digital experiences. Explore projects, shop, and more."
+        keywords={[
+          'creative technologist', 'portfolio', 'photography', 'video production',
+          'graphic design', 'web development', 'photo editing', 'freelancer',
+          'Nigeria', 'visual storytelling', 'digital experiences',
+        ]}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          name: 'Gifted | Creative Technologist',
+          description: 'Creative technologist combining visual storytelling, design, engineering, and digital experiences.',
+          url: 'https://giftedcreates.com/',
+          mainEntity: {
+            '@type': 'Person',
+            name: 'Ibiam Iheanyi Victory',
+            alternateName: 'Gifted',
+            jobTitle: 'Creative Technologist',
+          },
+        }}
+      />
       <Hero />
       <About />
       <Services />

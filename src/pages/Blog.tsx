@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import type { BlogPost } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
 import { Meta } from '@/lib/meta'
@@ -24,12 +25,23 @@ export default function Blog() {
 
   return (
     <section className="relative min-h-screen px-4 pt-32 pb-24">
-      <Meta title="Blog" description="Thoughts, insights, and stories on creative technology, design, and digital experiences." />
+      <Meta
+        title="Blog"
+        description="Thoughts, insights, and stories on creative technology, design, photography, video production, and digital experiences."
+        keywords={['blog', 'creative technology', 'design insights', 'photography tips', 'web development', 'visual storytelling']}
+        breadcrumbs={[{ name: 'Blog', path: '/blog' }]}
+      />
       <div className="mx-auto max-w-7xl">
+        <div className="mb-8">
+          <SEOBreadcrumbs items={[{ name: 'Blog', path: '/blog' }]} className="mb-6 pt-4" />
+        </div>
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           className="mb-12 text-center">
           <span className="mb-4 block text-xs font-semibold tracking-widest uppercase text-brand-500 dark:text-brand-400">Blog</span>
           <h1 className="font-display text-4xl font-bold sm:text-5xl lg:text-6xl">Thoughts & <span className="text-gradient">Insights</span></h1>
+          <p className="mt-4 max-w-2xl mx-auto text-text-muted-light dark:text-text-muted-dark">
+            Articles on creative technology, design, photography, and building digital experiences.
+          </p>
         </motion.div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -43,15 +55,15 @@ export default function Blog() {
               <Link to={`/blog/${post.slug}`}>
                 <LiquidGlass className="group overflow-hidden rounded-2xl transition-all duration-500 hover:scale-[1.02]" intensity="medium">
                   <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
-                    {post.cover_image ? <img src={post.cover_image} alt={post.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                      : <span className="text-4xl opacity-30">📝</span>}
+                    {post.cover_image ? <img src={post.cover_image} alt={post.title} loading="lazy" decoding="async" width="800" height="450" className="h-full w-full object-cover" />
+                      : <span className="text-4xl opacity-30" aria-hidden="true">📝</span>}
                   </div>
                   <div className="p-5">
                     <div className="flex items-center gap-3 text-xs text-text-muted-light dark:text-text-muted-dark">
-                      <span>{formatDate(post.created_at)}</span>
-                      {post.reading_time && <span>· {post.reading_time} min read</span>}
+                      <time dateTime={post.created_at}>{formatDate(post.created_at)}</time>
+                      {post.reading_time && <span aria-label={`${post.reading_time} minute read`}>· {post.reading_time} min read</span>}
                     </div>
-                    <h3 className="mt-2 text-lg font-semibold transition-colors group-hover:text-brand-500">{post.title}</h3>
+                    <h2 className="mt-2 text-lg font-semibold transition-colors group-hover:text-brand-500">{post.title}</h2>
                     <p className="mt-1 line-clamp-2 text-sm text-text-muted-light dark:text-text-muted-dark">{post.excerpt}</p>
                   </div>
                 </LiquidGlass>

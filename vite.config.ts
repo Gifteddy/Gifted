@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     server: {
-      allowedHosts: ['localhost', 'moneybags-scribble-urgency.ngrok-free.dev', 'gifted-beige.vercel.app'],
+      allowedHosts: ['localhost', 'moneybags-scribble-urgency.ngrok-free.dev', 'giftedcreates.com'],
       proxy: {
         '/api/chat': {
           target: 'https://openrouter.ai/api/v1',

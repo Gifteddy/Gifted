@@ -38,7 +38,7 @@ function escapeHtml(str) {
 }
 
 function emailWrap(body) {
-  const SITE_URL = process.env.VITE_SITE_URL || 'https://gifted-beige.vercel.app'
+  const SITE_URL = process.env.VITE_SITE_URL || 'https://giftedcreates.com'
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>body{margin:0;padding:0;background:#f5f5f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}table{border-collapse:collapse}</style>
@@ -60,7 +60,7 @@ ${body}
 }
 
 function commissionEmail(partnerName, saleAmount, commissionAmount, productTitle) {
-  const SITE_URL = process.env.VITE_SITE_URL || 'https://gifted-beige.vercel.app'
+  const SITE_URL = process.env.VITE_SITE_URL || 'https://giftedcreates.com'
   return emailWrap(`
     <tr><td style="background:#fff;border-radius:16px;padding:40px 32px">
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px">

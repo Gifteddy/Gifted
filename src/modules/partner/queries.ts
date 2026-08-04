@@ -1057,7 +1057,7 @@ export function buildReferralUrl(
   productSlug?: string,
   campaign?: string
 ): string {
-  const base = 'https://gifted-beige.vercel.app'
+  const base = 'https://giftedcreates.com'
   let url: string
 
   if (productSlug) {

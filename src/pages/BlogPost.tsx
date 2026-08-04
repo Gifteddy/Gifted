@@ -4,7 +4,8 @@ import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { Button } from '@/components/ui/Button'
-import { Meta } from '@/lib/meta'
+import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
+import { Meta, buildArticleSchema } from '@/lib/meta'
 import { formatDate } from '@/lib/utils'
 import type { BlogPost as BlogPostType } from '@/lib/types'
 
@@ -75,6 +76,17 @@ export default function BlogPost() {
     )
   }
 
+  const postUrl = `https://giftedcreates.com/blog/${post.slug}`
+  const articleSchema = buildArticleSchema({
+    title: post.title,
+    description: post.excerpt,
+    image: post.cover_image,
+    url: postUrl,
+    publishedAt: post.created_at,
+    modifiedAt: post.updated_at,
+    author: 'Ibiam Iheanyi Victory',
+  })
+
   if (post.custom_html) {
     return (
       <>
@@ -82,7 +94,17 @@ export default function BlogPost() {
           title={post.title}
           description={post.excerpt}
           image={post.cover_image}
-          url={`${window.location.origin}/blog/${post.slug}`}
+          url={postUrl}
+          type="article"
+          publishedAt={post.created_at}
+          modifiedAt={post.updated_at}
+          author="Ibiam Iheanyi Victory"
+          keywords={post.tags || []}
+          breadcrumbs={[
+            { name: 'Blog', path: '/blog' },
+            { name: post.title, path: `/blog/${post.slug}` },
+          ]}
+          jsonLd={articleSchema}
         />
         <CustomHtmlPage html={post.custom_html} />
       </>
@@ -95,12 +117,30 @@ export default function BlogPost() {
         title={post.title}
         description={post.excerpt}
         image={post.cover_image}
-        url={`${window.location.origin}/blog/${post.slug}`}
+        url={postUrl}
+        type="article"
+        publishedAt={post.created_at}
+        modifiedAt={post.updated_at}
+        author="Ibiam Iheanyi Victory"
+        keywords={post.tags || []}
+        breadcrumbs={[
+          { name: 'Blog', path: '/blog' },
+          { name: post.title, path: `/blog/${post.slug}` },
+        ]}
+        jsonLd={articleSchema}
       />
       <div className="mx-auto max-w-3xl">
+        <SEOBreadcrumbs
+          items={[
+            { name: 'Blog', path: '/blog' },
+            { name: post.title, path: `/blog/${post.slug}` },
+          ]}
+          className="mb-6"
+        />
+
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Link to="/blog" className="mb-8 inline-flex items-center gap-2 text-sm text-text-muted-light transition-colors hover:text-brand-500 dark:text-text-muted-dark dark:hover:text-brand-400">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Back to Blog
           </Link>
         </motion.div>
@@ -113,15 +153,22 @@ export default function BlogPost() {
           </div>
           <h1 className="font-display text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">{post.title}</h1>
           <div className="mt-4 flex items-center gap-4 text-sm text-text-muted-light dark:text-text-muted-dark">
-            <span>{formatDate(post.created_at)}</span>
-            {post.reading_time && <><span>·</span><span>{post.reading_time} min read</span></>}
+            <time dateTime={post.created_at}>{formatDate(post.created_at)}</time>
+            {post.reading_time && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{post.reading_time} min read</span>
+              </>
+            )}
+            <span className="hidden sm:inline">·</span>
+            <span className="hidden sm:inline">By Ibiam Iheanyi Victory</span>
           </div>
         </motion.div>
 
         {post.cover_image && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="mt-8 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
-            <img src={post.cover_image} alt={post.title} loading="lazy" decoding="async" className="w-full object-cover" />
+            <img src={post.cover_image} alt={post.title} loading="eager" decoding="async" width="1200" height="630" className="w-full object-cover" />
           </motion.div>
         )}
 
@@ -132,6 +179,40 @@ export default function BlogPost() {
             </div>
           </LiquidGlass>
         </motion.div>
+
+        {/* Related reading links */}
+        <div className="mt-12 border-t border-border-light dark:border-border-dark pt-8">
+          <p className="text-sm font-semibold text-text-muted-light dark:text-text-muted-dark mb-4">Share this article</p>
+          <div className="flex gap-3">
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(postUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-xs font-medium transition-colors hover:bg-surface-secondary-light dark:hover:bg-surface-secondary-dark"
+              aria-label="Share on X"
+            >
+              X / Twitter
+            </a>
+            <a
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-xs font-medium transition-colors hover:bg-surface-secondary-light dark:hover:bg-surface-secondary-dark"
+              aria-label="Share on LinkedIn"
+            >
+              LinkedIn
+            </a>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`${post.title} ${postUrl}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-xs font-medium transition-colors hover:bg-surface-secondary-light dark:hover:bg-surface-secondary-dark"
+              aria-label="Share on WhatsApp"
+            >
+              WhatsApp
+            </a>
+          </div>
+        </div>
       </div>
     </article>
   )

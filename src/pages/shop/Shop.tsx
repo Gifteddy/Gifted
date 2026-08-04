@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { cn } from '@/lib/utils'
 import { getProducts, getFeaturedProducts, getProductsByType } from '@/lib/commerce-queries'
 import type { Product } from '@/lib/commerce-types'
@@ -89,11 +90,24 @@ export default function Shop() {
   return (
     <main className="min-h-screen bg-surface-light text-text-light dark:bg-surface-dark dark:text-text-dark overflow-hidden">
 
-      <Meta title="Shop" description="Discover digital products, merch, and bundles from Gifted. Premium creative assets and tools." />
+      <Meta
+        title="Shop"
+        description="Discover digital products, merch, and bundles from Gifted. Premium creative assets, templates, and tools for creators."
+        keywords={['shop', 'digital products', 'merch', 'templates', 'creative assets', 'bundles', 'gifted store']}
+        breadcrumbs={[{ name: 'Shop', path: '/shop' }]}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Gifted Store',
+          description: 'Digital products, merch, and bundles from Gifted.',
+          url: 'https://giftedcreates.com/shop',
+        }}
+      />
 
       {/* ── Minimal Header ── */}
       <section className="px-6 pt-28 pb-6">
         <div className="mx-auto max-w-6xl">
+          <SEOBreadcrumbs items={[{ name: 'Shop', path: '/shop' }]} className="mb-4" />
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <h1 className="font-display text-4xl font-bold sm:text-5xl lg:text-6xl">
               Gifted <span className="text-gradient">Store</span>

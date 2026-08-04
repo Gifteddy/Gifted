@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Button } from '@/components/ui/Button'
+import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import type { Project } from '@/lib/types'
 import { Meta } from '@/lib/meta'
 
@@ -40,20 +41,30 @@ export default function Projects() {
 
   return (
     <section className="relative min-h-screen px-4 pt-32 pb-24">
-      <Meta title="Projects" description="Browse creative projects spanning photography, development, graphic design, and video production." />
+      <Meta
+        title="Projects"
+        description="Browse creative projects spanning photography, development, graphic design, and video production. View the full portfolio."
+        keywords={['portfolio', 'projects', 'photography', 'web development', 'graphic design', 'video production', 'creative work']}
+        breadcrumbs={[{ name: 'Projects', path: '/projects' }]}
+      />
       <div className="mx-auto max-w-7xl">
+        <SEOBreadcrumbs items={[{ name: 'Projects', path: '/projects' }]} className="mb-8" />
+
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           className="mb-12 text-center">
           <span className="mb-4 block text-xs font-semibold tracking-widest uppercase text-brand-500 dark:text-brand-400">Portfolio</span>
           <h1 className="font-display text-4xl font-bold sm:text-5xl lg:text-6xl">All <span className="text-gradient">Projects</span></h1>
+          <p className="mt-4 max-w-2xl mx-auto text-text-muted-light dark:text-text-muted-dark">
+            A curated collection of creative work across photography, development, design, and video production.
+          </p>
         </motion.div>
 
         {categories.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="mb-12 flex flex-wrap justify-center gap-2">
-            <Button key="all" variant={activeCategory === 'all' ? 'primary' : 'ghost'} size="sm" onClick={() => setActiveCategory('all')}>All</Button>
+            className="mb-12 flex flex-wrap justify-center gap-2" role="group" aria-label="Filter projects by category">
+            <Button key="all" variant={activeCategory === 'all' ? 'primary' : 'ghost'} size="sm" onClick={() => setActiveCategory('all')} aria-pressed={activeCategory === 'all'}>All</Button>
             {categories.map(cat => (
-              <Button key={cat} variant={activeCategory === cat ? 'primary' : 'ghost'} size="sm" onClick={() => setActiveCategory(cat)}>{cat}</Button>
+              <Button key={cat} variant={activeCategory === cat ? 'primary' : 'ghost'} size="sm" onClick={() => setActiveCategory(cat)} aria-pressed={activeCategory === cat}>{cat}</Button>
             ))}
           </motion.div>
         )}
@@ -69,19 +80,19 @@ export default function Projects() {
               <Link to={`/projects/${p.slug}`}>
                 <LiquidGlass className="group overflow-hidden rounded-2xl transition-all duration-500 hover:scale-[1.02]" intensity="medium">
                   <div className="relative flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
-                    {p.thumbnail ? <img src={p.thumbnail} alt={p.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                      : <span className="text-4xl opacity-30">🚀</span>}
+                    {p.thumbnail ? <img src={p.thumbnail} alt={p.title} loading="lazy" decoding="async" width="600" height="450" className="h-full w-full object-cover" />
+                      : <span className="text-4xl opacity-30" aria-hidden="true">🚀</span>}
                     {(p.categories?.some(c => ((c as any)?.category?.name ?? (c as any)?.name)?.toLowerCase().includes('video') || ((c as any)?.category?.slug ?? (c as any)?.slug) === 'video-production') || p.category === 'video-production') && (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-transform group-hover:scale-110">
-                          <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                          <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
                         </div>
                       </div>
                     )}
                   </div>
                   <div className="p-5">
                     <span className="text-xs font-medium text-brand-500 dark:text-brand-400">{(p.categories?.[0] as any)?.category?.name || (p.categories?.[0] as any)?.name || p.category?.replace(/-/g, ' ') || 'Project'}</span>
-                    <h3 className="mt-1 text-lg font-semibold transition-colors group-hover:text-brand-500">{p.title}</h3>
+                    <h2 className="mt-1 text-lg font-semibold transition-colors group-hover:text-brand-500">{p.title}</h2>
                   </div>
                 </LiquidGlass>
               </Link>

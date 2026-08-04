@@ -10,7 +10,8 @@ import { CLOUDINARY_BASE } from '@/lib/images'
 import { getCategoryConfig } from '@/lib/product-attributes'
 import type { Product, ProductVariant } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
-import { Meta } from '@/lib/meta'
+import { Meta, buildProductSchema } from '@/lib/meta'
+import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 
 const heading = 'font-display text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl'
 const sectionHeading = 'font-display text-2xl font-bold leading-[1.15] sm:text-3xl lg:text-4xl'
@@ -115,30 +116,33 @@ export default function ProductDetail() {
         description={product.short_description || product.description?.slice(0, 160)}
         image={product.thumbnail}
         type="product"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'Product',
-          name: product.title,
-          description: product.short_description,
+        keywords={[product.title, ...(product.tags ?? []), product.type, 'shop', 'gifted'].filter(Boolean)}
+        breadcrumbs={[
+          { name: 'Shop', path: '/shop' },
+          ...(cfg ? [{ name: cfg.name, path: `/shop/${cfg.type === 'physical' ? 'merch' : 'digital-products'}` }] : []),
+          { name: product.title, path: `/shop/${slug}` },
+        ]}
+        jsonLd={buildProductSchema({
+          title: product.title,
+          description: product.short_description || product.description || '',
           image: product.thumbnail,
-          offers: {
-            '@type': 'Offer',
-            price: product.sale_price || product.price,
-            priceCurrency: 'NGN',
-          },
-        }}
+          price: product.price,
+          salePrice: product.sale_price,
+          currency: 'NGN',
+          url: `https://giftedcreates.com/shop/${slug}`,
+        })}
       />
 
       {/* ── Breadcrumb ── */}
       <section className="px-6 pt-28 pb-2">
         <div className="mx-auto max-w-6xl">
-          <nav className="flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-gray-400 dark:text-white/40">
-            <Link to="/shop" className="hover:text-brand-500 dark:hover:text-brand-400 transition-colors">Shop</Link>
-            <span>/</span>
-            {cfg && <Link to={`/shop/${cfg.type === 'physical' ? 'merch' : 'digital-products'}`} className="hover:text-brand-500 dark:hover:text-brand-400 transition-colors">{cfg.name}</Link>}
-            {cfg && <span>/</span>}
-            <span className="text-brand-500 dark:text-brand-400">{product.title}</span>
-          </nav>
+          <SEOBreadcrumbs
+            items={[
+              { name: 'Shop', path: '/shop' },
+              ...(cfg ? [{ name: cfg.name, path: `/shop/${cfg.type === 'physical' ? 'merch' : 'digital-products'}` }] : []),
+              { name: product.title, path: `/shop/${slug}` },
+            ]}
+          />
         </div>
       </section>
 
@@ -157,6 +161,8 @@ export default function ProductDetail() {
                   src={mainImage}
                   alt={product.title}
                   className="w-full aspect-[4/3] object-cover"
+                  decoding="async"
+                  loading="eager"
                 />
               </div>
               {gallery.length > 1 && (
@@ -174,8 +180,10 @@ export default function ProductDetail() {
                     >
                       <img
                         src={img.startsWith('http') ? img.replace('/upload/', '/upload/f_auto,q_auto/') : `${CLOUDINARY_BASE}/f_auto,q_auto/${img}`}
-                        alt=""
+                        alt={`${product.title} thumbnail ${i + 1}`}
                         className="h-full w-full object-cover"
+                        decoding="async"
+                        loading="lazy"
                       />
                     </button>
                   ))}

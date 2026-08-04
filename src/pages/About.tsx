@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { PortraitCard } from '@/components/ui/PortraitCard'
+import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { cn } from '@/lib/utils'
 import { img } from '@/lib/images'
 import { Meta } from '@/lib/meta'
@@ -128,7 +129,33 @@ export default function About() {
   return (
     <main ref={mainRef} className="relative min-h-screen bg-surface-light text-text-light dark:bg-surface-dark dark:text-text-dark overflow-hidden">
 
-      <Meta title="About" description="Learn about Gifted — a multidisciplinary creative technologist passionate about visual storytelling, design, and engineering." />
+      <Meta
+        title="About"
+        description="Learn about Gifted — a multidisciplinary creative technologist passionate about visual storytelling, design, photography, video production, and engineering."
+        keywords={['about', 'creative technologist', 'photographer', 'developer', 'designer', 'Ibiam Iheanyi Victory', 'Gifted', 'portfolio', 'Nigeria']}
+        breadcrumbs={[{ name: 'About', path: '/about' }]}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'AboutPage',
+          name: 'About Gifted',
+          description: 'Learn about Gifted — a multidisciplinary creative technologist.',
+          url: 'https://giftedcreates.com/about',
+          mainEntity: {
+            '@type': 'Person',
+            name: 'Ibiam Iheanyi Victory',
+            alternateName: 'Gifted',
+            jobTitle: 'Creative Technologist',
+            description: 'Multidisciplinary creative technologist combining visual storytelling, design, engineering, and digital experiences.',
+            url: 'https://giftedcreates.com',
+            sameAs: [
+              'https://github.com/Gifteddy/',
+              'https://web.facebook.com/iheanyi.ibiam.3/',
+              'https://www.instagram.com/iheanyiibiam1/',
+              'https://www.tiktok.com/@iheanyiibiam',
+            ],
+          },
+        }}
+      />
 
       <motion.div
         className="fixed top-0 left-0 right-0 h-[2px] z-50 origin-left bg-gradient-to-r from-brand-500 via-gold-400 to-brand-500"
@@ -137,6 +164,7 @@ export default function About() {
 
       {/* ═══════════════ 1. HERO ═══════════════ */}
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6">
+        <SEOBreadcrumbs items={[{ name: 'About', path: '/about' }]} className="absolute top-24 left-6 right-6 z-20" />
         <div className="pointer-events-none absolute inset-0">
           <motion.div
             className="absolute top-1/4 left-1/3 -translate-x-1/2 h-[600px] w-[600px] rounded-full bg-brand-500/10 blur-[160px]"

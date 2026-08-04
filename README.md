@@ -54,7 +54,7 @@ npm run dev:api
 |----------|----------|-------------|
 | `VITE_SUPABASE_URL` | Yes | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
-| `VITE_SITE_URL` | No | Production URL (defaults to `gifted-beige.vercel.app`) |
+| `VITE_SITE_URL` | No | Production URL (defaults to `giftedcreates.com`) |
 | `VITE_ADMIN_EMAIL` | No | Admin email for role checks |
 | `VITE_CLOUDINARY_CLOUD_NAME` | No | Cloudinary cloud name |
 

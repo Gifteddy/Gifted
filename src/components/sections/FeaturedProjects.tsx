@@ -42,7 +42,7 @@ export function FeaturedProjects() {
               <Link to={`/projects/${p.slug}`}>
                 <LiquidGlass className="group overflow-hidden rounded-2xl transition-all duration-500 hover:scale-[1.02]" intensity="medium">
                   <div className="aspect-[4/3] bg-gradient-to-br from-brand-500/10 to-gold-500/10 flex items-center justify-center">
-                    {p.thumbnail ? <img src={p.thumbnail} alt={p.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                    {p.thumbnail ? <img src={p.thumbnail} alt={p.title} loading="lazy" decoding="async" width="600" height="450" className="h-full w-full object-cover" />
                       : <span className="text-4xl opacity-30">🚀</span>}
                   </div>
                   <div className="p-5">

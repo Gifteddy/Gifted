@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Button } from '@/components/ui/Button'
+import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { Meta } from '@/lib/meta'
 import type { Project } from '@/lib/types'
 
@@ -50,6 +51,13 @@ export default function ProjectDetail() {
     )
   }
 
+  const projectUrl = `https://giftedcreates.com/projects/${project.slug}`
+  const projectName = project.title
+  const projectDesc = project.description || `View ${projectName} by Gifted — a creative project spanning design, development, and visual storytelling.`
+  const projectImage = project.thumbnail || project.gallery?.[0]
+
+  const categoryNames = project.categories?.map(c => (c as any)?.category?.name || (c as any)?.name) || []
+
   const isVideoProject = project.categories?.some(c => ((c as any)?.category?.name ?? (c as any)?.name)?.toLowerCase().includes('video') || ((c as any)?.category?.slug ?? (c as any)?.slug)?.includes('video')) || project.category?.includes('video')
   const isDevProject = project.categories?.some(c => ((c as any)?.category?.slug ?? (c as any)?.slug) === 'development') || project.category === 'development'
 
@@ -67,22 +75,46 @@ export default function ProjectDetail() {
   return (
     <section className="relative min-h-screen pb-24">
       <Meta
-        title={project.title}
-        description={project.description}
-        image={project.thumbnail || project.gallery?.[0]}
-        url={`${window.location.origin}/projects/${project.slug}`}
+        title={projectName}
+        description={projectDesc}
+        image={projectImage}
+        url={projectUrl}
+        keywords={[projectName, ...(project.tags || []), ...categoryNames, 'portfolio', 'creative project']}
+        breadcrumbs={[
+          { name: 'Projects', path: '/projects' },
+          { name: projectName, path: `/projects/${project.slug}` },
+        ]}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'CreativeWork',
+          name: projectName,
+          description: projectDesc,
+          url: projectUrl,
+          image: projectImage,
+          author: {
+            '@type': 'Person',
+            name: 'Ibiam Iheanyi Victory',
+            url: 'https://giftedcreates.com',
+          },
+          dateCreated: project.created_at,
+          dateModified: project.updated_at,
+          keywords: project.tags?.join(', '),
+          genre: categoryNames.join(', ') || 'Creative',
+        }}
       />
+
       {isVideoProject && project.project_url ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="relative h-screen w-full overflow-hidden">
           <video src={project.project_url} controls className="h-full w-full object-contain bg-black" poster={project.thumbnail || undefined}>
+            <track kind="captions" src="" label="English" />
             Your browser does not support the video tag.
           </video>
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           <div className="absolute bottom-8 left-4 sm:bottom-12 sm:left-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <Link to="/projects" className="pointer-events-auto mb-4 inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white">
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                 Back to Projects
               </Link>
             </motion.div>
@@ -95,15 +127,23 @@ export default function ProjectDetail() {
                   <span className="pointer-events-auto rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">{project.category.replace(/-/g, ' ')}</span>
                 )}
               </div>
-              <h1 className="font-display text-4xl font-bold leading-tight text-white sm:text-5xl">{project.title}</h1>
+              <h1 className="font-display text-4xl font-bold leading-tight text-white sm:text-5xl">{projectName}</h1>
             </motion.div>
           </div>
         </motion.div>
       ) : (
         <div className="mx-auto max-w-4xl px-4 pt-32">
+          <SEOBreadcrumbs
+            items={[
+              { name: 'Projects', path: '/projects' },
+              { name: projectName, path: `/projects/${project.slug}` },
+            ]}
+            className="mb-6"
+          />
+
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <Link to="/projects" className="mb-8 inline-flex items-center gap-2 text-sm text-text-muted-light transition-colors hover:text-brand-500 dark:text-text-muted-dark dark:hover:text-brand-400">
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
               Back to Projects
             </Link>
           </motion.div>
@@ -117,18 +157,18 @@ export default function ProjectDetail() {
                 <span className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{project.category.replace(/-/g, ' ')}</span>
               )}
             </div>
-            <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">{project.title}</h1>
+            <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">{projectName}</h1>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="mt-8 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
             {project.thumbnail ? (
               <div className="relative">
-                <img src={project.thumbnail} alt={project.title} loading="lazy" decoding="async" className="w-full object-cover" />
+                <img src={project.thumbnail} alt={projectName} loading="eager" decoding="async" width="1200" height="675" className="w-full object-cover" />
               </div>
             ) : (
               <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
-                <span className="text-6xl opacity-30">🚀</span>
+                <span className="text-6xl opacity-30" aria-hidden="true">🚀</span>
               </div>
             )}
           </motion.div>
@@ -175,17 +215,17 @@ export default function ProjectDetail() {
                   {project.project_url && (
                     <a href={project.project_url} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-2 rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-white/5 px-4 py-2.5 text-sm font-medium transition-all hover:border-brand-500/50 hover:bg-brand-500/5">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                       <span>Live Site</span>
-                      <svg className="ml-auto h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                      <svg className="ml-auto h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
                     </a>
                   )}
                   {project.github_url && (
                     <a href={project.github_url} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-2 rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-white/5 px-4 py-2.5 text-sm font-medium transition-all hover:border-brand-500/50 hover:bg-brand-500/5">
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4"><path d="M12 2C6.5 2 2 6.5 2 12c0 4.4 2.9 8.2 6.9 9.5.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.4-3.4-1.4-.5-1.2-1.2-1.5-1.2-1.5-1-.7 0-.7 0-.7 1 .1 1.6 1.1 1.6 1.1.9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1.1-2.7-.1-.3-.5-1.3.1-2.7 0 0 .9-.3 2.9 1.1A10 10 0 0 1 12 7c1 0 2 .1 2.8.3 2-1.4 2.9-1.1 2.9-1.1.6 1.4.2 2.4.1 2.7.7.7 1.1 1.6 1.1 2.7 0 3.9-2.4 4.7-4.6 4.9.4.3.7 1 .7 1.9v2.8c0 .3.2.6.7.5C19.1 20.2 22 16.4 22 12c0-5.5-4.5-10-10-10z"/></svg>
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true"><path d="M12 2C6.5 2 2 6.5 2 12c0 4.4 2.9 8.2 6.9 9.5.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.4-3.4-1.4-.5-1.2-1.2-1.5-1.2-1.5-1-.7 0-.7 0-.7 1 .1 1.6 1.1 1.6 1.1.9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1.1-2.7-.1-.3-.5-1.3.1-2.7 0 0 .9-.3 2.9 1.1A10 10 0 0 1 12 7c1 0 2 .1 2.8.3 2-1.4 2.9-1.1 2.9-1.1.6 1.4.2 2.4.1 2.7.7.7 1.1 1.6 1.1 2.7 0 3.9-2.4 4.7-4.6 4.9.4.3.7 1 .7 1.9v2.8c0 .3.2.6.7.5C19.1 20.2 22 16.4 22 12c0-5.5-4.5-10-10-10z"/></svg>
                       <span>GitHub</span>
-                      <svg className="ml-auto h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                      <svg className="ml-auto h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
                     </a>
                   )}
                 </div>
@@ -197,7 +237,7 @@ export default function ProjectDetail() {
                     <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-2 rounded-xl border border-border-light dark:border-border-dark bg-white/50 dark:bg-white/5 px-4 py-2.5 text-sm font-medium transition-all hover:border-brand-500/50 hover:bg-brand-500/5">
                       <span>{link.label}</span>
-                      <svg className="ml-auto h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                      <svg className="ml-auto h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
                     </a>
                   ))}
                 </div>
@@ -217,28 +257,31 @@ export default function ProjectDetail() {
                   <button key={i} onClick={() => setLightboxIndex(i)}
                     className="snap-start shrink-0 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark
                       w-[80vw] sm:w-auto sm:h-96 transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-                    <img src={img} alt={`${project.title} - ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                    <img src={img} alt={`${projectName} — Gallery image ${i + 1}`} className="h-full w-full object-cover" loading="lazy" decoding="async" width="400" height="384" />
                   </button>
                 ))}
               </div>
               {project.gallery.length > 1 && (
                 <>
                   <button onClick={() => scrollGallery('left')}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-800 shadow-lg opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white dark:bg-gray-900/80 dark:text-white dark:hover:bg-gray-900">
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    className="absolute left-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-800 shadow-lg opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white dark:bg-gray-900/80 dark:text-white dark:hover:bg-gray-900"
+                    aria-label="Previous image">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
                   </button>
                   <button onClick={() => scrollGallery('right')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-800 shadow-lg opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white dark:bg-gray-900/80 dark:text-white dark:hover:bg-gray-900">
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-800 shadow-lg opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white dark:bg-gray-900/80 dark:text-white dark:hover:bg-gray-900"
+                    aria-label="Next image">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
                   </button>
                 </>
               )}
             </div>
             {project.gallery.length > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-4">
+              <div className="flex items-center justify-center gap-2 mt-4" role="group" aria-label="Gallery navigation">
                 {project.gallery.map((_, i) => (
                   <button key={i} onClick={() => { scrollRef.current?.children[i]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' }) }}
                     className="h-1.5 rounded-full transition-all bg-gray-300 dark:bg-gray-700 data-[active]:w-4 data-[active]:bg-brand-500"
+                    aria-label={`View image ${i + 1}`}
                     data-active={i === Math.round(scrollPos / (scrollRef.current?.clientWidth || 1)) ? '' : undefined} />
                 ))}
               </div>
@@ -248,25 +291,28 @@ export default function ProjectDetail() {
       </div>
 
       {lightboxIndex !== null && project.gallery && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setLightboxIndex(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setLightboxIndex(null)} role="dialog" aria-label="Image lightbox" aria-modal="true">
           <button onClick={() => setLightboxIndex(null)}
-            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20">
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            aria-label="Close lightbox">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
           {project.gallery.length > 1 && (
             <>
               <button onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => prev === 0 ? project.gallery.length - 1 : prev! - 1) }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20">
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                aria-label="Previous image">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
               <button onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => prev === project.gallery.length - 1 ? 0 : prev! + 1) }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20">
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                aria-label="Next image">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
               </button>
             </>
           )}
           <motion.img key={lightboxIndex} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            src={project.gallery[lightboxIndex]} alt={`${project.title} - ${lightboxIndex + 1}`}
+            src={project.gallery[lightboxIndex]} alt={`${projectName} — Gallery image ${lightboxIndex + 1}`}
             className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain" onClick={(e) => e.stopPropagation()} />
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-white backdrop-blur-sm">
             {lightboxIndex + 1} / {project.gallery.length}

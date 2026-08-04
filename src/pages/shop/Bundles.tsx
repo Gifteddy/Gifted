@@ -5,6 +5,8 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils'
 import type { Product } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
+import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
+import { Meta } from '@/lib/meta'
 
 const label = 'text-[11px] font-semibold tracking-[0.2em] uppercase'
 const heading = 'font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl'
@@ -22,6 +24,22 @@ export default function Bundles() {
 
   return (
     <main className="min-h-screen bg-surface-light text-text-light dark:bg-surface-dark dark:text-text-dark overflow-hidden">
+      <Meta
+        title="Bundles"
+        description="Curated product bundles from Gifted — digital and physical products at an exclusive discount. Save big with creative bundles."
+        keywords={['bundles', 'discount bundles', 'creative bundles', 'product bundles', 'gifted bundles', 'save']}
+        breadcrumbs={[
+          { name: 'Shop', path: '/shop' },
+          { name: 'Bundles', path: '/shop/bundles' },
+        ]}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Curated Bundles — Gifted Store',
+          description: 'Curated collections of digital and physical products at an exclusive discount.',
+          url: 'https://giftedcreates.com/shop/bundles',
+        }}
+      />
 
       <section className="relative flex min-h-[50vh] items-center justify-center overflow-hidden px-6 pt-24">
         <div className="pointer-events-none absolute inset-0">
@@ -38,6 +56,13 @@ export default function Bundles() {
         </div>
 
         <div className="relative z-10 w-full max-w-3xl mx-auto text-center">
+          <SEOBreadcrumbs
+            items={[
+              { name: 'Shop', path: '/shop' },
+              { name: 'Bundles', path: '/shop/bundles' },
+            ]}
+            className="mb-6"
+          />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

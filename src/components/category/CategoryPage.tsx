@@ -6,10 +6,40 @@ import { CategoryProjects } from './CategoryProjects'
 import { CategoryProcess } from './CategoryProcess'
 import { CategoryTestimonials } from './CategoryTestimonials'
 import { CategoryCTA } from './CategoryCTA'
+import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
+import { Meta } from '@/lib/meta'
 
 export function CategoryPage({ category }: { category: CategoryConfig }) {
   return (
     <div>
+      <Meta
+        title={category.seo.title}
+        description={category.seo.description}
+        keywords={[category.name, category.seo.title, 'creative services', 'gifted']}
+        breadcrumbs={[{ name: category.name, path: `/${category.slug}` }]}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Service',
+          name: category.seo.title,
+          description: category.seo.description,
+          provider: {
+            '@type': 'Person',
+            name: 'Ibiam Iheanyi Victory',
+            alternateName: 'Gifted',
+          },
+          url: `https://giftedcreates.com/${category.slug}`,
+          serviceType: category.name,
+          areaServed: 'NG',
+        }}
+      />
+      <div className="px-4 pt-20">
+        <SEOBreadcrumbs
+          items={[
+            { name: 'Services', path: '/services' },
+            { name: category.name, path: `/${category.slug}` },
+          ]}
+        />
+      </div>
       <Breadcrumbs category={category.name} />
       <CategoryHero category={category} />
       <CategoryServices category={category} />

@@ -1,5 +1,21 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /admin/*
 Disallow: /shop/partners/dashboard
-Sitemap: https://gifted-beige.vercel.app/sitemap.xml
+Disallow: /shop/partners/referrals
+Disallow: /shop/partners/products
+Disallow: /shop/partners/analytics
+Disallow: /shop/partners/notifications
+Disallow: /shop/partners/profile
+Disallow: /shop/partners/payouts
+Disallow: /shop/partners/achievements
+Disallow: /shop/partners/resources
+Disallow: /shop/partners/settings
+Disallow: /shop/checkout
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /upload/
+Disallow: /share/
+
+Sitemap: https://giftedcreates.com/sitemap.xml

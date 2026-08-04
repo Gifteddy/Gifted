@@ -56,7 +56,7 @@ export function CategoryProjects({ category }: { category: CategoryConfig }) {
                   <div className="relative aspect-[4/3] flex items-center justify-center overflow-hidden"
                     style={{ background: `linear-gradient(135deg, ${category.accentColor}18, ${category.accentColor}08)` }}>
                     {p.thumbnail ? (
-                      <><img src={p.thumbnail} alt={p.title} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                      <><img src={p.thumbnail} alt={p.title} loading="lazy" decoding="async" width="600" height="450" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         {(p.categories?.some(c => ((c as any)?.category?.name ?? (c as any)?.name)?.toLowerCase().includes('video') || ((c as any)?.category?.slug ?? (c as any)?.slug)?.includes('video')) || p.category?.includes('video')) && (
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-transform group-hover:scale-110">

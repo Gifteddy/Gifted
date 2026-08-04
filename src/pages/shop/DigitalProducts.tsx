@@ -5,6 +5,8 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils'
 import type { Product } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
+import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
+import { Meta } from '@/lib/meta'
 
 const label = 'text-[11px] font-semibold tracking-[0.2em] uppercase'
 const heading = 'font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl'
@@ -22,6 +24,22 @@ export default function DigitalProducts() {
 
   return (
     <main className="min-h-screen bg-surface-light text-text-light dark:bg-surface-dark dark:text-text-dark overflow-hidden">
+      <Meta
+        title="Digital Products"
+        description="Premium digital products from Gifted — templates, presets, assets, and creative tools delivered instantly. Download creative resources for photographers, designers, and creators."
+        keywords={['digital products', 'templates', 'presets', 'creative assets', 'downloads', 'gifted store']}
+        breadcrumbs={[
+          { name: 'Shop', path: '/shop' },
+          { name: 'Digital Products', path: '/shop/digital-products' },
+        ]}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Digital Products — Gifted Store',
+          description: 'Premium digital products including templates, presets, and creative assets.',
+          url: 'https://giftedcreates.com/shop/digital-products',
+        }}
+      />
 
       {/* Hero */}
       <section className="relative flex min-h-[50vh] items-center justify-center overflow-hidden px-6 pt-24">
@@ -34,6 +52,13 @@ export default function DigitalProducts() {
         </div>
 
         <div className="relative z-10 w-full max-w-3xl mx-auto text-center">
+          <SEOBreadcrumbs
+            items={[
+              { name: 'Shop', path: '/shop' },
+              { name: 'Digital Products', path: '/shop/digital-products' },
+            ]}
+            className="mb-6"
+          />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

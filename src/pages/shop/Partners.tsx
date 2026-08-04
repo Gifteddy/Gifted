@@ -93,6 +93,9 @@ export default function Partners() {
       <Meta
         title="Gifted Partners"
         description="Join the Gifted Partner Network. Share products you love, earn commissions, and grow with a brand that values creators."
+        noindex
+        nofollow
+        breadcrumbs={[{ name: 'Partners', path: '/partners' }]}
       />
 
       {/* ── Hero ── */}
