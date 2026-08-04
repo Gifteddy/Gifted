@@ -15,21 +15,31 @@ export default function AdminAnalytics() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true)
       try {
-        const [analyticsData, allData] = await Promise.all([
+        const [analyticsData, countsRes, chatsRes] = await Promise.all([
           getAnalytics(days),
-          supabase.from('analytics').select('event_type'),
+          supabase.rpc('get_event_counts'),
+          supabase.from('chat_logs').select('id', { count: 'exact', head: true }),
         ])
         setCommerce(analyticsData)
 
-        const all = allData?.data || []
-        setTotalEvents(all.length)
-        const counts: Record<string, number> = {}
-        all.forEach((e: any) => { counts[e.event_type] = (counts[e.event_type] || 0) + 1 })
-        const { data: chatsData } = await supabase.from('chat_logs').select('id', { count: 'exact', head: true })
+        let rows: { event_type: string; count: number }[] = []
+        if (countsRes.data) {
+          rows = countsRes.data as { event_type: string; count: number }[]
+          setTotalEvents(rows.reduce((s, r) => s + r.count, 0))
+        } else {
+          const { data } = await supabase.from('analytics').select('event_type').limit(10000)
+          const counts: Record<string, number> = {}
+          ;(data || []).forEach((e: any) => { counts[e.event_type] = (counts[e.event_type] || 0) + 1 })
+          rows = Object.entries(counts).map(([event_type, count]) => ({ event_type, count }))
+          setTotalEvents(rows.reduce((s, r) => s + r.count, 0))
+        }
+
+        const chatCount = chatsRes.count ?? 0
         setEvents(
-          Object.entries(counts).map(([event_type, count]) => ({ event_type, count: count as number }))
-            .concat([{ event_type: 'chat_interaction', count: chatsData?.length ?? 0 }])
+          rows
+            .concat([{ event_type: 'chat_interaction', count: chatCount }])
             .sort((a, b) => b.count - a.count)
         )
       } catch { /* silent */ }

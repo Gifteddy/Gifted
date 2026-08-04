@@ -49,6 +49,7 @@ export default function AdminProducts() {
         .from('products')
         .select('*')
         .order('display_order', { ascending: true, nullsFirst: false })
+        .limit(500)
       setProducts((data || []) as Product[])
     } catch {
       // silent

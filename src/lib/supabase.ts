@@ -19,6 +19,25 @@ const noopQuery = new Proxy({} as Record<string, unknown>, {
 
 const hasCredentials = supabaseUrl && supabaseAnonKey
 
+const FETCH_TIMEOUT_MS = 30000
+
+function withTimeout(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+  const signal = init?.signal
+  if (signal) {
+    if (signal.aborted) {
+      clearTimeout(timer)
+      return Promise.reject(signal.reason)
+    }
+    signal.addEventListener('abort', () => {
+      clearTimeout(timer)
+      controller.abort()
+    }, { once: true })
+  }
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer))
+}
+
 function createNoopClient() {
   return {
     from: () => noopQuery,
@@ -42,4 +61,6 @@ function createNoopClient() {
   } as unknown as ReturnType<typeof createClient>
 }
 
-export const supabase = hasCredentials ? createClient(supabaseUrl, supabaseAnonKey) : createNoopClient()
+export const supabase = hasCredentials
+  ? createClient(supabaseUrl, supabaseAnonKey, { global: { fetch: withTimeout } })
+  : createNoopClient()

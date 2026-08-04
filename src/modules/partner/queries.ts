@@ -117,6 +117,7 @@ export async function getPendingApplications(): Promise<Partner[]> {
     .select('*')
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
+    .limit(500)
 
   if (error) throw error
   return (data || []) as Partner[]
@@ -127,6 +128,7 @@ export async function getAllPartners(): Promise<Partner[]> {
     .from('partners')
     .select('*')
     .order('created_at', { ascending: false })
+    .limit(500)
 
   if (error) throw error
   return (data || []) as Partner[]
@@ -393,6 +395,7 @@ export async function getAdminAllConversions(): Promise<
     .from('partner_conversions')
     .select('*, partner:partners(name, email)')
     .order('created_at', { ascending: false })
+    .limit(500)
 
   if (error) throw error
 
@@ -474,6 +477,7 @@ export async function getAllPendingPayouts(): Promise<
     .select('*, partner:partners(name, email)')
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
+    .limit(500)
 
   if (error) throw error
 

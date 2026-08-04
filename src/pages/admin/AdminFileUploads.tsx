@@ -51,7 +51,7 @@ export default function AdminFileUploads() {
   const loadLinks = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await supabase.from('file_upload_links').select('*').order('created_at', { ascending: false })
+      const { data } = await supabase.from('file_upload_links').select('*').order('created_at', { ascending: false }).limit(500)
       setLinks((data || []) as FileUploadLink[])
     } catch { /* silent */ } finally { setLoading(false) }
   }, [])

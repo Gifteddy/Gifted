@@ -28,7 +28,7 @@ export default function AdminFileShares() {
   const loadShares = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await supabase.from('file_shares').select('*').order('created_at', { ascending: false })
+      const { data } = await supabase.from('file_shares').select('*').order('created_at', { ascending: false }).limit(500)
       setShares((data || []) as FileShare[])
     } catch { /* silent */ } finally { setLoading(false) }
   }, [])

@@ -20,6 +20,7 @@ export default function AdminDiscounts() {
         .from('discount_codes')
         .select('*')
         .order('created_at', { ascending: false })
+        .limit(500)
       setCodes((data || []) as DiscountCode[])
     } catch {
       // silent

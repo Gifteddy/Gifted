@@ -24,11 +24,13 @@ export default function AdminCategories() {
         .from('product_categories')
         .select('*')
         .order('name')
+        .limit(500)
       if (cats) setDbCategories(cats as ProductCategory[])
 
       const { data: counts } = await supabase
         .from('products')
         .select('category_id')
+        .limit(10000)
       if (counts) {
         const map: Record<string, number> = {}
         for (const row of counts) {

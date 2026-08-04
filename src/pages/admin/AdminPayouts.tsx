@@ -36,6 +36,7 @@ export default function AdminPayouts() {
         .from('partner_payouts')
         .select('*, partner:partners(name, email)')
         .order('created_at', { ascending: false })
+        .limit(500)
 
       if (error) throw error
 

@@ -17,6 +17,7 @@ export default function AdminCompanyLogos() {
         .from('company_logos')
         .select('*')
         .order('sort_order', { ascending: true })
+        .limit(500)
       setLogos((data || []) as CompanyLogo[])
     } catch { } finally {
       setLoading(false)

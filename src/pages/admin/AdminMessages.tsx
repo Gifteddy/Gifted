@@ -20,18 +20,22 @@ const statusFilters = ['all', 'unread', 'read', 'replied', 'archived'] as const
 export default function AdminMessages() {
   const [messages, setMessages] = useState<MessageItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [filter, setFilter] = useState<string>('all')
   const [selected, setSelected] = useState<MessageItem | null>(null)
 
   const loadMessages = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
     try {
-      let query = supabase.from('contact_messages').select('*').order('created_at', { ascending: false })
+      let query = supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(500)
       if (filter !== 'all') query = query.eq('status', filter)
-      const { data } = await query
+      const { data, error } = await query
+      if (error) throw error
       setMessages((data || []) as MessageItem[])
     } catch {
-      // silent
+      setLoadError('Could not load messages. Check your connection and try again.')
+      setMessages([])
     } finally {
       setLoading(false)
     }
@@ -80,6 +84,10 @@ export default function AdminMessages() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#7700ff] border-t-transparent" />
+        </div>
+      ) : loadError ? (
+        <div className="flex items-center justify-center rounded-2xl p-12 text-center admin-glass">
+          <p className="text-sm text-red-500">{loadError}</p>
         </div>
       ) : messages.length === 0 ? (
         <div className="flex items-center justify-center rounded-2xl p-12 text-center admin-glass">

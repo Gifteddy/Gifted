@@ -20,6 +20,7 @@ export default function AdminTestimonials() {
         .from('testimonials')
         .select('*')
         .order('created_at', { ascending: false })
+        .limit(500)
       setTestimonials((data || []) as Testimonial[])
     } catch {
       // silent

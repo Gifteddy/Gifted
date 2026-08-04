@@ -165,6 +165,7 @@ export async function getCustomers() {
     .from('customers')
     .select('*')
     .order('created_at', { ascending: false })
+    .limit(500)
   if (error) throw error
   return data as Customer[]
 }
@@ -280,6 +281,7 @@ export async function getAllInventory() {
     .from('inventory')
     .select('*, product:products(title, slug, type, published)')
     .order('product_id')
+    .limit(500)
   if (error) throw error
   return data as (InventoryItem & { product: Pick<Product, 'title' | 'slug' | 'type' | 'published'> })[]
 }

@@ -29,6 +29,7 @@ export default function AdminOrders() {
         .from('orders')
         .select('*, items:order_items(*), customer:customers(*)')
         .order('created_at', { ascending: false })
+        .limit(500)
       if (error) throw error
       setOrders((data || []) as OrderWithRelations[])
     } catch (e) {

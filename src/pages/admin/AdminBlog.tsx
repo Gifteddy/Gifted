@@ -33,6 +33,7 @@ export default function AdminBlog() {
         .from('blog_posts')
         .select('*')
         .order('created_at', { ascending: false })
+        .limit(500)
       setPosts((data || []) as BlogItem[])
     } catch {
       // silent
