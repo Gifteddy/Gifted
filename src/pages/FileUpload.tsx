@@ -295,7 +295,7 @@ export default function FileUpload() {
   if (linkFull) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-light p-4 dark:bg-surface-dark">
-        <Meta title="Upload — Link is Full" description="This upload link has reached its maximum number of uploads." />
+        <Meta title="Upload — Link is Full" description="This upload link has reached its maximum number of uploads." noindex />
         <div className="w-full max-w-md rounded-2xl border border-border-light p-8 text-center dark:border-border-dark admin-glass-strong">
           <span className="text-4xl">🔒</span>
           <h1 className="mt-4 text-lg font-semibold text-text-light dark:text-text-dark">Link is Full</h1>
@@ -311,7 +311,7 @@ export default function FileUpload() {
   if (error && !link) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-light p-4 dark:bg-surface-dark">
-        <Meta title="Upload — Invalid Link" description="This upload link is invalid or has expired." />
+        <Meta title="Upload — Invalid Link" description="This upload link is invalid or has expired." noindex />
         <div className="w-full max-w-md rounded-2xl border border-border-light p-8 text-center dark:border-border-dark admin-glass-strong">
           <span className="text-4xl">🔗</span>
           <h1 className="mt-4 text-lg font-semibold text-text-light dark:text-text-dark">Link Expired or Invalid</h1>
@@ -327,7 +327,7 @@ export default function FileUpload() {
   if (success) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-light p-4 dark:bg-surface-dark">
-        <Meta title="Upload — Success" description="Files uploaded successfully." />
+        <Meta title="Upload — Success" description="Files uploaded successfully." noindex />
         <div className="w-full max-w-md rounded-2xl border border-border-light p-8 text-center dark:border-border-dark admin-glass-strong">
           <span className="text-4xl">✅</span>
           <h1 className="mt-4 text-lg font-semibold text-text-light dark:text-text-dark">Files Uploaded!</h1>
@@ -346,6 +346,7 @@ export default function FileUpload() {
       <Meta
         title={`Upload — ${link?.label || 'File Upload'}`}
         description="Upload files securely with a message."
+        noindex
       />
       <div className="flex items-center justify-between border-b border-border-light px-6 py-4 dark:border-border-dark">
         <Link to="/" className="flex items-center gap-2.5">

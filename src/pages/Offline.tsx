@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { useTheme } from '@/store/theme'
+import { Meta } from '@/lib/meta'
 
 const icons = [
   { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>, x: 8, y: 15, depth: 0.5, anim: 0, dur: 22, size: 16 },
@@ -67,6 +68,7 @@ export default function Offline() {
 
   return (
     <section ref={ref} className="relative flex min-h-screen flex-col items-center justify-center px-4 pt-20 overflow-hidden bg-surface-light dark:bg-surface-dark">
+      <Meta title="Offline" description="You're offline. Reconnect to explore Gifted's projects, blog, and shop." noindex />
       <style>{orbitKeyframes}</style>
       <style>{glitchKf('g1') + glitchKf('g2')}</style>
 

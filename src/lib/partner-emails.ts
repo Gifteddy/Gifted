@@ -1,4 +1,4 @@
-const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://giftedcreates.com'
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.giftedcreates.com'
 
 function escapeHtml(str: string): string {
   if (!str) return ''

@@ -5,7 +5,8 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { Button } from '@/components/ui/Button'
 import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
-import { Meta, buildArticleSchema } from '@/lib/meta'
+import { Meta } from '@/lib/meta'
+import { buildArticleSchema, SITE_URL } from '@/lib/seo'
 import { formatDate } from '@/lib/utils'
 import type { BlogPost as BlogPostType } from '@/lib/types'
 
@@ -76,7 +77,7 @@ export default function BlogPost() {
     )
   }
 
-  const postUrl = `https://giftedcreates.com/blog/${post.slug}`
+  const postUrl = `${SITE_URL}/blog/${post.slug}`
   const articleSchema = buildArticleSchema({
     title: post.title,
     description: post.excerpt,

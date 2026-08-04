@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-
-const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://giftedcreates.com'
+import { SITE_URL } from '@/lib/seo'
 
 export interface BreadcrumbItem {
   name: string

@@ -312,7 +312,7 @@ export default function FileShareViewer() {
   if (error) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-light p-4 dark:bg-surface-dark">
-        <Meta title="File Share" description="View shared files and media." />
+        <Meta title="File Share" description="View shared files and media." noindex />
         <div className="w-full max-w-md rounded-2xl border border-border-light p-8 text-center dark:border-border-dark admin-glass-strong">
           <span className="text-4xl">🔗</span>
           <h1 className="mt-4 text-lg font-semibold text-text-light dark:text-text-dark">Link Expired or Invalid</h1>
@@ -329,6 +329,7 @@ export default function FileShareViewer() {
         <Meta
           title={`${share?.label || 'File Share'} — Shared Files`}
           description={share?.description || 'View shared files and media.'}
+          noindex
         />
         <div className="w-full max-w-sm rounded-2xl border border-border-light p-8 dark:border-border-dark admin-glass-strong">
           <div className="text-center">
@@ -356,6 +357,7 @@ export default function FileShareViewer() {
       <Meta
         title={`${share?.label || 'File Share'} — Shared Files`}
         description={share?.description || 'View shared files and media.'}
+        noindex
       />
       <div className="flex items-center justify-between border-b border-border-light px-4 py-3 sm:px-6 sm:py-4 dark:border-border-dark">
         <Link to="/" className="flex items-center gap-2.5">

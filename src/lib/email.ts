@@ -1,4 +1,4 @@
-const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://giftedcreates.com'
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.giftedcreates.com'
 const FROM_EMAIL = import.meta.env.VITE_SMTP_FROM || import.meta.env.VITE_RESEND_FROM_EMAIL || 'ibiamiheanyi@gmail.com'
 
 export interface SendEmailParams {

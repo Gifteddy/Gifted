@@ -8,6 +8,7 @@ import { getProducts, getFeaturedProducts, getProductsByType } from '@/lib/comme
 import type { Product } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
 import { Meta } from '@/lib/meta'
+import { SITE_URL } from '@/lib/seo'
 
 const label = 'text-[11px] font-semibold tracking-[0.2em] uppercase'
 
@@ -100,7 +101,7 @@ export default function Shop() {
           '@type': 'CollectionPage',
           name: 'Gifted Store',
           description: 'Digital products, merch, and bundles from Gifted.',
-          url: 'https://giftedcreates.com/shop',
+          url: `${SITE_URL}/shop`,
         }}
       />
 

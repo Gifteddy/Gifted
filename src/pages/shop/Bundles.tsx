@@ -7,6 +7,7 @@ import type { Product } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
 import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { Meta } from '@/lib/meta'
+import { SITE_URL } from '@/lib/seo'
 
 const label = 'text-[11px] font-semibold tracking-[0.2em] uppercase'
 const heading = 'font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl'
@@ -37,7 +38,7 @@ export default function Bundles() {
           '@type': 'CollectionPage',
           name: 'Curated Bundles — Gifted Store',
           description: 'Curated collections of digital and physical products at an exclusive discount.',
-          url: 'https://giftedcreates.com/shop/bundles',
+          url: `${SITE_URL}/shop/bundles`,
         }}
       />
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { Meta } from '@/lib/meta'
 
 export default function SubmitTestimonial() {
   const [name, setName] = useState('')
@@ -53,6 +54,7 @@ export default function SubmitTestimonial() {
   if (submitted) {
     return (
       <section className="relative flex min-h-screen items-center justify-center px-4">
+        <Meta title="Thank You" description="Your testimonial has been submitted for review." noindex />
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-brand-500/10 blur-3xl" />
           <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gold-500/10 blur-3xl" />
@@ -68,6 +70,7 @@ export default function SubmitTestimonial() {
 
   return (
     <section className="relative min-h-screen px-4 pt-28 pb-24">
+      <Meta title="Submit a Testimonial" description="Share your experience working with Gifted. Leave a testimonial about your project, shoot, or collaboration." noindex />
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-brand-500/10 blur-3xl" />
         <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gold-500/10 blur-3xl" />

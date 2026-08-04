@@ -7,6 +7,7 @@ import type { Product } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
 import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { Meta } from '@/lib/meta'
+import { SITE_URL } from '@/lib/seo'
 
 const label = 'text-[11px] font-semibold tracking-[0.2em] uppercase'
 const heading = 'font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl'
@@ -37,7 +38,7 @@ export default function Merch() {
           '@type': 'CollectionPage',
           name: 'Official Merch — Gifted Store',
           description: 'Apparel, accessories, and physical goods shipped straight to your door.',
-          url: 'https://giftedcreates.com/shop/merch',
+          url: `${SITE_URL}/shop/merch`,
         }}
       />
 

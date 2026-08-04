@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Navigate, useLocation, Link } from 'react-router-dom'
 import { useAdminStore } from '@/store/admin'
+import { Meta } from '@/lib/meta'
 
 export default function AdminLogin() {
   const { user, initialized, initialize, signIn } = useAdminStore()
@@ -31,6 +32,7 @@ export default function AdminLogin() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F7F8FA] p-4 dark:bg-[#0A0A0F]">
+      <Meta title="Admin Login" description="Sign in to manage Gifted." noindex nofollow />
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7700ff] text-lg font-bold text-white dark:bg-[#9233ff]">A</div>

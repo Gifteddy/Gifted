@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { useTheme } from '@/store/theme'
+import { Meta } from '@/lib/meta'
 
 const icons = [
   { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15 9 22 9 16 14 18 22 12 17 6 22 8 14 2 9 9 9"/></svg>, x: 8, y: 15, depth: 0.5, anim: 0, dur: 22, size: 16 },
@@ -63,6 +64,7 @@ export default function NotFound() {
 
   return (
     <section ref={ref} className="relative flex min-h-screen flex-col items-center justify-center px-4 pt-20 overflow-hidden bg-surface-light dark:bg-surface-dark">
+      <Meta title="Page Not Found" description="The page you're looking for doesn't exist or has been moved. Explore projects, blog, and shop on Gifted." noindex />
       <style>{orbitKeyframes}</style>
       <style>{glitchKf('g1') + glitchKf('g2')}</style>
 

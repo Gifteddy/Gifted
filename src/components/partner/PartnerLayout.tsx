@@ -6,6 +6,7 @@ import { useTheme } from '@/store/theme'
 import { cn } from '@/lib/utils'
 import { PARTNER_LEVELS } from '@/modules/partner/constants'
 import PartnerNotificationBell from '@/components/partner/PartnerNotificationBell'
+import { Meta } from '@/lib/meta'
 import type { PartnerLevel } from '@/modules/partner/types'
 
 function PartnerSvg({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -89,6 +90,7 @@ export default function PartnerLayout() {
 
   return (
     <div className="flex min-h-screen bg-[#f4f2f0] dark:bg-[#06060c]">
+      <Meta title="Partner Dashboard" description="Gifted Partners dashboard." noindex nofollow />
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"

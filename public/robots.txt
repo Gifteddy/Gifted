@@ -18,4 +18,4 @@ Disallow: /reset-password
 Disallow: /upload/
 Disallow: /share/
 
-Sitemap: https://giftedcreates.com/sitemap.xml
+Sitemap: https://www.giftedcreates.com/sitemap.xml

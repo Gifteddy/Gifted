@@ -1,6 +1,7 @@
 import { ContactSection } from '@/components/sections/ContactSection'
 import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { Meta } from '@/lib/meta'
+import { SITE_URL } from '@/lib/seo'
 
 export default function Contact() {
   return (
@@ -15,12 +16,12 @@ export default function Contact() {
           '@type': 'ContactPage',
           name: 'Contact Gifted',
           description: 'Get in touch with Gifted for creative projects and collaborations.',
-          url: 'https://giftedcreates.com/contact',
+          url: `${SITE_URL}/contact`,
           mainEntity: {
             '@type': 'Person',
             name: 'Ibiam Iheanyi Victory',
             email: 'ibiamiheanyi@gmail.com',
-            url: 'https://giftedcreates.com',
+            url: SITE_URL,
           },
         }}
       />

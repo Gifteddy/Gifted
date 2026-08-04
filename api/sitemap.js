@@ -1,6 +1,6 @@
 const { createClient } = require('@supabase/supabase-js')
 
-const SITE_URL = 'https://giftedcreates.com'
+const SITE_URL = 'https://www.giftedcreates.com'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 

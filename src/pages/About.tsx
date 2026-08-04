@@ -7,6 +7,7 @@ import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { cn } from '@/lib/utils'
 import { img } from '@/lib/images'
 import { Meta } from '@/lib/meta'
+import { SITE_URL } from '@/lib/seo'
 
 const label = 'text-[11px] font-semibold tracking-[0.2em] uppercase'
 const heading = 'font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl'
@@ -139,14 +140,14 @@ export default function About() {
           '@type': 'AboutPage',
           name: 'About Gifted',
           description: 'Learn about Gifted — a multidisciplinary creative technologist.',
-          url: 'https://giftedcreates.com/about',
+          url: `${SITE_URL}/about`,
           mainEntity: {
             '@type': 'Person',
             name: 'Ibiam Iheanyi Victory',
             alternateName: 'Gifted',
             jobTitle: 'Creative Technologist',
             description: 'Multidisciplinary creative technologist combining visual storytelling, design, engineering, and digital experiences.',
-            url: 'https://giftedcreates.com',
+            url: SITE_URL,
             sameAs: [
               'https://github.com/Gifteddy/',
               'https://web.facebook.com/iheanyi.ibiam.3/',

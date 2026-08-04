@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { Meta } from '@/lib/meta'
 
 export default function ResetPassword() {
   const navigate = useNavigate()
@@ -60,6 +61,7 @@ export default function ResetPassword() {
   if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F7F8FA] p-4 dark:bg-[#0A0A0F]">
+        <Meta title="Password Updated" description="Your Gifted account password has been updated." noindex />
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-[400px] w-[400px] rounded-full bg-brand-500/8 blur-[120px]" />
         </div>
@@ -81,6 +83,7 @@ export default function ResetPassword() {
   if (!sessionReady) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F7F8FA] p-4 dark:bg-[#0A0A0F]">
+        <Meta title="Verifying Reset Link" description="Verifying your password reset link." noindex />
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
           <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Verifying reset link...</p>
@@ -91,6 +94,7 @@ export default function ResetPassword() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F7F8FA] p-4 dark:bg-[#0A0A0F]">
+      <Meta title="Set New Password" description="Set a new password for your Gifted account." noindex />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-[400px] w-[400px] rounded-full bg-brand-500/8 blur-[120px]" />
       </div>

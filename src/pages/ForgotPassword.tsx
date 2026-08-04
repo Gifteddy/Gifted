@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { Meta } from '@/lib/meta'
 
 export default function ForgotPassword() {
   const [searchParams] = useSearchParams()
@@ -34,6 +35,7 @@ export default function ForgotPassword() {
   if (sent) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F7F8FA] p-4 dark:bg-[#0A0A0F]">
+        <Meta title="Check Your Email" description="Password reset instructions sent." noindex />
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-[400px] w-[400px] rounded-full bg-brand-500/8 blur-[120px]" />
         </div>
@@ -53,6 +55,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F7F8FA] p-4 dark:bg-[#0A0A0F]">
+      <Meta title="Reset Password" description="Enter your email to receive a password reset link for your Gifted account." noindex />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-[400px] w-[400px] rounded-full bg-brand-500/8 blur-[120px]" />
       </div>

@@ -10,7 +10,8 @@ import { CLOUDINARY_BASE } from '@/lib/images'
 import { getCategoryConfig } from '@/lib/product-attributes'
 import type { Product, ProductVariant } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
-import { Meta, buildProductSchema } from '@/lib/meta'
+import { Meta } from '@/lib/meta'
+import { buildProductSchema, SITE_URL } from '@/lib/seo'
 import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 
 const heading = 'font-display text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl'
@@ -116,11 +117,12 @@ export default function ProductDetail() {
         description={product.short_description || product.description?.slice(0, 160)}
         image={product.thumbnail}
         type="product"
+        url={`${SITE_URL}/shop/product/${slug}`}
         keywords={[product.title, ...(product.tags ?? []), product.type, 'shop', 'gifted'].filter(Boolean)}
         breadcrumbs={[
           { name: 'Shop', path: '/shop' },
           ...(cfg ? [{ name: cfg.name, path: `/shop/${cfg.type === 'physical' ? 'merch' : 'digital-products'}` }] : []),
-          { name: product.title, path: `/shop/${slug}` },
+          { name: product.title, path: `/shop/product/${slug}` },
         ]}
         jsonLd={buildProductSchema({
           title: product.title,
@@ -129,7 +131,7 @@ export default function ProductDetail() {
           price: product.price,
           salePrice: product.sale_price,
           currency: 'NGN',
-          url: `https://giftedcreates.com/shop/${slug}`,
+          url: `${SITE_URL}/shop/product/${slug}`,
         })}
       />
 
@@ -140,7 +142,7 @@ export default function ProductDetail() {
             items={[
               { name: 'Shop', path: '/shop' },
               ...(cfg ? [{ name: cfg.name, path: `/shop/${cfg.type === 'physical' ? 'merch' : 'digital-products'}` }] : []),
-              { name: product.title, path: `/shop/${slug}` },
+              { name: product.title, path: `/shop/product/${slug}` },
             ]}
           />
         </div>

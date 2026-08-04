@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { Button } from '@/components/ui/Button'
 import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { Meta } from '@/lib/meta'
+import { SITE_URL, resolveOgImage } from '@/lib/seo'
 import type { Project } from '@/lib/types'
 
 export default function ProjectDetail() {
@@ -51,7 +52,7 @@ export default function ProjectDetail() {
     )
   }
 
-  const projectUrl = `https://giftedcreates.com/projects/${project.slug}`
+  const projectUrl = `${SITE_URL}/projects/${project.slug}`
   const projectName = project.title
   const projectDesc = project.description || `View ${projectName} by Gifted — a creative project spanning design, development, and visual storytelling.`
   const projectImage = project.thumbnail || project.gallery?.[0]
@@ -90,11 +91,11 @@ export default function ProjectDetail() {
           name: projectName,
           description: projectDesc,
           url: projectUrl,
-          image: projectImage,
+          image: resolveOgImage(projectImage).url,
           author: {
             '@type': 'Person',
             name: 'Ibiam Iheanyi Victory',
-            url: 'https://giftedcreates.com',
+            url: SITE_URL,
           },
           dateCreated: project.created_at,
           dateModified: project.updated_at,

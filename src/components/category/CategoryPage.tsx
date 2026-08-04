@@ -8,6 +8,7 @@ import { CategoryTestimonials } from './CategoryTestimonials'
 import { CategoryCTA } from './CategoryCTA'
 import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { Meta } from '@/lib/meta'
+import { SITE_URL } from '@/lib/seo'
 
 export function CategoryPage({ category }: { category: CategoryConfig }) {
   return (
@@ -27,7 +28,7 @@ export function CategoryPage({ category }: { category: CategoryConfig }) {
             name: 'Ibiam Iheanyi Victory',
             alternateName: 'Gifted',
           },
-          url: `https://giftedcreates.com/${category.slug}`,
+          url: `${SITE_URL}/${category.slug}`,
           serviceType: category.name,
           areaServed: 'NG',
         }}

@@ -7,6 +7,7 @@ import { CompanyMarquee } from '@/components/sections/CompanyMarquee'
 import { Testimonials } from '@/components/sections/Testimonials'
 import { ContactSection } from '@/components/sections/ContactSection'
 import { Meta } from '@/lib/meta'
+import { SITE_URL } from '@/lib/seo'
 
 export default function Home() {
   return (
@@ -24,7 +25,7 @@ export default function Home() {
           '@type': 'WebPage',
           name: 'Gifted | Creative Technologist',
           description: 'Creative technologist combining visual storytelling, design, engineering, and digital experiences.',
-          url: 'https://giftedcreates.com/',
+          url: `${SITE_URL}/`,
           mainEntity: {
             '@type': 'Person',
             name: 'Ibiam Iheanyi Victory',

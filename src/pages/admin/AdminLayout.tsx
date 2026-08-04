@@ -4,6 +4,7 @@ import { Icons } from '@/lib/admin-icons'
 import { useAdminStore } from '@/store/admin'
 import { useTheme } from '@/store/theme'
 import NotificationBell from '@/components/admin/NotificationBell'
+import { Meta } from '@/lib/meta'
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -121,6 +122,7 @@ export default function AdminLayout() {
 
   return (
     <div className="flex min-h-screen bg-[#f4f2f0] dark:bg-[#06060c]">
+      <Meta title="Admin" description="Gifted admin dashboard." noindex nofollow />
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"

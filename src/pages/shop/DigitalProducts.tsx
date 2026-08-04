@@ -7,6 +7,7 @@ import type { Product } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
 import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { Meta } from '@/lib/meta'
+import { SITE_URL } from '@/lib/seo'
 
 const label = 'text-[11px] font-semibold tracking-[0.2em] uppercase'
 const heading = 'font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl'
@@ -37,7 +38,7 @@ export default function DigitalProducts() {
           '@type': 'CollectionPage',
           name: 'Digital Products — Gifted Store',
           description: 'Premium digital products including templates, presets, and creative assets.',
-          url: 'https://giftedcreates.com/shop/digital-products',
+          url: `${SITE_URL}/shop/digital-products`,
         }}
       />
 
