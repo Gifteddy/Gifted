@@ -16,6 +16,8 @@ type Step = 'review' | 'paying' | 'complete' | 'error'
 export default function Checkout() {
   const navigate = useNavigate()
   const { items, subtotal, clearCart, removeItem, updateQuantity } = useCart()
+  const cartKey = (item: { productId: string; size?: string; color?: string }) =>
+    `${item.productId}__${item.size || ''}__${item.color || ''}`
   const [step, setStep] = useState<Step>('review')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -88,6 +90,9 @@ export default function Checkout() {
                 product_id: i.productId,
                 product_title: i.title,
                 product_type: i.type,
+                size: i.size || null,
+                color: i.color || null,
+                options: i.options || null,
                 quantity: i.quantity,
                 unit_price: i.price,
                 total_price: i.price * i.quantity,
@@ -262,13 +267,13 @@ export default function Checkout() {
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                        <button onClick={() => updateQuantity(cartKey(item), item.quantity - 1)}
                           className="flex h-6 w-6 items-center justify-center rounded-lg border border-black/[0.06] dark:border-white/[0.08] text-xs hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors">−</button>
                         <span className="w-6 text-center text-xs font-medium tabular-nums">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                        <button onClick={() => updateQuantity(cartKey(item), item.quantity + 1)}
                           className="flex h-6 w-6 items-center justify-center rounded-lg border border-black/[0.06] dark:border-white/[0.08] text-xs hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors">+</button>
                       </div>
-                      <button onClick={() => removeItem(item.productId)} className="text-[10px] text-red-400 hover:text-red-500 transition-colors">Remove</button>
+                      <button onClick={() => removeItem(cartKey(item))} className="text-[10px] text-red-400 hover:text-red-500 transition-colors">Remove</button>
                     </div>
                   </div>
                 ))}

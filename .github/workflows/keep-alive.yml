@@ -15,5 +15,5 @@ jobs:
       - name: Wake project
         run: |
           curl -fsS -o /dev/null \
-            -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
-            "${{ secrets.VITE_SUPABASE_URL }}/rest/v1/testimonials?select=id&limit=1"
+            -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bXFqYmh4ZG1rY3RybWFmbG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMjU0NzksImV4cCI6MjA5NTkwMTQ3OX0.SNRfGxbrdqe8F1OWk6iE7nbBFPepd_kSjD0wXkjvgi8' }}" \
+            "${{ secrets.VITE_SUPABASE_URL || 'https://xvmqjbhxdmkctrmafloh.supabase.co' }}/rest/v1/testimonials?select=id&limit=1"

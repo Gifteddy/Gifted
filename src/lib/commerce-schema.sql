@@ -269,6 +269,9 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
   product_title TEXT NOT NULL DEFAULT '',
   product_type TEXT NOT NULL DEFAULT 'digital',
+  size TEXT DEFAULT NULL,
+  color TEXT DEFAULT NULL,
+  options JSONB DEFAULT NULL,
   quantity INTEGER NOT NULL DEFAULT 1,
   unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
   total_price DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -579,6 +582,24 @@ BEGIN
     WHERE table_name = 'products' AND column_name = 'variants'
   ) THEN
     ALTER TABLE products ADD COLUMN variants JSONB DEFAULT NULL;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'order_items' AND column_name = 'size'
+  ) THEN
+    ALTER TABLE order_items ADD COLUMN size TEXT DEFAULT NULL;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'order_items' AND column_name = 'color'
+  ) THEN
+    ALTER TABLE order_items ADD COLUMN color TEXT DEFAULT NULL;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'order_items' AND column_name = 'options'
+  ) THEN
+    ALTER TABLE order_items ADD COLUMN options JSONB DEFAULT NULL;
   END IF;
 END $$;
 

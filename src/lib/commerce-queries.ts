@@ -482,7 +482,7 @@ export async function createFullOrder(order: {
   currency: string
   discount_code: string | null
   shipping_address?: ShippingAddress | null
-  items: { product_id: string; product_title: string; product_type: string; quantity: number; unit_price: number; total_price: number }[]
+  items: { product_id: string; product_title: string; product_type: string; size?: string | null; color?: string | null; options?: Record<string, string> | null; quantity: number; unit_price: number; total_price: number }[]
   payment_reference: string
 }) {
   const shipAddr = order.shipping_address
@@ -527,6 +527,9 @@ export async function createFullOrder(order: {
         product_id: item.product_id,
         product_title: item.product_title,
         product_type: item.product_type,
+        size: item.size || null,
+        color: item.color || null,
+        options: item.options && Object.keys(item.options).length > 0 ? item.options : null,
         quantity: item.quantity,
         unit_price: item.unit_price,
         total_price: item.total_price,

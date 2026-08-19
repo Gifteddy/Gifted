@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Nav } from './Nav'
 import { Footer } from './Footer'
+import CartDrawer from '@/components/shop/CartDrawer'
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
@@ -14,12 +15,13 @@ export function AnimatedLayout() {
   const { pathname } = useLocation()
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }, [pathname])
 
   return (
     <div className="flex min-h-screen flex-col">
       <Nav />
+      <CartDrawer />
       <main className="flex-1">
         <AnimatePresence mode="wait">
           <motion.div key={pathname} variants={pageVariants} initial="initial" animate="enter" exit="exit">

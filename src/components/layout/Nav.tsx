@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ThemeToggle } from './ThemeToggle'
 import { useTheme } from '@/store/theme'
@@ -66,10 +66,10 @@ export function Nav() {
   const [servicesOpen, setServicesOpen] = useState(false)
   const [desktopServicesOpen, setDesktopServicesOpen] = useState(false)
   const { pathname } = useLocation()
-  const navigate = useNavigate()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const itemCount = useCart(s => s.itemCount())
+  const openDrawer = useCart(s => s.openDrawer)
   const menuRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const desktopServicesRef = useRef<HTMLLIElement>(null)
@@ -231,7 +231,7 @@ export function Nav() {
           </ul>
 
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate('/shop/checkout')} className="relative flex h-9 w-9 items-center justify-center rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Cart">
+            <button onClick={openDrawer} className="relative flex h-9 w-9 items-center justify-center rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Cart">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5">
                 <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
                 <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>

@@ -7,8 +7,8 @@ import { supabase } from '@/lib/supabase'
 import { getProductBySlug, getProductsByType } from '@/lib/commerce-queries'
 import { useCart } from '@/store/cart'
 import { CLOUDINARY_BASE } from '@/lib/images'
-import { getCategoryConfig } from '@/lib/product-attributes'
-import type { Product, ProductVariant } from '@/lib/commerce-types'
+import { getCategoryConfig, categoryConfigs, internalKeys } from '@/lib/product-attributes'
+import type { Product } from '@/lib/commerce-types'
 import ProductCard from '@/components/shop/ProductCard'
 import { Meta } from '@/lib/meta'
 import { buildProductSchema, SITE_URL } from '@/lib/seo'
@@ -28,14 +28,16 @@ export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   const addItem = useCart(s => s.addItem)
+  const openDrawer = useCart(s => s.openDrawer)
   const [product, setProduct] = useState<Product | null>(null)
   const [related, setRelated] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedImage, setSelectedImage] = useState(0)
-  const [added, setAdded] = useState(false)
   const [categorySlug, setCategorySlug] = useState('')
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
+  const [selectedSize, setSelectedSize] = useState<string | undefined>()
+  const [selectedColor, setSelectedColor] = useState<string | undefined>()
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
   const [quantity, setQuantity] = useState(1)
 
   useEffect(() => {
@@ -43,7 +45,9 @@ export default function ProductDetail() {
     setLoading(true)
     setError('')
     setCategorySlug('')
-    setSelectedVariant(null)
+    setSelectedSize(undefined)
+    setSelectedColor(undefined)
+    setSelectedOptions({})
     setQuantity(1)
     getProductBySlug(slug)
       .then((p) => {
@@ -106,8 +110,23 @@ export default function ProductDetail() {
 
   const isDigital = product.type === 'digital'
   const cfg = categorySlug ? getCategoryConfig(categorySlug) : undefined
-  const displayAttrs = cfg?.attributes.filter(a => a.key !== 'shipping_required' && a.key !== 'weight') ?? []
+  const fallbackCfg = cfg ?? Object.values(categoryConfigs).find(c => c.type === product.type && c.hasVariants) ?? Object.values(categoryConfigs).find(c => c.type === product.type)
+  const displayAttrs = fallbackCfg?.attributes.filter(a => !internalKeys.has(a.key)) ?? []
   const attrs = product.attributes as Record<string, unknown> | null
+
+  const selectableAttrs = displayAttrs.filter(a =>
+    a.selectable === true || (a.type === 'select' && a.options && a.options.length > 0 && !internalKeys.has(a.key))
+  )
+
+  const requiresVariant = !!fallbackCfg?.hasVariants
+  const requiresSize = requiresVariant && (fallbackCfg?.variantConfig?.sizes?.length ?? 0) > 0
+  const requiresColor = requiresVariant && (fallbackCfg?.variantConfig?.colors?.length ?? 0) > 0
+  const variantOk = !requiresVariant || (
+    (!requiresSize || !!selectedSize) &&
+    (!requiresColor || !!selectedColor)
+  )
+  const attrsOk = selectableAttrs.every(a => !!selectedOptions[a.key])
+  const canAddToCart = variantOk && attrsOk
 
   return (
     <main className="min-h-screen bg-surface-light text-text-light dark:bg-surface-dark dark:text-text-dark overflow-hidden">
@@ -121,7 +140,7 @@ export default function ProductDetail() {
         keywords={[product.title, ...(product.tags ?? []), product.type, 'shop', 'gifted'].filter(Boolean)}
         breadcrumbs={[
           { name: 'Shop', path: '/shop' },
-          ...(cfg ? [{ name: cfg.name, path: `/shop/${cfg.type === 'physical' ? 'merch' : 'digital-products'}` }] : []),
+          ...(cfg ? [{ name: cfg.name, path: `/shop/${cfg.type === 'physical' ? 'merch' : 'digital-products'}` }] : fallbackCfg ? [{ name: fallbackCfg.name, path: `/shop/${fallbackCfg.type === 'physical' ? 'merch' : 'digital-products'}` }] : []),
           { name: product.title, path: `/shop/product/${slug}` },
         ]}
         jsonLd={buildProductSchema({
@@ -141,7 +160,7 @@ export default function ProductDetail() {
           <SEOBreadcrumbs
             items={[
               { name: 'Shop', path: '/shop' },
-              ...(cfg ? [{ name: cfg.name, path: `/shop/${cfg.type === 'physical' ? 'merch' : 'digital-products'}` }] : []),
+              ...(cfg ? [{ name: cfg.name, path: `/shop/${cfg.type === 'physical' ? 'merch' : 'digital-products'}` }] : fallbackCfg ? [{ name: fallbackCfg.name, path: `/shop/${fallbackCfg.type === 'physical' ? 'merch' : 'digital-products'}` }] : []),
               { name: product.title, path: `/shop/product/${slug}` },
             ]}
           />
@@ -253,62 +272,93 @@ export default function ProductDetail() {
               )}
 
               {/* Dynamic Attributes */}
-              {displayAttrs.length > 0 && attrs && (
-                <div className="mt-6 space-y-4">
-                  {displayAttrs.map(a => {
-                    const val = attrs[a.key]
-                    if (!val || (Array.isArray(val) && val.length === 0)) return null
-                    return (
+              {displayAttrs.length > 0 && attrs && (() => {
+                const isSelectable = (a: { key: string; selectable?: boolean; options?: string[]; type: string }) =>
+                  a.selectable === true || (a.type === 'select' && a.options && a.options.length > 0 && !['shipping_required', 'weight', 'download_type'].includes(a.key))
+                const selectableAttrs = displayAttrs.filter(a => isSelectable(a))
+                const readOnlyAttrs = displayAttrs.filter(a => !isSelectable(a))
+
+                return (
+                  <div className="mt-6 space-y-4">
+                    {selectableAttrs.map(a => (
                       <div key={a.key}>
-                        <p className="text-xs font-medium text-gray-500 dark:text-white/50 mb-1.5">{a.label}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {Array.isArray(val) ? (
-                            val.map(v => (
-                              <span key={v as string} className="rounded-lg bg-black/[0.04] dark:bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-white/70">
-                                {v as string}
-                              </span>
-                            ))
-                          ) : a.type === 'boolean' ? (
-                            <span className={cn('text-sm font-medium', val ? 'text-green-500' : 'text-gray-400')}>
-                              {val ? 'Yes' : 'No'}
-                            </span>
-                          ) : a.type === 'url' ? (
-                            <a href={val as string} target="_blank" rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline">
-                              {val as string}
-                              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" /></svg>
-                            </a>
-                          ) : (
-                            <span className="text-sm font-medium text-gray-900 dark:text-white/90">{val as string}</span>
-                          )}
+                        <p className="text-xs font-medium text-gray-500 dark:text-white/50 mb-2">{a.label}{a.required ? ' *' : ''}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {a.options!.map(opt => (
+                            <button key={opt} onClick={() => setSelectedOptions(prev => ({ ...prev, [a.key]: opt }))}
+                              className={cn('rounded-xl px-4 py-2 text-xs font-medium transition-all border',
+                                selectedOptions[a.key] === opt
+                                  ? 'border-brand-500 bg-brand-500/8 text-brand-600 dark:text-brand-400 dark:border-brand-400'
+                                  : 'border-black/[0.06] dark:border-white/[0.08] hover:border-brand-500/30 dark:hover:border-brand-400/30'
+                              )}>
+                              {opt}
+                            </button>
+                          ))}
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
-              )}
+                    ))}
+                    {readOnlyAttrs.map(a => {
+                      const val = attrs[a.key]
+                      if (!val || (Array.isArray(val) && val.length === 0)) return null
+                      return (
+                        <div key={a.key}>
+                          <p className="text-xs font-medium text-gray-500 dark:text-white/50 mb-1.5">{a.label}</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {Array.isArray(val) ? (
+                              val.map(v => (
+                                <span key={v as string} className="rounded-lg bg-black/[0.04] dark:bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-white/70">
+                                  {v as string}
+                                </span>
+                              ))
+                            ) : a.type === 'boolean' ? (
+                              <span className={cn('text-sm font-medium', val ? 'text-green-500' : 'text-gray-400')}>
+                                {val ? 'Yes' : 'No'}
+                              </span>
+                            ) : a.type === 'url' ? (
+                              <a href={val as string} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline">
+                                {val as string}
+                                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" /></svg>
+                              </a>
+                            ) : (
+                              <span className="text-sm font-medium text-gray-900 dark:text-white/90">{val as string}</span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
 
               {/* Variant Selector */}
-              {categorySlug && getCategoryConfig(categorySlug)?.hasVariants && product.variants && product.variants.length > 0 && (() => {
-                const sizes = [...new Set(product.variants!.map(v => v.size).filter(Boolean))] as string[]
-                const colors = [...new Set(product.variants!.map(v => v.color).filter(Boolean))] as string[]
-                const currentSize = selectedVariant?.size
-                const currentColor = selectedVariant?.color
+              {fallbackCfg?.hasVariants && (() => {
+                const hasVariants = product.variants && product.variants.length > 0
+                const vc = fallbackCfg.variantConfig
+                const sizes = hasVariants
+                  ? [...new Set(product.variants!.map(v => v.size).filter(Boolean))] as string[]
+                  : (vc?.sizes || []) as string[]
+                const colors = hasVariants
+                  ? [...new Set(product.variants!.map(v => v.color).filter(Boolean))] as string[]
+                  : (vc?.colors || []) as string[]
+                if (sizes.length === 0 && colors.length === 0) return null
 
-                const availableColorsForSize = currentSize
-                  ? product.variants!.filter(v => v.size === currentSize && v.stock > 0).map(v => v.color).filter(Boolean) as string[]
+                const matchedVariant = hasVariants && selectedSize && selectedColor
+                  ? product.variants!.find(v => v.size === selectedSize && v.color === selectedColor) ?? null
+                  : null
+
+                const availableColorsForSize = selectedSize && hasVariants
+                  ? product.variants!.filter(v => v.size === selectedSize && v.stock > 0).map(v => v.color).filter(Boolean) as string[]
                   : colors
-                const availableSizesForColor = currentColor
-                  ? product.variants!.filter(v => v.color === currentColor && v.stock > 0).map(v => v.size).filter(Boolean) as string[]
+                const availableSizesForColor = selectedColor && hasVariants
+                  ? product.variants!.filter(v => v.color === selectedColor && v.stock > 0).map(v => v.size).filter(Boolean) as string[]
                   : sizes
 
-                const selectVariant = (size?: string, color?: string) => {
-                  const match = product.variants!.find(v =>
-                    (size ? v.size === size : !v.size) &&
-                    (color ? v.color === color : !v.color)
-                  )
-                  setSelectedVariant(match || null)
-                }
+                const stockDisplay = matchedVariant
+                  ? matchedVariant.stock
+                  : selectedSize && selectedColor && hasVariants
+                    ? 0
+                    : null
 
                 return (
                   <div className="mt-6 space-y-5">
@@ -317,12 +367,12 @@ export default function ProductDetail() {
                         <p className="text-xs font-medium text-gray-500 dark:text-white/50 mb-2">Size</p>
                         <div className="flex flex-wrap gap-2">
                           {sizes.map(s => {
-                            const disabled = currentColor ? !availableSizesForColor.includes(s) : false
+                            const disabled = selectedColor ? !availableSizesForColor.includes(s) : false
                             return (
-                              <button key={s} onClick={() => { selectVariant(s, currentColor); if (!currentColor) setQuantity(1) }}
+                              <button key={s} onClick={() => { setSelectedSize(s); if (!selectedColor) setQuantity(1) }}
                                 disabled={disabled}
                                 className={cn('rounded-xl px-4 py-2 text-xs font-medium transition-all border',
-                                  currentSize === s
+                                  selectedSize === s
                                     ? 'border-brand-500 bg-brand-500/8 text-brand-600 dark:text-brand-400 dark:border-brand-400'
                                     : disabled
                                       ? 'border-black/[0.04] dark:border-white/[0.06] opacity-30 cursor-not-allowed'
@@ -340,12 +390,12 @@ export default function ProductDetail() {
                         <p className="text-xs font-medium text-gray-500 dark:text-white/50 mb-2">Color</p>
                         <div className="flex flex-wrap gap-2">
                           {colors.map(c => {
-                            const disabled = currentSize ? !availableColorsForSize.includes(c) : false
+                            const disabled = selectedSize ? !availableColorsForSize.includes(c) : false
                             return (
-                              <button key={c} onClick={() => { selectVariant(currentSize, c); if (!currentSize) setQuantity(1) }}
+                              <button key={c} onClick={() => { setSelectedColor(c); if (!selectedSize) setQuantity(1) }}
                                 disabled={disabled}
                                 className={cn('rounded-xl px-4 py-2 text-xs font-medium transition-all border',
-                                  currentColor === c
+                                  selectedColor === c
                                     ? 'border-brand-500 bg-brand-500/8 text-brand-600 dark:text-brand-400 dark:border-brand-400'
                                     : disabled
                                       ? 'border-black/[0.04] dark:border-white/[0.06] opacity-30 cursor-not-allowed'
@@ -358,14 +408,14 @@ export default function ProductDetail() {
                         </div>
                       </div>
                     )}
-                    {selectedVariant && (
+                    {selectedSize && selectedColor && stockDisplay !== null && (
                       <p className="text-xs text-gray-500 dark:text-white/50">
-                        {selectedVariant.stock > 0 ? (
-                          <span className="text-green-500">{selectedVariant.stock} in stock</span>
+                        {stockDisplay > 0 ? (
+                          <span className="text-green-500">{stockDisplay} in stock</span>
                         ) : (
                           <span className="text-red-400">Out of stock</span>
                         )}
-                        {selectedVariant.sku && <span className="ml-3">SKU: {selectedVariant.sku}</span>}
+                        {matchedVariant?.sku && <span className="ml-3">SKU: {matchedVariant.sku}</span>}
                       </p>
                     )}
                   </div>
@@ -374,7 +424,7 @@ export default function ProductDetail() {
 
               {/* Quantity + Add to Cart */}
               <div className="mt-8 border-t border-black/[0.06] dark:border-white/[0.08] pt-8">
-                {categorySlug && getCategoryConfig(categorySlug)?.hasVariants && product.variants && product.variants.length > 0 && (
+                {fallbackCfg?.hasVariants && (
                   <div className="mb-4">
                     <label className="text-xs font-medium text-gray-500 dark:text-white/50">Quantity</label>
                     <div className="flex items-center gap-2 mt-1.5">
@@ -388,35 +438,50 @@ export default function ProductDetail() {
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-3">
+                  {!canAddToCart && (
+                    <p className="text-xs text-gray-500 dark:text-white/50 mb-1 sm:col-span-2">
+                      {!variantOk ? 'Please select a variant above.' : 'Please select all options above.'}
+                    </p>
+                  )}
                   <button
+                    disabled={!canAddToCart}
                     onClick={() => {
-                      const variantInfo = selectedVariant ? `${selectedVariant.size ? selectedVariant.size + ' / ' : ''}${selectedVariant.color || ''}`.trim().replace(/\/\s*$/, '') : ''
-                      const title = variantInfo ? `${product.title} (${variantInfo})` : product.title
-                      const price = selectedVariant?.price_override ?? product.sale_price ?? product.price
-                      addItem({ productId: product.id, title, price, type: product.type, thumbnail: product.thumbnail })
-                      setAdded(true)
-                      setTimeout(() => setAdded(false), 2000)
+                      const variantInfo = selectedSize || selectedColor ? [selectedSize, selectedColor].filter(Boolean).join(' / ') : ''
+                      const optInfo = Object.values(selectedOptions).filter(Boolean).join(' / ')
+                      const fullInfo = [variantInfo, optInfo].filter(Boolean).join(' / ')
+                      const title = fullInfo ? `${product.title} (${fullInfo})` : product.title
+                      const matchedVariant = product.variants?.find(v => v.size === selectedSize && v.color === selectedColor)
+                      const price = matchedVariant?.price_override ?? product.sale_price ?? product.price
+                      const opts = Object.keys(selectedOptions).length > 0 ? selectedOptions : undefined
+                      addItem({ productId: product.id, title, price, type: product.type, thumbnail: product.thumbnail, size: selectedSize, color: selectedColor, options: opts })
+                      openDrawer()
                     }}
-                    className="flex-1 rounded-full border border-black/[0.08] dark:border-white/[0.1] px-7 py-3.5 text-sm font-semibold transition-all duration-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.04] active:scale-[0.98]"
-                  >
-                    {added ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <svg className="h-4 w-4 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
-                        Added to Cart
-                      </span>
-                    ) : (
-                      'Add to Cart'
+                    className={cn('flex-1 rounded-full border px-7 py-3.5 text-sm font-semibold transition-all duration-300 active:scale-[0.98]',
+                      canAddToCart
+                        ? 'border-black/[0.08] dark:border-white/[0.1] hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
+                        : 'border-black/[0.04] dark:border-white/[0.06] opacity-40 cursor-not-allowed'
                     )}
+                  >
+                    Add to Cart
                   </button>
                   <button
+                    disabled={!canAddToCart}
                     onClick={() => {
-                      const variantInfo = selectedVariant ? `${selectedVariant.size ? selectedVariant.size + ' / ' : ''}${selectedVariant.color || ''}`.trim().replace(/\/\s*$/, '') : ''
-                      const title = variantInfo ? `${product.title} (${variantInfo})` : product.title
-                      const price = selectedVariant?.price_override ?? product.sale_price ?? product.price
-                      addItem({ productId: product.id, title, price, type: product.type, thumbnail: product.thumbnail })
+                      const variantInfo = selectedSize || selectedColor ? [selectedSize, selectedColor].filter(Boolean).join(' / ') : ''
+                      const optInfo = Object.values(selectedOptions).filter(Boolean).join(' / ')
+                      const fullInfo = [variantInfo, optInfo].filter(Boolean).join(' / ')
+                      const title = fullInfo ? `${product.title} (${fullInfo})` : product.title
+                      const matchedVariant = product.variants?.find(v => v.size === selectedSize && v.color === selectedColor)
+                      const price = matchedVariant?.price_override ?? product.sale_price ?? product.price
+                      const opts = Object.keys(selectedOptions).length > 0 ? selectedOptions : undefined
+                      addItem({ productId: product.id, title, price, type: product.type, thumbnail: product.thumbnail, size: selectedSize, color: selectedColor, options: opts })
                       navigate('/shop/checkout')
                     }}
-                    className="flex-1 rounded-full bg-brand-500 px-7 py-3.5 text-sm font-semibold text-white transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/30 active:scale-[0.98]"
+                    className={cn('flex-1 rounded-full px-7 py-3.5 text-sm font-semibold transition-all duration-500 active:scale-[0.98]',
+                      canAddToCart
+                        ? 'bg-brand-500 text-white hover:shadow-xl hover:shadow-brand-500/30'
+                        : 'bg-brand-500/40 text-white/60 cursor-not-allowed'
+                    )}
                   >
                     Buy Now
                   </button>

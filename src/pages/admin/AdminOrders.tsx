@@ -183,6 +183,7 @@ export default function AdminOrders() {
                       <thead>
                         <tr className="text-text-muted-light dark:text-text-muted-dark border-b border-border-light dark:border-border-dark">
                           <th className="pb-2 text-left font-medium">Product</th>
+                          <th className="pb-2 text-left font-medium">Variant</th>
                           <th className="pb-2 text-left font-medium">Type</th>
                           <th className="pb-2 text-right font-medium">Qty</th>
                           <th className="pb-2 text-right font-medium">Price</th>
@@ -193,6 +194,14 @@ export default function AdminOrders() {
                         {order.items.map(item => (
                           <tr key={item.id} className="border-b border-border-light/50 dark:border-border-dark/50">
                             <td className="py-2">{item.product_title}</td>
+                            <td className="py-2 text-text-muted-light dark:text-text-muted-dark">
+                              {[item.size, item.color].filter(Boolean).join(' / ')}
+                              {item.options && Object.keys(item.options).length > 0 && (
+                                <>{[item.size, item.color].filter(Boolean).length > 0 ? ', ' : ''}
+                                {Object.entries(item.options).map(([, v]) => `${v}`).join(', ')}</>
+                              )}
+                              {!item.size && !item.color && (!item.options || Object.keys(item.options).length === 0) && '—'}
+                            </td>
                             <td className="py-2 text-text-muted-light dark:text-text-muted-dark">{item.product_type}</td>
                             <td className="py-2 text-right">{item.quantity}</td>
                             <td className="py-2 text-right">₦{item.unit_price.toLocaleString()}</td>
@@ -201,13 +210,13 @@ export default function AdminOrders() {
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr><td colSpan={4} className="pt-2 text-right text-text-muted-light dark:text-text-muted-dark">Subtotal</td>
+                        <tr><td colSpan={5} className="pt-2 text-right text-text-muted-light dark:text-text-muted-dark">Subtotal</td>
                           <td className="pt-2 text-right">₦{order.subtotal.toLocaleString()}</td></tr>
                         {order.discount > 0 && (
-                          <tr><td colSpan={4} className="text-right text-red-500">Discount</td>
+                          <tr><td colSpan={5} className="text-right text-red-500">Discount</td>
                             <td className="text-right text-red-500">-₦{order.discount.toLocaleString()}</td></tr>
                         )}
-                        <tr><td colSpan={4} className="text-right font-medium">Total</td>
+                        <tr><td colSpan={5} className="text-right font-medium">Total</td>
                           <td className="text-right font-medium">₦{order.total.toLocaleString()}</td></tr>
                       </tfoot>
                     </table>

@@ -7,6 +7,7 @@ export interface AttributeDef {
   options?: string[]
   required?: boolean
   placeholder?: string
+  selectable?: boolean
 }
 
 export interface VariantConfig {
@@ -74,8 +75,8 @@ export const categoryConfigs: Record<string, CategoryConfig> = {
   stickers: {
     slug: 'stickers', name: 'Stickers', type: 'physical',
     attributes: [
-      { key: 'dimension', label: 'Dimension', type: 'select', options: ['Small', 'Medium', 'Large'], required: true },
-      { key: 'material', label: 'Material', type: 'select', options: ['Matte', 'Glossy', 'Holographic'], required: true },
+      { key: 'dimension', label: 'Dimension', type: 'select', options: ['Small', 'Medium', 'Large'], required: true, selectable: true },
+      { key: 'material', label: 'Material', type: 'select', options: ['Matte', 'Glossy', 'Holographic'], required: true, selectable: true },
       ...physicalAttrs,
     ],
     hasVariants: false,
@@ -84,8 +85,8 @@ export const categoryConfigs: Record<string, CategoryConfig> = {
   posters: {
     slug: 'posters', name: 'Posters', type: 'physical',
     attributes: [
-      { key: 'size', label: 'Size', type: 'select', options: ['A4', 'A3', 'A2', 'A1'], required: true },
-      { key: 'orientation', label: 'Orientation', type: 'select', options: ['Portrait', 'Landscape'], required: true },
+      { key: 'size', label: 'Size', type: 'select', options: ['A4', 'A3', 'A2', 'A1'], required: true, selectable: true },
+      { key: 'orientation', label: 'Orientation', type: 'select', options: ['Portrait', 'Landscape'], required: true, selectable: true },
       ...physicalAttrs,
     ],
     hasVariants: false,

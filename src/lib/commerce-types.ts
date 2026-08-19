@@ -101,6 +101,9 @@ export interface OrderItem {
   product_id: string
   product_title: string
   product_type: ProductType
+  size: string | null
+  color: string | null
+  options: Record<string, string> | null
   quantity: number
   unit_price: number
   total_price: number

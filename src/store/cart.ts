@@ -7,27 +7,43 @@ interface CartItem {
   type: 'digital' | 'physical' | 'bundle'
   thumbnail: string
   quantity: number
+  size?: string
+  color?: string
+  options?: Record<string, string>
 }
+
+function cartKey(item: { productId: string; size?: string; color?: string; options?: Record<string, string> }) {
+  const optStr = item.options ? JSON.stringify(Object.entries(item.options).sort()) : ''
+  return `${item.productId}__${item.size || ''}__${item.color || ''}__${optStr}`
+}
+
+export { cartKey }
 
 interface CartState {
   items: CartItem[]
+  drawerOpen: boolean
   addItem: (item: Omit<CartItem, 'quantity'>) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
+  removeItem: (key: string) => void
+  updateQuantity: (key: string, quantity: number) => void
   clearCart: () => void
+  openDrawer: () => void
+  closeDrawer: () => void
+  toggleDrawer: () => void
   itemCount: () => number
   subtotal: () => number
 }
 
 export const useCart = create<CartState>((set, get) => ({
   items: [],
+  drawerOpen: false,
 
   addItem: (item) => set((state) => {
-    const existing = state.items.find(i => i.productId === item.productId)
+    const key = cartKey(item)
+    const existing = state.items.find(i => cartKey(i) === key)
     if (existing) {
       return {
         items: state.items.map(i =>
-          i.productId === item.productId
+          cartKey(i) === key
             ? { ...i, quantity: i.quantity + 1 }
             : i
         ),
@@ -36,19 +52,23 @@ export const useCart = create<CartState>((set, get) => ({
     return { items: [...state.items, { ...item, quantity: 1 }] }
   }),
 
-  removeItem: (productId) => set((state) => ({
-    items: state.items.filter(i => i.productId !== productId),
+  removeItem: (key) => set((state) => ({
+    items: state.items.filter(i => cartKey(i) !== key),
   })),
 
-  updateQuantity: (productId, quantity) => set((state) => ({
+  updateQuantity: (key, quantity) => set((state) => ({
     items: quantity <= 0
-      ? state.items.filter(i => i.productId !== productId)
+      ? state.items.filter(i => cartKey(i) !== key)
       : state.items.map(i =>
-          i.productId === productId ? { ...i, quantity } : i
+          cartKey(i) === key ? { ...i, quantity } : i
         ),
   })),
 
   clearCart: () => set({ items: [] }),
+
+  openDrawer: () => set({ drawerOpen: true }),
+  closeDrawer: () => set({ drawerOpen: false }),
+  toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen })),
 
   itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
 
