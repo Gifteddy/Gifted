@@ -5,6 +5,7 @@ import { LiquidGlass } from '@/components/ui/LiquidGlass'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Button } from '@/components/ui/Button'
 import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
+import { FannedPhotoGallery } from '@/components/gallery/FannedPhotoGallery'
 import { Meta } from '@/lib/meta'
 import { SITE_URL, resolveOgImage } from '@/lib/seo'
 import type { Project } from '@/lib/types'
@@ -14,6 +15,7 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [photoLbIndex, setPhotoLbIndex] = useState<number | null>(null)
   const [scrollPos, setScrollPos] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -24,6 +26,7 @@ export default function ProjectDetail() {
         const { getProjectBySlug } = await import('@/lib/queries')
         const data = await getProjectBySlug(slug)
         setProject(data)
+        setPhotoLbIndex(null)
       } catch { /* silent */ } finally { setLoading(false) }
     }
     load()
@@ -61,6 +64,16 @@ export default function ProjectDetail() {
 
   const isVideoProject = project.categories?.some(c => ((c as any)?.category?.name ?? (c as any)?.name)?.toLowerCase().includes('video') || ((c as any)?.category?.slug ?? (c as any)?.slug)?.includes('video')) || project.category?.includes('video')
   const isDevProject = project.categories?.some(c => ((c as any)?.category?.slug ?? (c as any)?.slug) === 'development') || project.category === 'development'
+
+  interface NestedCategoryRef { category?: { name?: unknown; slug?: unknown } | null; name?: unknown; slug?: unknown }
+  const catRefs = (project.categories ?? []) as unknown as NestedCategoryRef[]
+  const catNameList = catRefs.map(c => String(c.category?.name ?? c.name ?? '').toLowerCase())
+  const catSlugList = catRefs.map(c => String(c.category?.slug ?? c.slug ?? '').toLowerCase())
+  const isPhotoProject =
+    catNameList.some(n => n === 'photography' || n === 'photo editing') ||
+    catSlugList.some(s => s === 'photography' || s === 'photo-editing') ||
+    project.category === 'photography' ||
+    project.category === 'photo-editing'
 
   const scrollGallery = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return
@@ -132,6 +145,15 @@ export default function ProjectDetail() {
             </motion.div>
           </div>
         </motion.div>
+      ) : isPhotoProject && project.gallery && project.gallery.length > 0 ? (
+        <FannedPhotoGallery
+          key={project.id}
+          images={project.gallery}
+          title={projectName}
+          categories={categoryNames.length > 0 ? categoryNames : project.category ? [project.category.replace(/-/g, ' ')] : []}
+          lbIndex={photoLbIndex}
+          onLbIndexChange={setPhotoLbIndex}
+        />
       ) : (
         <div className="mx-auto max-w-4xl px-4 pt-32">
           <SEOBreadcrumbs
@@ -149,30 +171,34 @@ export default function ProjectDetail() {
             </Link>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="mb-2 flex flex-wrap gap-2">
-              {project.categories?.map(cat => (
-                <span key={(cat as any)?.category?.slug ?? (cat as any)?.slug ?? (cat as any)?.name} className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{(cat as any)?.category?.name ?? (cat as any)?.name}</span>
-              ))}
-              {(!project.categories || project.categories.length === 0) && project.category && (
-                <span className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{project.category.replace(/-/g, ' ')}</span>
-              )}
-            </div>
-            <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">{projectName}</h1>
-          </motion.div>
+          {!isPhotoProject && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <div className="mb-2 flex flex-wrap gap-2">
+                {project.categories?.map(cat => (
+                  <span key={(cat as any)?.category?.slug ?? (cat as any)?.slug ?? (cat as any)?.name} className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{(cat as any)?.category?.name ?? (cat as any)?.name}</span>
+                ))}
+                {(!project.categories || project.categories.length === 0) && project.category && (
+                  <span className="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-500 dark:text-brand-400">{project.category.replace(/-/g, ' ')}</span>
+                )}
+              </div>
+              <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">{projectName}</h1>
+            </motion.div>
+          )}
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="mt-8 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
-            {project.thumbnail ? (
-              <div className="relative">
-                <img src={project.thumbnail} alt={projectName} loading="eager" decoding="async" width="1200" height="675" className="w-full object-cover" />
-              </div>
-            ) : (
-              <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
-                <span className="text-6xl opacity-30" aria-hidden="true">🚀</span>
-              </div>
-            )}
-          </motion.div>
+          {!isPhotoProject && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="mt-8 overflow-hidden rounded-2xl border border-border-light dark:border-border-dark">
+              {project.thumbnail ? (
+                <div className="relative">
+                  <img src={project.thumbnail} alt={projectName} loading="eager" decoding="async" width="1200" height="675" className="w-full object-cover" />
+                </div>
+              ) : (
+                <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-brand-500/10 to-gold-500/10">
+                  <span className="text-6xl opacity-30" aria-hidden="true">🚀</span>
+                </div>
+              )}
+            </motion.div>
+          )}
         </div>
       )}
 
@@ -247,7 +273,7 @@ export default function ProjectDetail() {
           </motion.div>
         </div>
 
-        {!isVideoProject && project.gallery && project.gallery.length > 0 && (
+        {!isVideoProject && !isPhotoProject && project.gallery && project.gallery.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
             className="mt-12">
             <h2 className="mb-6 text-2xl font-bold font-display">Gallery</h2>
@@ -291,7 +317,26 @@ export default function ProjectDetail() {
         )}
       </div>
 
-      {lightboxIndex !== null && project.gallery && (
+      {isPhotoProject && project.gallery && project.gallery.length > 0 && (
+        <div className="mx-auto mt-12 max-w-6xl px-4">
+          <div className="mb-6 flex items-end justify-between">
+            <h2 className="font-display text-2xl font-bold">Gallery</h2>
+            <span className="text-sm tabular-nums text-text-muted-light dark:text-text-muted-dark">{project.gallery.length} photos</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+            {project.gallery.map((img, i) => (
+              <button key={i} type="button" onClick={() => setPhotoLbIndex(i)}
+                aria-label={`Open ${projectName} image ${i + 1}`}
+                className="group relative overflow-hidden rounded-2xl border border-border-light transition-transform duration-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-border-dark">
+                <img src={img} alt={`${projectName} — Gallery image ${i + 1}`} loading="lazy" decoding="async" width="600" height="600"
+                  className="aspect-square w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {lightboxIndex !== null && project.gallery && !isPhotoProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setLightboxIndex(null)} role="dialog" aria-label="Image lightbox" aria-modal="true">
           <button onClick={() => setLightboxIndex(null)}
             className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
