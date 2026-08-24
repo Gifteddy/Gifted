@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { Button } from '@/components/ui/Button'
 import { SEOBreadcrumbs } from '@/components/ui/SEOBreadcrumbs'
 import { FannedPhotoGallery } from '@/components/gallery/FannedPhotoGallery'
+import { CARD_IMG_OPS, cdnImage } from '@/lib/image'
 import { Meta } from '@/lib/meta'
 import { SITE_URL, resolveOgImage } from '@/lib/seo'
 import type { Project } from '@/lib/types'
@@ -328,7 +329,7 @@ export default function ProjectDetail() {
               <button key={i} type="button" onClick={() => setPhotoLbIndex(i)}
                 aria-label={`Open ${projectName} image ${i + 1}`}
                 className="group relative overflow-hidden rounded-2xl border border-border-light transition-transform duration-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-border-dark">
-                <img src={img} alt={`${projectName} — Gallery image ${i + 1}`} loading="lazy" decoding="async" width="600" height="600"
+                <img src={cdnImage(img, CARD_IMG_OPS)} alt={`${projectName} — Gallery image ${i + 1}`} loading="lazy" decoding="async" width="600" height="600"
                   className="aspect-square w-full object-cover" />
               </button>
             ))}

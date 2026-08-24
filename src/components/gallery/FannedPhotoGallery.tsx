@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Dispatch, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, SetStateAction } from 'react'
+import { CARD_IMG_OPS, LIGHTBOX_IMG_OPS, cdnImage } from '@/lib/image'
 
 interface FannedPhotoGalleryProps {
   images: string[]
@@ -18,14 +19,13 @@ interface FanPose {
   o: number
 }
 
-const FAN: FanPose[] = [
-  { x: 45, r: 8, s: 0.93, b: 1, o: 0.85 },
-  { x: 90, r: 16, s: 0.86, b: 3, o: 0.6 },
-  { x: 135, r: 24, s: 0.79, b: 5, o: 0.4 },
-  { x: 180, r: 35, s: 0.72, b: 7, o: 0.2 },
-]
+const SPREAD_X = [45, 90, 135, 180]
+const FAN_ROT = [8, 16, 24, 35]
+const FAN_SCALE = [0.93, 0.86, 0.79, 0.72]
+const FAN_BLUR = [1, 3, 5, 7]
+const FAN_OPACITY = [0.85, 0.6, 0.4, 0.2]
 
-const MAX_SIDE = FAN.length
+const MAX_SIDE = SPREAD_X.length
 const MIN_ZOOM = 0.5
 const MAX_ZOOM = 4
 const CARD_WIDTH = 'min(400px, 85vw)'
@@ -64,15 +64,27 @@ const ORBS = [
 
 interface LightboxViewProps {
   src: string
+  previewSrc: string
   alt: string
 }
 
-function LightboxView({ src, alt }: LightboxViewProps) {
+function LightboxView({ src, previewSrc, alt }: LightboxViewProps) {
   const [zoom, setZoom] = useState(1)
   const [zoomMode, setZoomMode] = useState<'fit' | 'one'>('fit')
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [naturalW, setNaturalW] = useState<number | null>(null)
   const [activePointers, setActivePointers] = useState(0)
+  const [useHiRes, setUseHiRes] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    const im = new window.Image()
+    im.src = src
+    const done = () => { if (alive) setUseHiRes(true) }
+    if (typeof im.decode === 'function') im.decode().then(done).catch(() => {})
+    else im.onload = done
+    return () => { alive = false }
+  }, [src])
 
   const imgRef = useRef<HTMLImageElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -181,7 +193,7 @@ function LightboxView({ src, alt }: LightboxViewProps) {
       >
         <img
           ref={imgRef}
-          src={src}
+          src={useHiRes ? src : previewSrc}
           alt={alt}
           draggable={false}
           onLoad={e => setNaturalW(e.currentTarget.naturalWidth)}
@@ -233,6 +245,19 @@ export function FannedPhotoGallery({ images, title, categories, lbIndex, onLbInd
   const [dragDx, setDragDx] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
+  const [vw, setVw] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
+
+  useEffect(() => {
+    const onResize = () => setVw(window.innerWidth)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const spread = Math.min(1.9, Math.max(1, vw / 1400))
+  const fan: FanPose[] = useMemo(
+    () => SPREAD_X.map((x, i) => ({ x: x * spread, r: FAN_ROT[i], s: FAN_SCALE[i], b: FAN_BLUR[i], o: FAN_OPACITY[i] })),
+    [spread],
+  )
 
   const sectionRef = useRef<HTMLElement>(null)
   const inViewRef = useRef(false)
@@ -376,7 +401,7 @@ export function FannedPhotoGallery({ images, title, categories, lbIndex, onLbInd
             const side = off < 0 ? -1 : 1
             const isActive = abs === 0
             const hidden = !isActive && abs > MAX_SIDE
-            const pose = isActive ? null : FAN[Math.min(abs, MAX_SIDE) - 1]
+            const pose = isActive ? null : fan[Math.min(abs, MAX_SIDE) - 1]
             const isHovered = hovered === i
 
             let sc = 1.05
@@ -402,8 +427,12 @@ export function FannedPhotoGallery({ images, title, categories, lbIndex, onLbInd
               sc = 1.07
             }
 
+            const isEngaged = isActive && (dragging || isHovered || tilt.rx !== 0 || tilt.ry !== 0)
+
             const transform = isActive
-              ? `translate(-50%, -50%) perspective(1100px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry + dragDx * 0.05}deg) translateX(${dragDx}px) scale(${sc})`
+              ? isEngaged
+                ? `translate(-50%, -50%) perspective(1100px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry + dragDx * 0.05}deg) translateX(${dragDx}px) scale(${sc})`
+                : `translate(-50%, -50%) scale(${sc})`
               : `translate(-50%, -50%) translateX(${tx}px) rotate(${rot}deg) scale(${sc})`
 
             const boxShadow = isActive
@@ -443,15 +472,20 @@ export function FannedPhotoGallery({ images, title, categories, lbIndex, onLbInd
                 }}
               >
                 <span className="block h-full w-full overflow-hidden rounded-[24px] bg-white/95 p-[5px]">
-                  <img
-                    src={src}
-                    alt={`${title} — ${i + 1}`}
-                    draggable={false}
-                    loading={abs <= 2 ? 'eager' : 'lazy'}
-                    decoding="async"
-                    className="h-full w-full select-none object-cover"
-                    style={{ borderRadius: 19 }}
-                  />
+                  {abs <= MAX_SIDE + 1 ? (
+                    <img
+                      src={cdnImage(src, CARD_IMG_OPS)}
+                      alt={`${title} — ${i + 1}`}
+                      draggable={false}
+                      loading={abs <= 2 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      fetchPriority={isActive ? 'high' : 'auto'}
+                      className="h-full w-full select-none object-cover"
+                      style={{ borderRadius: 19 }}
+                    />
+                  ) : (
+                    <span className="block h-full w-full" style={{ borderRadius: 19, background: 'linear-gradient(135deg, rgba(0,0,0,0.06), rgba(0,0,0,0.14))' }} />
+                  )}
                 </span>
               </button>
             )
@@ -533,7 +567,12 @@ export function FannedPhotoGallery({ images, title, categories, lbIndex, onLbInd
             </>
           )}
 
-          <LightboxView key={lbIndex} src={images[lbIndex]} alt={`${title} — ${lbIndex + 1}`} />
+          <LightboxView
+            key={lbIndex}
+            src={cdnImage(images[lbIndex], LIGHTBOX_IMG_OPS)}
+            previewSrc={cdnImage(images[lbIndex], CARD_IMG_OPS)}
+            alt={`${title} — ${lbIndex + 1}`}
+          />
 
           <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-1.5 text-sm tabular-nums text-white backdrop-blur-sm">
             {lbIndex + 1} / {total}
